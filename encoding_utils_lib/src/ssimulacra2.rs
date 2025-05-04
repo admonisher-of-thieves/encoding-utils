@@ -1,0 +1,149 @@
+use std::path::Path;
+
+use crate::math::{Score, ScoreList};
+use crate::scenes::SceneList;
+use crate::vapoursynth::{
+    ToCString, bestsource_invoke, resize_bicubic, select_frames, vszip_metrics,
+};
+use eyre::{OptionExt, Result, eyre};
+use rayon::prelude::*;
+use vapoursynth4_rs::{api::Api, core::Core, frame::Frame, map::KeyStr, node::Node};
+
+pub fn ssimu2_scenes(
+    input: &Path,
+    temp_encode: &Path,
+    scene_list: &SceneList,
+    verbose: bool,
+) -> Result<ScoreList> {
+    let api = Api::default();
+    let core = Core::builder().api(api).disable_library_unloading().build();
+
+    let src = bestsource_invoke(&core, input)?;
+    let enc = bestsource_invoke(&core, temp_encode)?;
+
+    let src = resize_bicubic(&core, &src)?;
+    let enc = resize_bicubic(&core, &enc)?;
+
+    let middle_frames = scene_list.middle_frames();
+
+    // let src = select_frames(&core, &src, &middle_frames)?;
+
+    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+
+    println!();
+    println!("\nObtaining SSIMU2 Scores");
+    let mut scores: Vec<Score> = middle_frames
+        .iter()
+        .par_bridge()
+        .map(|&x| {
+            let frame = ssimu2
+                .get_frame(i32::try_from(x)?)
+                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+            let props = frame.properties().ok_or_eyre("Props not found")?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            if verbose {
+                println!("Frame: {}, Score: {}", x, score);
+            }
+            Ok(Score {
+                frame: x,
+                value: score,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    scores.sort_by_key(|s| s.frame);
+
+    Ok(ScoreList { scores })
+}
+
+pub fn ssimu2_frames_scenes(
+    input: &Path,
+    temp_encode: &Path,
+    scene_list: &SceneList,
+    verbose: bool,
+) -> Result<ScoreList> {
+    let api = Api::default();
+    let core = Core::builder().api(api).disable_library_unloading().build();
+
+    let middle_frames = scene_list.middle_frames();
+
+    let src = bestsource_invoke(&core, input)?;
+    let enc = bestsource_invoke(&core, temp_encode)?;
+
+    let src = select_frames(&core, &src, &middle_frames)?;
+
+    let src = resize_bicubic(&core, &src)?;
+    let enc = resize_bicubic(&core, &enc)?;
+
+    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+
+    println!();
+    println!("\nObtaining SSIMU2 Scores\n");
+    let mut scores: Vec<Score> = middle_frames
+        .iter()
+        .enumerate()
+        .par_bridge()
+        .map(|(i, &x)| {
+            let frame = ssimu2
+                .get_frame(i32::try_from(i)?)
+                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+            let props = frame.properties().ok_or_eyre("Props not found")?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            if verbose {
+                println!("i: {}, Frame: {}, Score: {}", i, x, score);
+            }
+            Ok(Score {
+                frame: x,
+                value: score,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    scores.sort_by_key(|s| s.frame);
+
+    Ok(ScoreList { scores })
+    // Ok(())
+}
+
+pub fn ssimu2(input: &Path, encode: &Path, step: usize, verbose: bool) -> Result<ScoreList> {
+    let api = Api::default();
+    let core = Core::builder().api(api).disable_library_unloading().build();
+
+    let src = bestsource_invoke(&core, input)?;
+    let enc = bestsource_invoke(&core, encode)?;
+
+    let src = resize_bicubic(&core, &src)?;
+    let enc = resize_bicubic(&core, &enc)?;
+
+    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+
+    let info = ssimu2.info();
+    let num_frames = info.num_frames;
+
+    println!();
+    println!("\nObtaining SSIMU2 Scores\n");
+    let mut scores: Vec<Score> = (1..=num_frames)
+        .step_by(step)
+        .enumerate()
+        .par_bridge()
+        .map(|(i, x)| {
+            let frame = ssimu2
+                .get_frame(x - 1)
+                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+            let props = frame.properties().ok_or_eyre("Props not found")?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            let n_frame = u32::try_from(i)? * u32::try_from(step)?;
+            if verbose {
+                println!("Frame: {}, Score: {}", n_frame, score);
+            }
+            Ok(Score {
+                frame: n_frame,
+                value: score,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    scores.sort_by_key(|s| s.frame);
+
+    Ok(ScoreList { scores })
+}
