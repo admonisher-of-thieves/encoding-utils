@@ -84,7 +84,7 @@ pub fn ssimu2_frames_scenes(
     let middle_frames = scene_list.middle_frames();
 
     // Load source and encode
-    let mut reference = bestsource_invoke(&core, reference)?;
+    let reference = bestsource_invoke(&core, reference)?;
     let distorted = bestsource_invoke(&core, distorted)?;
 
     if verbose {
@@ -92,14 +92,14 @@ pub fn ssimu2_frames_scenes(
         println!("Distorted: {:#?}", distorted.info());
     }
 
-    // Match resolutions
-    reference = match_distorted_resolution(&core, &reference, &distorted)?;
+    // // Match resolutions
+    // reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
-    // Apply cropping if needed
-    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+    // // Apply cropping if needed
+    // reference = crop_reference_to_match(&core, &reference, &distorted)?;
 
-    // Apply offset to encoded clip
-    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+    // // Apply offset to encoded clip
+    // let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
 
     let reference = select_frames(&core, &reference, &middle_frames)?;
 
