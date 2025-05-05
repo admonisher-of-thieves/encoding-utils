@@ -76,11 +76,13 @@ pub fn run_loop<'a>(
         // Temp encode
         let vpy_file =
             create_frames_vpy_file(input, &vpy_path, &filtered_scene_list_with_zones, clean)?;
+        let new_av1an_params = update_split_method(av1an_params, "none".to_owned());
+        let new_av1an_params = update_extra_split_and_min_scene_len(&new_av1an_params, 0, 1);
         let encode = encode_frames(
             vpy_file,
             scenes_file_middle_frames,
             &encode_path,
-            av1an_params,
+            &new_av1an_params,
             &temp_encoder_params,
             clean,
         )?;
@@ -226,6 +228,34 @@ pub fn update_extra_split_and_min_scene_len(
     if !found_min_scene_len {
         updated_tokens.push("--min-scene-len".to_string());
         updated_tokens.push(new_min_scene_len.to_string());
+    }
+
+    updated_tokens.join(" ")
+}
+
+pub fn update_split_method(params: &str, new_split_method: String) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+    let mut found_split_method = false;
+
+    while let Some(token) = tokens.next() {
+        match token {
+            "--split-method" => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--split-method".to_string());
+                updated_tokens.push(new_split_method.to_string());
+                found_split_method = true;
+            }
+            _ => {
+                updated_tokens.push(token.to_string());
+            }
+        }
+    }
+
+    // Append if not found
+    if !found_split_method {
+        updated_tokens.push("--split-method".to_string());
+        updated_tokens.push(new_split_method.to_string());
     }
 
     updated_tokens.join(" ")

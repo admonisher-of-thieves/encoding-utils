@@ -31,8 +31,6 @@ pub fn encode_frames<'a>(
         "--video-params",
         encoder_params,
         "-y",
-        "--split-method",
-        "none",
         "--scenes",
         scenes_str,
     ]);
