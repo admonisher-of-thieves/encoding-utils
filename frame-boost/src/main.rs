@@ -3,8 +3,8 @@ use eyre::{OptionExt, Result};
 use encoding_utils_lib::main_loop::run_loop;
 use std::{fs, path::{absolute, PathBuf}};
 
-/// Scene-based boost that dynamically adjusts CRF
-/// It create a scene-file with zone overrides
+/// Scene-based boost that dynamically adjusts CRF.
+/// It creates a scene-file with zone overrides
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
