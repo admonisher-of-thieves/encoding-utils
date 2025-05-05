@@ -3,32 +3,46 @@ use std::path::Path;
 use crate::math::{Score, ScoreList};
 use crate::scenes::SceneList;
 use crate::vapoursynth::{
-    ToCString, bestsource_invoke, resize_bicubic, select_frames, vszip_metrics,
+    ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
+    match_distorted_resolution, resize_bicubic, select_frames, vszip_metrics,
 };
 use eyre::{OptionExt, Result, eyre};
 use rayon::prelude::*;
 use vapoursynth4_rs::{api::Api, core::Core, frame::Frame, map::KeyStr, node::Node};
 
 pub fn ssimu2_scenes(
-    input: &Path,
-    temp_encode: &Path,
+    reference: &Path,
+    distorded: &Path,
     scene_list: &SceneList,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
-    let src = bestsource_invoke(&core, input)?;
-    let enc = bestsource_invoke(&core, temp_encode)?;
+    // Load source and encode
+    let mut reference = bestsource_invoke(&core, reference)?;
+    let distorted = bestsource_invoke(&core, distorded)?;
 
-    let src = resize_bicubic(&core, &src)?;
-    let enc = resize_bicubic(&core, &enc)?;
+    if verbose {
+        println!("{:?}", reference.info());
+        println!("{:?}", distorted.info());
+    }
+
+    // Match resolutions
+    reference = match_distorted_resolution(&core, &reference, &distorted)?;
+
+    // Apply cropping if needed
+    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+
+    // Apply offset to encoded clip
+    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+
+    let reference = resize_bicubic(&core, &reference)?;
+    let distorted = resize_bicubic(&core, &distorted)?;
 
     let middle_frames = scene_list.middle_frames();
 
-    // let src = select_frames(&core, &src, &middle_frames)?;
-
-    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
     println!();
     println!("\nObtaining SSIMU2 Scores");
@@ -57,8 +71,8 @@ pub fn ssimu2_scenes(
 }
 
 pub fn ssimu2_frames_scenes(
-    input: &Path,
-    temp_encode: &Path,
+    reference: &Path,
+    distorted: &Path,
     scene_list: &SceneList,
     verbose: bool,
 ) -> Result<ScoreList> {
@@ -67,15 +81,30 @@ pub fn ssimu2_frames_scenes(
 
     let middle_frames = scene_list.middle_frames();
 
-    let src = bestsource_invoke(&core, input)?;
-    let enc = bestsource_invoke(&core, temp_encode)?;
+    // Load source and encode
+    let mut reference = bestsource_invoke(&core, reference)?;
+    let distorted = bestsource_invoke(&core, distorted)?;
 
-    let src = select_frames(&core, &src, &middle_frames)?;
+    if verbose {
+        println!("{:?}", reference.info());
+        println!("{:?}", distorted.info());
+    }
 
-    let src = resize_bicubic(&core, &src)?;
-    let enc = resize_bicubic(&core, &enc)?;
+    // Match resolutions
+    reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
-    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+    // Apply cropping if needed
+    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+
+    // Apply offset to encoded clip
+    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+
+    let reference = select_frames(&core, &reference, &middle_frames)?;
+
+    let reference = resize_bicubic(&core, &reference)?;
+    let distorted = resize_bicubic(&core, &distorted)?;
+
+    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
     println!();
     println!("\nObtaining SSIMU2 Scores\n");
@@ -105,17 +134,33 @@ pub fn ssimu2_frames_scenes(
     // Ok(())
 }
 
-pub fn ssimu2(input: &Path, encode: &Path, step: usize, verbose: bool) -> Result<ScoreList> {
+pub fn ssimu2(reference: &Path, distorted: &Path, step: usize, verbose: bool) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
-    let src = bestsource_invoke(&core, input)?;
-    let enc = bestsource_invoke(&core, encode)?;
+    // Load reference and distorted
+    let mut reference = bestsource_invoke(&core, reference)?;
+    let distorted = bestsource_invoke(&core, distorted)?;
 
-    let src = resize_bicubic(&core, &src)?;
-    let enc = resize_bicubic(&core, &enc)?;
+    if verbose {
+        println!("{:?}", reference.info());
+        println!("{:?}", distorted.info());
+    }
 
-    let ssimu2 = vszip_metrics(&core, &src, &enc)?;
+    // Match resolutions
+    reference = match_distorted_resolution(&core, &reference, &distorted)?;
+
+    // Apply cropping if needed
+    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+
+    // Apply offset to encoded clip
+    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+
+    // Resize after cropping
+    let reference = resize_bicubic(&core, &reference)?;
+    let distorted = resize_bicubic(&core, &distorted)?;
+
+    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
     let info = ssimu2.info();
     let num_frames = info.num_frames;

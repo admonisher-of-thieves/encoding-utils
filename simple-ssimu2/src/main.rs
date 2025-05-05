@@ -7,13 +7,13 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Input video file
+    /// Reference video file
     #[arg(short, long)]
-    input: PathBuf,
+    reference: PathBuf,
 
-    /// Output video file (encoded version)
+    /// Distorted video file (encoded version)
     #[arg(short, long)]
-    output: PathBuf,
+    distorted: PathBuf,
 
     /// JSON file containing scene information
     #[arg(short = 'S', long)]
@@ -36,16 +36,16 @@ fn main() -> Result<()> {
         // If scenes file provided, use scene-based processing
         let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
         encoding_utils_lib::ssimulacra2::ssimu2_scenes(
-            &args.input,
-            &args.output,
+            &args.reference,
+            &args.distorted,
             &scene_list,
             !args.no_verbose,
         )?
     } else {
         // Otherwise use frame-by-frame processing with step
         ssimu2(
-            &args.input,
-            &args.output,
+            &args.reference,
+            &args.distorted,
             args.step as usize,
             !args.no_verbose,
         )?
