@@ -16,8 +16,7 @@ impl ChunkList {
             .chunks
             .iter()
             .map(|chunk| {
-                let zone_overrides =
-                    ZoneOverrides::from(av1an_params, encoder_params, chunk.crf, None, None);
+                let zone_overrides = ZoneOverrides::from(av1an_params, encoder_params, chunk.crf);
                 Scene {
                     start_frame: chunk.scene.start_frame,
                     end_frame: chunk.scene.end_frame,
