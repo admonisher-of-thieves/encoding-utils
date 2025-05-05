@@ -23,7 +23,7 @@ struct Args {
     #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
     step: u32,
 
-    /// Disabel verbose output - Print only stats
+    /// Disable verbose output - Print only stats
     #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
     only_stats: bool,
 
