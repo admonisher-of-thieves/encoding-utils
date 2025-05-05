@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2};
 use eyre::Result;
 use std::path::PathBuf;
@@ -23,9 +23,9 @@ struct Args {
     #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
     step: u32,
 
-    /// Enable verbose output
-    #[arg(short, long = "no-verbose")]
-    no_verbose: bool,
+    /// Disabel verbose output - Print only stats
+    #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
+    only_stats: bool,
 }
 
 fn main() -> Result<()> {
@@ -39,7 +39,7 @@ fn main() -> Result<()> {
             &args.reference,
             &args.distorted,
             &scene_list,
-            !args.no_verbose,
+            !args.only_stats,
         )?
     } else {
         // Otherwise use frame-by-frame processing with step
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
             &args.reference,
             &args.distorted,
             args.step as usize,
-            !args.no_verbose,
+            !args.only_stats,
         )?
     };
 

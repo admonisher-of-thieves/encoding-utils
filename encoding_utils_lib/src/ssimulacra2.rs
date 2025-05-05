@@ -44,8 +44,10 @@ pub fn ssimu2_scenes(
 
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
-    println!();
-    println!("\nObtaining SSIMU2 Scores");
+    if verbose {
+        println!();
+        println!("\nObtaining SSIMU2 Scores\n");
+    }
     let mut scores: Vec<Score> = middle_frames
         .iter()
         .par_bridge()
@@ -106,8 +108,10 @@ pub fn ssimu2_frames_scenes(
 
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
-    println!();
-    println!("\nObtaining SSIMU2 Scores\n");
+    if verbose {
+        println!();
+        println!("\nObtaining SSIMU2 Scores\n");
+    }
     let mut scores: Vec<Score> = middle_frames
         .iter()
         .enumerate()
@@ -165,8 +169,10 @@ pub fn ssimu2(reference: &Path, distorted: &Path, step: usize, verbose: bool) ->
     let info = ssimu2.info();
     let num_frames = info.num_frames;
 
-    println!();
-    println!("\nObtaining SSIMU2 Scores\n");
+    if verbose {
+        println!();
+        println!("\nObtaining SSIMU2 Scores\n");
+    }
     let mut scores: Vec<Score> = (1..=num_frames)
         .step_by(step)
         .enumerate()
