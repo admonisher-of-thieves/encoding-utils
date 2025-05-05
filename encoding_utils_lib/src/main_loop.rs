@@ -92,7 +92,8 @@ pub fn run_loop<'a>(
             input,
             encode,
             &filtered_scene_list_with_zones,
-            ImporterPlugin::Lsmash,
+            check_chunk_method(av1an_params)
+                .ok_or_eyre("--chuck-method not found in av1an_params")?,
             verbose,
         )?;
 
@@ -259,4 +260,29 @@ pub fn update_split_method(params: &str, new_split_method: String) -> String {
     }
 
     updated_tokens.join(" ")
+}
+
+/// Extracts the value of a command-line argument from a parameter string
+fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
+    let mut tokens = params.split_whitespace().peekable();
+
+    while let Some(token) = tokens.next() {
+        if token == arg_name {
+            if let Some(value) = tokens.next() {
+                return Some(value.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Checks the chunk method in the params and returns the corresponding ImporterPlugin
+pub fn check_chunk_method(params: &str) -> Option<ImporterPlugin> {
+    let chunk_method = get_arg_value(params, "--chunk-method")?;
+
+    match chunk_method.as_str() {
+        "lsmash" => Some(ImporterPlugin::Lsmash),
+        "bestsource" => Some(ImporterPlugin::Bestsource),
+        _ => None,
+    }
 }
