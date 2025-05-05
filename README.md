@@ -3,7 +3,7 @@
 ## frame-boost
 
 ```sh
-Scene-based boost that dynamically adjusts CRF It create a scene-file with zone overrides
+Scene-based boost that dynamically adjusts CRF. It creates a scene-file with zone overrides
 
 Usage: frame-boost [OPTIONS] --input <INPUT>
 
@@ -25,7 +25,7 @@ Options:
   -F, --no-force
           Disable overwrite protection (remove the scene file)
   -v, --verbose
-
+          
   -h, --help
           Print help
   -V, --version
@@ -44,7 +44,7 @@ Options:
   -d, --distorted <DISTORTED>  Distorted video file (encoded version)
   -S, --scenes <SCENES>        JSON file containing scene information
   -s, --step <STEP>            Frame step value (process every N-th frame) [default: 1]
-  -n, --no-verbose             Enable verbose output
+  -o, --only-stats             Disabel verbose output - Print only stats
   -h, --help                   Print help
   -V, --version                Print version
 ```
