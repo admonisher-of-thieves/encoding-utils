@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::{ffi::CString, str::FromStr};
 
+use clap::ValueEnum;
 use eyre::{OptionExt, Result, eyre};
 use vapoursynth4_rs::api::Api;
 use vapoursynth4_rs::ffi::VSMapAppendMode::{Append, Replace};
@@ -27,6 +28,13 @@ pub fn print_vs_plugins() {
     for plugin in core.plugins() {
         println!("{}", plugin.id().to_str().unwrap())
     }
+}
+
+/// Chunking plugin
+#[derive(Debug, Clone, ValueEnum)]
+pub enum ImporterPlugins {
+    Lsmash,
+    Bestsource,
 }
 
 pub fn lsmash(core: &Core) -> Result<Plugin> {

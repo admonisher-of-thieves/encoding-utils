@@ -19,13 +19,13 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1"
+        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method lsmash --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 24"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
-        long,
+    long,
         default_value = "--preset 2 --crf 21~36 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"
     )]
     encoder_params: String,

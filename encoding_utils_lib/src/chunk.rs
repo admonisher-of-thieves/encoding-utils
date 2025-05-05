@@ -1,4 +1,5 @@
 use crate::{
+    main_loop::update_extra_split_and_min_scene_len,
     math::Score,
     scenes::{Scene, SceneList, ZoneOverrides},
 };
@@ -38,6 +39,7 @@ impl ChunkList {
         ssimu2_score: f64,
         verbose: bool,
     ) -> SceneList {
+        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, 0, 1);
         let scenes = self
             .chunks
             .iter()
@@ -46,8 +48,7 @@ impl ChunkList {
                 if verbose {
                     println!("{:?}", chunk);
                 }
-                let zone_overrides =
-                    ZoneOverrides::from(av1an_params, encoder_params, chunk.crf, None, None);
+                let zone_overrides = ZoneOverrides::from(&av1an_params, encoder_params, chunk.crf);
                 Scene {
                     start_frame: chunk.scene.start_frame,
                     end_frame: chunk.scene.end_frame,

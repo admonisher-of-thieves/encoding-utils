@@ -3,10 +3,11 @@ use std::path::Path;
 
 use crate::chunk::{Chunk, ChunkList};
 use crate::encode::encode_frames;
-use crate::frames::create_vpy_file;
 use crate::math::{Score, print_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
+use crate::vapoursynth::ImporterPlugins;
+use crate::vpy_files::create_frames_vpy_file;
 use eyre::{OptionExt, Result};
 
 #[allow(clippy::too_many_arguments)]
@@ -26,7 +27,7 @@ pub fn run_loop<'a>(
 
     // Generating original scenes
     let original_scenes_path = temp_folder.join("scenes.json");
-    let original_scenes_file = get_scene_file(input, &original_scenes_path, clean)?;
+    let original_scenes_file = get_scene_file(input, &original_scenes_path, av1an_params, clean)?;
     let scene_list = parse_scene_file(original_scenes_file)?;
 
     // Creating crf list
@@ -73,7 +74,8 @@ pub fn run_loop<'a>(
             write_scene_list_to_file(&scene_list_middle_frames, &scenes_path)?;
 
         // Temp encode
-        let vpy_file = create_vpy_file(input, &vpy_path, &filtered_scene_list_with_zones, clean)?;
+        let vpy_file =
+            create_frames_vpy_file(input, &vpy_path, &filtered_scene_list_with_zones, clean)?;
         let encode = encode_frames(
             vpy_file,
             scenes_file_middle_frames,
@@ -84,8 +86,13 @@ pub fn run_loop<'a>(
         )?;
 
         // Scores
-        let score_list =
-            ssimu2_frames_scenes(input, encode, &filtered_scene_list_with_zones, verbose)?;
+        let score_list = ssimu2_frames_scenes(
+            input,
+            encode,
+            &filtered_scene_list_with_zones,
+            ImporterPlugins::Lsmash,
+            verbose,
+        )?;
 
         if verbose {
             print_stats(&score_list)?;
@@ -178,4 +185,48 @@ pub fn update_preset(velocity_preset: i32, encoder_params: &str) -> String {
     }
 
     args.join(" ")
+}
+
+pub fn update_extra_split_and_min_scene_len(
+    params: &str,
+    new_extra_split: u32,
+    new_min_scene_len: u32,
+) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+    let mut found_extra_split = false;
+    let mut found_min_scene_len = false;
+
+    while let Some(token) = tokens.next() {
+        match token {
+            "--extra-split" => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--extra-split".to_string());
+                updated_tokens.push(new_extra_split.to_string());
+                found_extra_split = true;
+            }
+            "--min-scene-len" => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--min-scene-len".to_string());
+                updated_tokens.push(new_min_scene_len.to_string());
+                found_min_scene_len = true;
+            }
+            _ => {
+                updated_tokens.push(token.to_string());
+            }
+        }
+    }
+
+    // Append if not found
+    if !found_extra_split {
+        updated_tokens.push("--extra-split".to_string());
+        updated_tokens.push(new_extra_split.to_string());
+    }
+
+    if !found_min_scene_len {
+        updated_tokens.push("--min-scene-len".to_string());
+        updated_tokens.push(new_min_scene_len.to_string());
+    }
+
+    updated_tokens.join(" ")
 }

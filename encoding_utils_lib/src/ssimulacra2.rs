@@ -3,8 +3,8 @@ use std::path::Path;
 use crate::math::{Score, ScoreList};
 use crate::scenes::SceneList;
 use crate::vapoursynth::{
-    ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
-    match_distorted_resolution, resize_bicubic, select_frames, vszip_metrics,
+    ImporterPlugins, ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
+    lsmash_invoke, match_distorted_resolution, resize_bicubic, select_frames, vszip_metrics,
 };
 use eyre::{OptionExt, Result, eyre};
 use rayon::prelude::*;
@@ -12,16 +12,25 @@ use vapoursynth4_rs::{api::Api, core::Core, frame::Frame, map::KeyStr, node::Nod
 
 pub fn ssimu2_scenes(
     reference: &Path,
-    distorded: &Path,
+    distorted: &Path,
     scene_list: &SceneList,
+    importer_plugin: ImporterPlugins,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
-    // Load source and encode
-    let mut reference = bestsource_invoke(&core, reference)?;
-    let distorted = bestsource_invoke(&core, distorded)?;
+    // Load reference and distorted
+    let (mut reference, distorted) = match importer_plugin {
+        ImporterPlugins::Lsmash => (
+            lsmash_invoke(&core, reference)?,
+            lsmash_invoke(&core, distorted)?,
+        ),
+        ImporterPlugins::Bestsource => (
+            bestsource_invoke(&core, reference)?,
+            bestsource_invoke(&core, distorted)?,
+        ),
+    };
 
     if verbose {
         println!("Reference: {:#?}", reference.info());
@@ -49,8 +58,7 @@ pub fn ssimu2_scenes(
         println!("\nObtaining SSIMU2 Scores\n");
     }
     let mut scores: Vec<Score> = middle_frames
-        .iter()
-        .par_bridge()
+        .par_iter()
         .map(|&x| {
             let frame = ssimu2
                 .get_frame(i32::try_from(x)?)
@@ -76,6 +84,7 @@ pub fn ssimu2_frames_scenes(
     reference: &Path,
     distorted: &Path,
     scene_list: &SceneList,
+    importer_plugin: ImporterPlugins,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -83,9 +92,17 @@ pub fn ssimu2_frames_scenes(
 
     let middle_frames = scene_list.middle_frames();
 
-    // Load source and encode
-    let reference = bestsource_invoke(&core, reference)?;
-    let distorted = bestsource_invoke(&core, distorted)?;
+    // Load reference and distorted
+    let (mut reference, distorted) = match importer_plugin {
+        ImporterPlugins::Lsmash => (
+            lsmash_invoke(&core, reference)?,
+            lsmash_invoke(&core, distorted)?,
+        ),
+        ImporterPlugins::Bestsource => (
+            bestsource_invoke(&core, reference)?,
+            bestsource_invoke(&core, distorted)?,
+        ),
+    };
 
     if verbose {
         println!("Reference: {:#?}", reference.info());
@@ -138,13 +155,27 @@ pub fn ssimu2_frames_scenes(
     // Ok(())
 }
 
-pub fn ssimu2(reference: &Path, distorted: &Path, step: usize, verbose: bool) -> Result<ScoreList> {
+pub fn ssimu2(
+    reference: &Path,
+    distorted: &Path,
+    step: usize,
+    importer_plugin: ImporterPlugins,
+    verbose: bool,
+) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
     // Load reference and distorted
-    let mut reference = bestsource_invoke(&core, reference)?;
-    let distorted = bestsource_invoke(&core, distorted)?;
+    let (mut reference, distorted) = match importer_plugin {
+        ImporterPlugins::Lsmash => (
+            lsmash_invoke(&core, reference)?,
+            lsmash_invoke(&core, distorted)?,
+        ),
+        ImporterPlugins::Bestsource => (
+            bestsource_invoke(&core, reference)?,
+            bestsource_invoke(&core, distorted)?,
+        ),
+    };
 
     if verbose {
         println!("Reference: {:#?}", reference.info());
@@ -173,6 +204,7 @@ pub fn ssimu2(reference: &Path, distorted: &Path, step: usize, verbose: bool) ->
         println!();
         println!("\nObtaining SSIMU2 Scores\n");
     }
+
     let mut scores: Vec<Score> = (1..=num_frames)
         .step_by(step)
         .enumerate()

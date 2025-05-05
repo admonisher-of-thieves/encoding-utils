@@ -9,6 +9,7 @@ use eyre::{OptionExt, Result};
 pub fn get_scene_file<'a>(
     input: &'a Path,
     scenes_path: &'a Path,
+    av1an_params: &str,
     override_file: bool,
 ) -> Result<&'a Path> {
     if override_file && scenes_path.exists() {
@@ -22,24 +23,10 @@ pub fn get_scene_file<'a>(
 
     println!("Obtaining scene file:\n");
 
-    let args = [
-        "-i",
-        input_str,
-        "--scenes",
-        scene_str,
-        "--sc-only",
-        "--chunk-method",
-        "bestsource",
-        "--split-method",
-        "av-scenechange",
-        "--sc-method",
-        "standard",
-        "--extra-split",
-        "240",
-        "--min-scene-len",
-        "24",
-        "--verbose",
-    ];
+    let av1an_params: Vec<&str> = av1an_params.split_whitespace().collect();
+
+    let mut args = Vec::from(["--input", input_str, "--scenes", scene_str, "--sc-only"]);
+    args.extend(av1an_params);
 
     println!("{}", args.join(" "));
     println!();
@@ -135,16 +122,12 @@ pub struct ZoneOverrides {
 }
 
 impl ZoneOverrides {
-    pub fn from(
-        av1an_params: &str,
-        encoder_params: &str,
-        crf: u32,
-        extra_splits_len: Option<u32>,
-        min_scene_len: Option<u32>,
-    ) -> ZoneOverrides {
+    pub fn from(av1an_params: &str, encoder_params: &str, crf: u32) -> ZoneOverrides {
         let mut encoder = None;
         let mut passes = None;
         let mut photon_noise = None;
+        let mut min_scene_len: Option<u32> = None;
+        let mut extra_splits_len: Option<u32> = None;
 
         let mut av1an_tokens = av1an_params.split_whitespace().peekable();
         while let Some(token) = av1an_tokens.next() {
@@ -165,6 +148,16 @@ impl ZoneOverrides {
                         photon_noise = value.parse().ok();
                     }
                 }
+                "--min-scene-len" => {
+                    if let Some(value) = av1an_tokens.next() {
+                        min_scene_len = value.parse().ok();
+                    }
+                }
+                "--extra-splits" => {
+                    if let Some(value) = av1an_tokens.next() {
+                        extra_splits_len = value.parse().ok();
+                    }
+                }
                 _ => {}
             }
         }
@@ -178,19 +171,11 @@ impl ZoneOverrides {
 
         ZoneOverrides {
             encoder,
-            passes: if passes.is_none() { Some(1) } else { passes },
+            passes: passes.or(Some(1)),
             video_params: Some(video_params_vec),
             photon_noise,
-            extra_splits_len: if extra_splits_len.is_none() {
-                Some(240)
-            } else {
-                extra_splits_len
-            },
-            min_scene_len: if min_scene_len.is_none() {
-                Some(24)
-            } else {
-                min_scene_len
-            },
+            extra_splits_len: extra_splits_len.or(Some(240)),
+            min_scene_len: min_scene_len.or(Some(24)),
         }
     }
 }

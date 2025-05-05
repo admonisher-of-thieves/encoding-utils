@@ -1,9 +1,9 @@
-use clap::{ArgAction, Parser};
-use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2};
+use clap::{ArgAction, Parser, ValueEnum};
+use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugins};
 use eyre::Result;
 use std::path::PathBuf;
 
-/// Calculate SSIMULACRA2 metric
+/// Calculate SSIMULACRA2 metric - Using vszip
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -26,6 +26,10 @@ struct Args {
     /// Disabel verbose output - Print only stats
     #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
     only_stats: bool,
+
+    /// Importer plugin
+    #[arg(short, long = "importer-plugin", default_value = "lsmash")]
+    importer_plugin: ImporterPlugins,
 }
 
 fn main() -> Result<()> {
@@ -39,6 +43,7 @@ fn main() -> Result<()> {
             &args.reference,
             &args.distorted,
             &scene_list,
+            args.importer_plugin,
             !args.only_stats,
         )?
     } else {
@@ -47,6 +52,7 @@ fn main() -> Result<()> {
             &args.reference,
             &args.distorted,
             args.step as usize,
+            args.importer_plugin,
             !args.only_stats,
         )?
     };
