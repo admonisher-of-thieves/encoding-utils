@@ -190,7 +190,8 @@ pub fn print_stats(score_list: &ScoreList) -> Result<()> {
     let mean = mean(score_list);
     let deviation = standard_deviation(score_list);
     // let variance = variance(data);
-    // let median = median(data)?;
+    let median = median(score_list)?;
+
     let mode = mode(score_list)?;
     let percentiles = percentiles(score_list)?;
     let max = max(score_list)?;
@@ -203,11 +204,11 @@ pub fn print_stats(score_list: &ScoreList) -> Result<()> {
 
     println!("Mode: {:.4}, count: {:.4}", mode.value, mode.count);
 
-    // print!("Median: ");
-    // for (frame, score) in median {
-    //     print!("Frame: {frame:.4} - Score {score:.4}, ");
-    // }
-    // println!();
+    print!("Median: ");
+    for score in median.scores {
+        print!("Frame: {:.4} - Score {:.4}, ", score.frame, score.value);
+    }
+    println!();
 
     print!("Min: ");
     for score in min.scores {
