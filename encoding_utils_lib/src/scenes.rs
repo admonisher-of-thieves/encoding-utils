@@ -25,7 +25,7 @@ pub fn get_scene_file<'a>(
 
     let av1an_params: Vec<&str> = av1an_params.split_whitespace().collect();
 
-    let mut args = Vec::from(["--input", input_str, "--scenes", scene_str, "--sc-only"]);
+    let mut args = Vec::from(["-i", input_str, "--scenes", scene_str, "--sc-only"]);
     args.extend(av1an_params);
 
     println!("{}", args.join(" "));
