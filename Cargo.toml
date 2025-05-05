@@ -1,5 +1,5 @@
 [workspace]
-members = ["encoding_utils_lib", "simple-ssimu2", "frame-boost"]
+members = ["encoding_utils_lib", "simple-ssimu2", "frame-boost", "vpy_files"]
 resolver = "2"
 
 [workspace.dependencies]

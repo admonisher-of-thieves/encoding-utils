@@ -1,6 +1,6 @@
 pub mod chunk;
 pub mod encode;
-pub mod frames;
+pub mod vpy_files;
 pub mod main_loop;
 pub mod math;
 pub mod scenes;

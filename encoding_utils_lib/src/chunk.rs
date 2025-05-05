@@ -12,11 +12,12 @@ pub struct ChunkList {
 
 impl ChunkList {
     pub fn to_scene_list_with_zones(&self, av1an_params: &str, encoder_params: &str) -> SceneList {
+        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, 0, 1);
         let scenes = self
             .chunks
             .iter()
             .map(|chunk| {
-                let zone_overrides = ZoneOverrides::from(av1an_params, encoder_params, chunk.crf);
+                let zone_overrides = ZoneOverrides::from(&av1an_params, encoder_params, chunk.crf);
                 Scene {
                     start_frame: chunk.scene.start_frame,
                     end_frame: chunk.scene.end_frame,

@@ -32,7 +32,7 @@ pub fn print_vs_plugins() {
 
 /// Chunking plugin
 #[derive(Debug, Clone, ValueEnum)]
-pub enum ImporterPlugins {
+pub enum ImporterPlugin {
     Lsmash,
     Bestsource,
 }

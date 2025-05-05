@@ -6,7 +6,7 @@ use crate::encode::encode_frames;
 use crate::math::{Score, print_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
-use crate::vapoursynth::ImporterPlugins;
+use crate::vapoursynth::ImporterPlugin;
 use crate::vpy_files::create_frames_vpy_file;
 use eyre::{OptionExt, Result};
 
@@ -90,7 +90,7 @@ pub fn run_loop<'a>(
             input,
             encode,
             &filtered_scene_list_with_zones,
-            ImporterPlugins::Lsmash,
+            ImporterPlugin::Lsmash,
             verbose,
         )?;
 

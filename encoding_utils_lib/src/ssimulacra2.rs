@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::math::{Score, ScoreList};
 use crate::scenes::SceneList;
 use crate::vapoursynth::{
-    ImporterPlugins, ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
+    ImporterPlugin, ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
     lsmash_invoke, match_distorted_resolution, resize_bicubic, select_frames, vszip_metrics,
 };
 use eyre::{OptionExt, Result, eyre};
@@ -14,7 +14,7 @@ pub fn ssimu2_scenes(
     reference: &Path,
     distorted: &Path,
     scene_list: &SceneList,
-    importer_plugin: ImporterPlugins,
+    importer_plugin: ImporterPlugin,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -22,11 +22,11 @@ pub fn ssimu2_scenes(
 
     // Load reference and distorted
     let (mut reference, distorted) = match importer_plugin {
-        ImporterPlugins::Lsmash => (
+        ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
         ),
-        ImporterPlugins::Bestsource => (
+        ImporterPlugin::Bestsource => (
             bestsource_invoke(&core, reference)?,
             bestsource_invoke(&core, distorted)?,
         ),
@@ -84,7 +84,7 @@ pub fn ssimu2_frames_scenes(
     reference: &Path,
     distorted: &Path,
     scene_list: &SceneList,
-    importer_plugin: ImporterPlugins,
+    importer_plugin: ImporterPlugin,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -93,12 +93,12 @@ pub fn ssimu2_frames_scenes(
     let middle_frames = scene_list.middle_frames();
 
     // Load reference and distorted
-    let (mut reference, distorted) = match importer_plugin {
-        ImporterPlugins::Lsmash => (
+    let (reference, distorted) = match importer_plugin {
+        ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
         ),
-        ImporterPlugins::Bestsource => (
+        ImporterPlugin::Bestsource => (
             bestsource_invoke(&core, reference)?,
             bestsource_invoke(&core, distorted)?,
         ),
@@ -159,7 +159,7 @@ pub fn ssimu2(
     reference: &Path,
     distorted: &Path,
     step: usize,
-    importer_plugin: ImporterPlugins,
+    importer_plugin: ImporterPlugin,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -167,11 +167,11 @@ pub fn ssimu2(
 
     // Load reference and distorted
     let (mut reference, distorted) = match importer_plugin {
-        ImporterPlugins::Lsmash => (
+        ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
         ),
-        ImporterPlugins::Bestsource => (
+        ImporterPlugin::Bestsource => (
             bestsource_invoke(&core, reference)?,
             bestsource_invoke(&core, distorted)?,
         ),

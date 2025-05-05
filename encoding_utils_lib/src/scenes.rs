@@ -206,8 +206,7 @@ impl SceneList {
             .iter()
             .zip(crf_list.iter())
             .map(|(scene, crf)| {
-                let zone_overrides =
-                    ZoneOverrides::from(av1an_params, encoder_params, crf.crf, None, None);
+                let zone_overrides = ZoneOverrides::from(av1an_params, encoder_params, crf.crf);
                 Scene {
                     start_frame: scene.start_frame,
                     end_frame: scene.end_frame,

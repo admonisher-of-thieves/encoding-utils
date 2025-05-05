@@ -193,6 +193,7 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 name = "encoding_utils_lib"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "eyre",
  "rayon",
  "serde",
@@ -431,6 +432,15 @@ dependencies = [
 name = "vapoursynth4-sys"
 version = "0.3.1"
 source = "git+https://github.com/inflation/vapoursynth4-rs?rev=e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7#e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7"
+
+[[package]]
+name = "vpy_files"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "encoding_utils_lib",
+ "eyre",
+]
 
 [[package]]
 name = "windows-sys"

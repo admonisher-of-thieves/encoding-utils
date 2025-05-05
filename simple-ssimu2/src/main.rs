@@ -1,5 +1,5 @@
-use clap::{ArgAction, Parser, ValueEnum};
-use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugins};
+use clap::{ArgAction, Parser};
+use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugin};
 use eyre::Result;
 use std::path::PathBuf;
 
@@ -29,7 +29,7 @@ struct Args {
 
     /// Importer plugin
     #[arg(short, long = "importer-plugin", default_value = "lsmash")]
-    importer_plugin: ImporterPlugins,
+    importer_plugin: ImporterPlugin,
 }
 
 fn main() -> Result<()> {
