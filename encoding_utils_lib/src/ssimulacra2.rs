@@ -24,8 +24,8 @@ pub fn ssimu2_scenes(
     let distorted = bestsource_invoke(&core, distorded)?;
 
     if verbose {
-        println!("{:?}", reference.info());
-        println!("{:?}", distorted.info());
+        println!("Reference: {:#?}", reference.info());
+        println!("Distorted: {:#?}", distorted.info());
     }
 
     // Match resolutions
@@ -88,8 +88,8 @@ pub fn ssimu2_frames_scenes(
     let distorted = bestsource_invoke(&core, distorted)?;
 
     if verbose {
-        println!("{:?}", reference.info());
-        println!("{:?}", distorted.info());
+        println!("Reference: {:#?}", reference.info());
+        println!("Distorted: {:#?}", distorted.info());
     }
 
     // Match resolutions
@@ -147,8 +147,8 @@ pub fn ssimu2(reference: &Path, distorted: &Path, step: usize, verbose: bool) ->
     let distorted = bestsource_invoke(&core, distorted)?;
 
     if verbose {
-        println!("{:?}", reference.info());
-        println!("{:?}", distorted.info());
+        println!("Reference: {:#?}", reference.info());
+        println!("Distorted: {:#?}", distorted.info());
     }
 
     // Match resolutions
