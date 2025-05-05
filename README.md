@@ -37,14 +37,14 @@ Options:
 ```sh
 Calculate SSIMULACRA2 metric
 
-Usage: simple-ssimu2 [OPTIONS] --input <INPUT> --output <OUTPUT>
+Usage: simple-ssimu2 [OPTIONS] --reference <REFERENCE> --distorted <DISTORTED>
 
 Options:
-  -i, --input <INPUT>    Input video file
-  -o, --output <OUTPUT>  Output video file (encoded version)
-  -S, --scenes <SCENES>  JSON file containing scene information
-  -s, --step <STEP>      Frame step value (process every N-th frame) [default: 1]
-  -n, --no-verbose       Enable verbose output
-  -h, --help             Print help
-  -V, --version          Print version
+  -r, --reference <REFERENCE>  Reference video file
+  -d, --distorted <DISTORTED>  Distorted video file (encoded version)
+  -S, --scenes <SCENES>        JSON file containing scene information
+  -s, --step <STEP>            Frame step value (process every N-th frame) [default: 1]
+  -n, --no-verbose             Enable verbose output
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
