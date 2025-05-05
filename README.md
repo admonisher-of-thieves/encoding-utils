@@ -10,6 +10,8 @@ Usage: frame-boost [OPTIONS] --input <INPUT>
 Options:
   -i, --input <INPUT>
           Input video file
+  -o, --output <OUTPUT>
+          Output file (default: "[SCENES BOOSTED] <input>.json" if no input given)
       --av1an-params <AV1AN_PARAMS>
           AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1"]
       --encoder-params <ENCODER_PARAMS>
@@ -30,6 +32,7 @@ Options:
           Print help
   -V, --version
           Print version
+
 ```
 
 ## simple-ssimu2
