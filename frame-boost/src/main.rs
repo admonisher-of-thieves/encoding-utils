@@ -19,7 +19,7 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method lsmash --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 24"
+        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method lsmash --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24"
     )]
     av1an_params: String,
 
