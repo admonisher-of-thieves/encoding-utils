@@ -11,7 +11,7 @@ Options:
   -i, --input <INPUT>
           Input video file
   -o, --output <OUTPUT>
-          Output scene file (default: "[BOOST] <input>.json" if no input given)
+          Output scene file (default: "[BOOST] <input>.json" if no output given)
       --av1an-params <AV1AN_PARAMS>
           AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24"]
       --encoder-params <ENCODER_PARAMS>
@@ -55,6 +55,8 @@ Options:
           Disable verbose output - Print only stats
   -i, --importer-plugin <IMPORTER_PLUGIN>
           Importer plugin [default: lsmash] [possible values: lsmash, bestsource]
+  -o, --output <OUTPUT>
+          Path to output file (if not provided, stats will only be printed)
   -h, --help
           Print help
   -V, --version

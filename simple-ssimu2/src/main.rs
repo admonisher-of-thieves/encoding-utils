@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{math::print_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugin};
+use encoding_utils_lib::{math::get_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugin};
 use eyre::Result;
 use std::path::PathBuf;
 
@@ -30,6 +30,10 @@ struct Args {
     /// Importer plugin
     #[arg(short, long = "importer-plugin", default_value = "lsmash")]
     importer_plugin: ImporterPlugin,
+
+    /// Path to output file (if not provided, stats will only be printed)
+    #[arg(short, long)]
+    output: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -57,7 +61,13 @@ fn main() -> Result<()> {
         )?
     };
 
-    print_stats(&score_list)?;
+    let stats = get_stats(&score_list)?;
+    if let Some(output_path) = args.output {
+        println!("{}", stats);
+        std::fs::write(output_path, stats)?;
+    } else {
+        println!("{}", stats);
+    }
 
     Ok(())
 }

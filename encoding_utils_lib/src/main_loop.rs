@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::chunk::{Chunk, ChunkList};
 use crate::encode::encode_frames;
-use crate::math::{Score, print_stats};
+use crate::math::{Score, get_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
 use crate::vapoursynth::ImporterPlugin;
@@ -98,7 +98,8 @@ pub fn run_loop<'a>(
         )?;
 
         if verbose {
-            print_stats(&score_list)?;
+            let stats = get_stats(&score_list)?;
+            println!("{}", stats)
         }
 
         if *i_crf == 0 {

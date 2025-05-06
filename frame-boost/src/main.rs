@@ -12,7 +12,7 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
-    /// Output scene file (default: "[BOOST] <input>.json" if no input given)
+    /// Output scene file (default: "[BOOST] <input>.json" if no output given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     output: Option<PathBuf>,
 
