@@ -3,7 +3,7 @@
 ## frame-boost
 
 ```sh
-Scene-based boost that dynamically adjusts CRF. It creates a scene-file with zone overrides
+cene-based boost that dynamically adjusts CRF. It creates a scene-file with zone overrides
 
 Usage: frame-boost [OPTIONS] --input <INPUT>
 
@@ -13,7 +13,7 @@ Options:
   -o, --output <OUTPUT>
           Output file (default: "[SCENES BOOSTED] <input>.json" if no input given)
       --av1an-params <AV1AN_PARAMS>
-          AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method lsmash --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 240 --min-scene-len 24"]
+          AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24"]
       --encoder-params <ENCODER_PARAMS>
           SVT-AV1 encoder parameters [default: "--preset 2 --crf 21~36 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"]
   -q, --target-quality <TARGET_QUALITY>
