@@ -145,7 +145,7 @@ impl ZoneOverrides {
                         min_scene_len = value.parse().ok();
                     }
                 }
-                "--extra-splits" => {
+                "--extra-split" => {
                     if let Some(value) = av1an_tokens.next() {
                         extra_splits_len = value.parse().ok();
                     }
