@@ -63,10 +63,10 @@ fn main() -> Result<()> {
 
     let stats = get_stats(&score_list)?;
     if let Some(output_path) = args.output {
-        println!("{}", stats);
+        println!("\n{}", stats);
         std::fs::write(output_path, stats)?;
     } else {
-        println!("{}", stats);
+        println!("\n{}", stats);
     }
 
     Ok(())

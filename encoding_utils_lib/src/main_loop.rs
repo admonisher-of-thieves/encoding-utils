@@ -99,7 +99,7 @@ pub fn run_loop<'a>(
 
         if verbose {
             let stats = get_stats(&score_list)?;
-            println!("{}", stats)
+            println!("\n{}", stats)
         }
 
         if *i_crf == 0 {
