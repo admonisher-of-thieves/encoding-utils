@@ -40,7 +40,7 @@ impl ChunkList {
         verbose: bool,
     ) -> SceneList {
         let av1an_params = update_extra_split_and_min_scene_len(av1an_params, 0, 1);
-        let scenes = self
+        let scenes: Vec<Scene> = self
             .chunks
             .iter()
             .filter(|chunk| chunk.score.value < ssimu2_score)
@@ -56,13 +56,14 @@ impl ChunkList {
                 }
             })
             .collect();
+        let scenes_len = scenes.len();
 
         if verbose {
             println!();
         }
         SceneList {
             scenes,
-            frames: self.frames, // Note: may no longer match filtered scene count
+            frames: scenes_len as u32,
         }
     }
 }
