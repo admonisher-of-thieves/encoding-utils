@@ -12,7 +12,7 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
-    /// Output file (default: "[SCENES BOOSTED] <input>.json" if no input given)
+    /// Output scene file (default: "[BOOST] <input>.json" if no input given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     output: Option<PathBuf>,
 
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
         Some(output) => output, 
         None => { 
             let output_name = format!(
-                "[SCENES BOOSTED] {}.json",
+                "[BOOST] {}.json",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?
