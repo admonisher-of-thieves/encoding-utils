@@ -17,8 +17,8 @@ Options:
       --encoder-params <ENCODER_PARAMS>
           SVT-AV1 encoder parameters [default: "--preset 2 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"]
   -q, --target-quality <TARGET_QUALITY>
-          Target SSIMULACRA2 score (0-100) [default: 80]
-  -q, --crf <CRF>
+          Target SSIMULACRA2 score (0-100) [default: 75]
+  -c, --crf <CRF>
           Target CRF value(s) (1-70). Can be: - Single value (35) - Comma-separated list (21,27,35) - Range (21..36) - Stepped range (21..36:3) [default: 21,24,27,30,33,36]
   -p, --velocity-preset <VELOCITY_PRESET>
           Velocity tuning preset (-1~13) [default: 4]
@@ -34,7 +34,6 @@ Options:
           Print help
   -V, --version
           Print version
-
 ```
 
 ## simple-ssimu2
