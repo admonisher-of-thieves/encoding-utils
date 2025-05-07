@@ -53,7 +53,7 @@ pub fn run_loop<'a>(
     crfs.reverse();
 
     for (i, crf) in iter_crfs.iter().enumerate() {
-        println!("\nCycle: {}, CRF: {}\n", i + 1, crfs[i]);
+        println!("\nCycle: {}, CRF: {}\n", i, crfs[i]);
         let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
         let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
         let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
