@@ -24,7 +24,7 @@ pub fn run_loop<'a>(
     verbose: bool,
     temp_folder: &'a Path,
 ) -> Result<&'a Path> {
-    println!("\nRunning scene-boost\n");
+    println!("\nRunning frame-boost\n");
 
     // Generating original scenes
     let original_scenes_path = temp_folder.join("scenes.json");
