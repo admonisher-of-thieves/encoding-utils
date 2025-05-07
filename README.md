@@ -15,13 +15,13 @@ Options:
       --av1an-params <AV1AN_PARAMS>
           AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24"]
       --encoder-params <ENCODER_PARAMS>
-          SVT-AV1 encoder parameters [default: "--preset 2 --crf 21~36 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"]
+          SVT-AV1 encoder parameters [default: "--preset 2 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"]
   -q, --target-quality <TARGET_QUALITY>
           Target SSIMULACRA2 score (0-100) [default: 80]
+  -q, --crf <CRF>
+          Target CRF value(s) (1-70). Can be: - Single value (35) - Comma-separated list (21,27,35) - Range (21..36) - Stepped range (21..36:3) [default: 21,24,27,30,33,36]
   -p, --velocity-preset <VELOCITY_PRESET>
           Velocity tuning preset (-1~13) [default: 4]
-  -s, --step <STEP>
-          Frame processing step (1 = every frame) [default: 3]
   -k, --keep-files
           Keep temporary files (disables automatic cleanup)
   -F, --no-force
