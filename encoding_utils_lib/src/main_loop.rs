@@ -19,6 +19,7 @@ pub fn run_loop<'a>(
     ssimu2_score: f64,
     velocity_preset: i32,
     step: usize,
+    metric_importer: ImporterPlugin,
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
@@ -62,10 +63,10 @@ pub fn run_loop<'a>(
         let encode_path = temp_folder.join(format!("encode_{}.mkv", i_crf));
 
         // Scenes
-        let mut filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones_filtered(
+        let mut filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones(
             av1an_params,
             &temp_encoder_params,
-            ssimu2_score,
+            // ssimu2_score,
             verbose,
         );
         filtered_scene_list_with_zones.update_preset(velocity_preset);
@@ -77,7 +78,8 @@ pub fn run_loop<'a>(
         let vpy_file =
             create_frames_vpy_file(input, &vpy_path, &filtered_scene_list_with_zones, clean)?;
         let new_av1an_params = update_split_method(av1an_params, "none".to_owned());
-        let new_av1an_params = update_extra_split_and_min_scene_len(&new_av1an_params, 0, 1);
+        let new_av1an_params =
+            update_extra_split_and_min_scene_len(&new_av1an_params, Some(0), Some(1));
         let encode = encode_frames(
             vpy_file,
             scenes_file_middle_frames,
@@ -92,8 +94,7 @@ pub fn run_loop<'a>(
             input,
             encode,
             &filtered_scene_list_with_zones,
-            check_chunk_method(av1an_params)
-                .ok_or_eyre("--chuck-method not found in av1an_params")?,
+            metric_importer.clone(),
             verbose,
         )?;
 
@@ -133,7 +134,8 @@ pub fn run_loop<'a>(
         }
     }
 
-    let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, &encoder_params);
+    let scene_list_with_zones =
+        chunk_list.to_scene_list_with_zones(av1an_params, &encoder_params, verbose);
     write_scene_list_to_file(&scene_list_with_zones, scene_boosted)?;
 
     if clean && temp_folder.exists() {
@@ -193,8 +195,8 @@ pub fn update_preset(velocity_preset: i32, encoder_params: &str) -> String {
 
 pub fn update_extra_split_and_min_scene_len(
     params: &str,
-    new_extra_split: u32,
-    new_min_scene_len: u32,
+    new_extra_split: Option<u32>,
+    new_min_scene_len: Option<u32>,
 ) -> String {
     let mut tokens = params.split_whitespace().peekable();
     let mut updated_tokens: Vec<String> = Vec::new();
@@ -203,16 +205,16 @@ pub fn update_extra_split_and_min_scene_len(
 
     while let Some(token) = tokens.next() {
         match token {
-            "--extra-split" => {
+            "--extra-split" if new_extra_split.is_some() => {
                 tokens.next(); // skip old value
                 updated_tokens.push("--extra-split".to_string());
-                updated_tokens.push(new_extra_split.to_string());
+                updated_tokens.push(new_extra_split.unwrap().to_string());
                 found_extra_split = true;
             }
-            "--min-scene-len" => {
+            "--min-scene-len" if new_min_scene_len.is_some() => {
                 tokens.next(); // skip old value
                 updated_tokens.push("--min-scene-len".to_string());
-                updated_tokens.push(new_min_scene_len.to_string());
+                updated_tokens.push(new_min_scene_len.unwrap().to_string());
                 found_min_scene_len = true;
             }
             _ => {
@@ -221,15 +223,18 @@ pub fn update_extra_split_and_min_scene_len(
         }
     }
 
-    // Append if not found
     if !found_extra_split {
-        updated_tokens.push("--extra-split".to_string());
-        updated_tokens.push(new_extra_split.to_string());
+        if let Some(extra_split) = new_extra_split {
+            updated_tokens.push("--extra-split".to_string());
+            updated_tokens.push(extra_split.to_string());
+        }
     }
 
     if !found_min_scene_len {
-        updated_tokens.push("--min-scene-len".to_string());
-        updated_tokens.push(new_min_scene_len.to_string());
+        if let Some(min_scene_len) = new_min_scene_len {
+            updated_tokens.push("--min-scene-len".to_string());
+            updated_tokens.push(min_scene_len.to_string());
+        }
     }
 
     updated_tokens.join(" ")

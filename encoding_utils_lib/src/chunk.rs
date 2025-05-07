@@ -11,12 +11,20 @@ pub struct ChunkList {
 }
 
 impl ChunkList {
-    pub fn to_scene_list_with_zones(&self, av1an_params: &str, encoder_params: &str) -> SceneList {
-        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, 0, 1);
-        let scenes = self
+    pub fn to_scene_list_with_zones(
+        &self,
+        av1an_params: &str,
+        encoder_params: &str,
+        verbose: bool,
+    ) -> SceneList {
+        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, Some(0), None);
+        let scenes: Vec<Scene> = self
             .chunks
             .iter()
             .map(|chunk| {
+                if verbose {
+                    println!("{:?}", chunk);
+                }
                 let zone_overrides = ZoneOverrides::from(&av1an_params, encoder_params, chunk.crf);
                 Scene {
                     start_frame: chunk.scene.start_frame,
@@ -39,7 +47,7 @@ impl ChunkList {
         ssimu2_score: f64,
         verbose: bool,
     ) -> SceneList {
-        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, 0, 1);
+        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, Some(0), Some(1));
         let scenes: Vec<Scene> = self
             .chunks
             .iter()
