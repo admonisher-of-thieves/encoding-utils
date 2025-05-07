@@ -41,12 +41,11 @@ struct Args {
     /// - Range (21..36)
     /// - Stepped range (21..36:3)
     #[arg(
-        short = 'q',
+        short = 'c',
         long,
         default_value = "21,24,27,30,33,36",
-        value_parser = crf_parser,
     )]
-    crf: Vec<u8>,
+    crf: String,
 
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
@@ -81,6 +80,7 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    let crf_values = crf_parser(&args.crf)?;
 
     let input_path = absolute(&args.input)?;
     let scene_boosted = match args.output {
@@ -125,7 +125,7 @@ fn main() -> Result<()> {
         &scene_boosted,
         &args.av1an_params,
         &args.encoder_params,
-        &args.crf,
+        &crf_values,
         args.target_quality,
         args.velocity_preset,
         args.metric_importer_plugin,
@@ -213,4 +213,10 @@ fn crf_parser(s: &str) -> Result<Vec<u8>> {
             }
         })
         .collect()
+}
+
+#[test]
+fn verify_cli() {
+    use clap::CommandFactory;
+    Args::command().debug_assert();
 }
