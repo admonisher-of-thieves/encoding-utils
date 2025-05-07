@@ -3,8 +3,8 @@ use std::path::Path;
 use crate::math::{Score, ScoreList};
 use crate::scenes::SceneList;
 use crate::vapoursynth::{
-    ImporterPlugin, ToCString, auto_synchronize_clips, bestsource_invoke, crop_reference_to_match,
-    lsmash_invoke, match_distorted_resolution, resize_bicubic, select_frames, vszip_metrics,
+    ImporterPlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match, lsmash_invoke,
+    match_distorted_resolution, resize_bicubic, select_frames, synchronize_clips, vszip_metrics,
 };
 use eyre::{OptionExt, Result, eyre};
 use rayon::prelude::*;
@@ -15,13 +15,14 @@ pub fn ssimu2_scenes(
     distorted: &Path,
     scene_list: &SceneList,
     importer_plugin: ImporterPlugin,
+    trim: Option<Trim>,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
     // Load reference and distorted
-    let (mut reference, distorted) = match importer_plugin {
+    let (mut reference, mut distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
@@ -43,8 +44,10 @@ pub fn ssimu2_scenes(
     // Apply cropping if needed
     reference = crop_reference_to_match(&core, &reference, &distorted)?;
 
-    // Apply offset to encoded clip
-    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+    // Apply offset to clips
+    if let Some(trim) = trim {
+        (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
+    }
 
     let reference = resize_bicubic(&core, &reference)?;
     let distorted = resize_bicubic(&core, &distorted)?;
@@ -93,7 +96,7 @@ pub fn ssimu2_frames_scenes(
     let middle_frames = scene_list.middle_frames();
 
     // Load reference and distorted
-    let (reference, distorted) = match importer_plugin {
+    let (mut reference, distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
@@ -109,14 +112,11 @@ pub fn ssimu2_frames_scenes(
         println!("Distorted: {:#?}", distorted.info());
     }
 
-    // // Match resolutions
-    // reference = match_distorted_resolution(&core, &reference, &distorted)?;
+    // Match resolutions
+    reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
-    // // Apply cropping if needed
-    // reference = crop_reference_to_match(&core, &reference, &distorted)?;
-
-    // // Apply offset to encoded clip
-    // let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+    // Apply cropping if needed
+    reference = crop_reference_to_match(&core, &reference, &distorted)?;
 
     let reference = select_frames(&core, &reference, &middle_frames)?;
 
@@ -160,13 +160,14 @@ pub fn ssimu2(
     distorted: &Path,
     step: usize,
     importer_plugin: ImporterPlugin,
+    trim: Option<Trim>,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
     let core = Core::builder().api(api).disable_library_unloading().build();
 
     // Load reference and distorted
-    let (mut reference, distorted) = match importer_plugin {
+    let (mut reference, mut distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference)?,
             lsmash_invoke(&core, distorted)?,
@@ -188,8 +189,10 @@ pub fn ssimu2(
     // Apply cropping if needed
     reference = crop_reference_to_match(&core, &reference, &distorted)?;
 
-    // Apply offset to encoded clip
-    let (reference, distorted) = auto_synchronize_clips(&core, &reference, &distorted)?;
+    // Apply offset to clips
+    if let Some(trim) = trim {
+        (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
+    }
 
     // Resize after cropping
     let reference = resize_bicubic(&core, &reference)?;

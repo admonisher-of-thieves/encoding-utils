@@ -1,5 +1,9 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{math::get_stats, ssimulacra2::ssimu2, vapoursynth::ImporterPlugin};
+use encoding_utils_lib::{
+    math::get_stats,
+    ssimulacra2::ssimu2,
+    vapoursynth::{ImporterPlugin, Trim},
+};
 use eyre::Result;
 use std::path::PathBuf;
 
@@ -34,6 +38,15 @@ struct Args {
     /// Path to output file (if not provided, stats will only be printed)
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Trim to sync video: format is "first,last,clip"
+    /// Example: "6,18,distorted" or "6,18,d"
+    #[arg(short, long)]
+    trim: Option<Trim>,
+
+    /// Calculate ssimu2 for vs the distorted middle frames scenes. Needs scenes file
+    #[arg(short, long = "middle-frames", action = ArgAction::SetTrue, default_value_t = false)]
+    middle_frames: bool,
 }
 
 fn main() -> Result<()> {
@@ -43,13 +56,24 @@ fn main() -> Result<()> {
     let score_list = if let Some(scenes_file) = args.scenes {
         // If scenes file provided, use scene-based processing
         let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
-        encoding_utils_lib::ssimulacra2::ssimu2_scenes(
-            &args.reference,
-            &args.distorted,
-            &scene_list,
-            args.importer_plugin,
-            !args.only_stats,
-        )?
+        if args.middle_frames {
+            encoding_utils_lib::ssimulacra2::ssimu2_scenes(
+                &args.reference,
+                &args.distorted,
+                &scene_list,
+                args.importer_plugin,
+                args.trim,
+                !args.only_stats,
+            )?
+        } else {
+            encoding_utils_lib::ssimulacra2::ssimu2_frames_scenes(
+                &args.reference,
+                &args.distorted,
+                &scene_list,
+                args.importer_plugin,
+                !args.only_stats,
+            )?
+        }
     } else {
         // Otherwise use frame-by-frame processing with step
         ssimu2(
@@ -57,6 +81,7 @@ fn main() -> Result<()> {
             &args.distorted,
             args.step as usize,
             args.importer_plugin,
+            args.trim,
             !args.only_stats,
         )?
     };
