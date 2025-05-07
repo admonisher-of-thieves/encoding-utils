@@ -60,7 +60,7 @@ struct Args {
     )]
     no_force: bool,
 
-    /// Importer plugin
+    /// Importer plugin, only for the calculates of ssimu2
     #[arg(short, long = "metric-importer", default_value = "lsmash")]
     metric_importer_plugin: ImporterPlugin,
 

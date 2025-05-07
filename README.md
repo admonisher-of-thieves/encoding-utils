@@ -26,6 +26,8 @@ Options:
           Keep temporary files (disables automatic cleanup)
   -F, --no-force
           Disable overwrite protection (remove the scene file)
+  -m, --metric-importer <METRIC_IMPORTER_PLUGIN>
+          Importer plugin, only for the calculates of ssimu2 [default: lsmash] [possible values: lsmash, bestsource]
   -v, --verbose
           
   -h, --help
@@ -57,6 +59,10 @@ Options:
           Importer plugin [default: lsmash] [possible values: lsmash, bestsource]
   -o, --output <OUTPUT>
           Path to output file (if not provided, stats will only be printed)
+  -t, --trim <TRIM>
+          Trim to sync video: format is "first,last,clip" Example: "6,18,distorted" or "6,18,d"
+  -m, --middle-frames
+          Allows you to use a distorted video composed of middle frames. Needs scenes file
   -h, --help
           Print help
   -V, --version

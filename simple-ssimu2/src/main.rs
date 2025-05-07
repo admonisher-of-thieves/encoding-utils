@@ -44,7 +44,7 @@ struct Args {
     #[arg(short, long)]
     trim: Option<Trim>,
 
-    /// Calculate ssimu2 for vs the distorted middle frames scenes. Needs scenes file
+    /// Allows you to use a distorted video composed of middle frames. Needs scenes file
     #[arg(short, long = "middle-frames", action = ArgAction::SetTrue, default_value_t = false)]
     middle_frames: bool,
 }
