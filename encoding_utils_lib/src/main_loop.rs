@@ -48,9 +48,9 @@ pub fn run_loop<'a>(
     let temp_encoder_params = update_preset(velocity_preset, encoder_params);
 
     let mut crfs = crf.to_vec();
-    crfs = crfs.iter().rev().copied().collect();
     let mut iter_crfs: Vec<u8> = crfs.iter().skip(1).rev().copied().collect();
     iter_crfs.insert(0, 0);
+    crfs.reverse();
 
     for (i, crf) in iter_crfs.iter().enumerate() {
         println!("\nCycle: {}, CRF: {}\n", i, crf);
@@ -111,7 +111,7 @@ pub fn run_loop<'a>(
                 {
                     values.score = *new_score;
                     values.crf = match new_score.value {
-                        x if x <= ssimu2_score => crfs[i + 1],
+                        x if x <= ssimu2_score => crfs[i],
                         _ => values.crf,
                     };
                 }
