@@ -48,10 +48,11 @@ pub fn run_loop<'a>(
     let temp_encoder_params = update_preset(velocity_preset, encoder_params);
 
     let mut crfs = crf.to_vec();
-    crfs = crfs.iter().skip(1).rev().copied().collect();
-    crfs.insert(0, 0);
+    crfs = crfs.iter().rev().copied().collect();
+    let mut iter_crfs: Vec<u8> = crfs.iter().skip(1).rev().copied().collect();
+    iter_crfs.insert(0, 0);
 
-    for (i, crf) in crfs.iter().enumerate() {
+    for (i, crf) in iter_crfs.iter().enumerate() {
         println!("\nCycle: {}, CRF: {}\n", i, crf);
         let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
         let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
