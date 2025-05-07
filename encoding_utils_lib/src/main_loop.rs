@@ -48,9 +48,10 @@ pub fn run_loop<'a>(
     let temp_encoder_params = update_preset(velocity_preset, encoder_params);
 
     let mut crfs = crf.to_vec();
+    crfs = crfs.iter().skip(1).rev().copied().collect();
     crfs.insert(0, 0);
 
-    for (i, crf) in crfs.iter().rev().skip(1).enumerate() {
+    for (i, crf) in crfs.iter().enumerate() {
         println!("\nCycle: {}, CRF: {}\n", i, crf);
         let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
         let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
@@ -121,7 +122,7 @@ pub fn run_loop<'a>(
                 println!(
                     "crf: {:3}, score: {:6.2}, frame: {:6}, scene-range: {:6} {:6}",
                     chunk.crf,
-                    chunk.score.value.round(),
+                    chunk.score.value,
                     chunk.score.frame,
                     chunk.scene.start_frame,
                     chunk.scene.end_frame
@@ -140,7 +141,7 @@ pub fn run_loop<'a>(
         }
     }
 
-    let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, &encoder_params);
+    let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, encoder_params);
     write_scene_list_to_file(&scene_list_with_zones, scene_boosted)?;
 
     if clean && temp_folder.exists() {
