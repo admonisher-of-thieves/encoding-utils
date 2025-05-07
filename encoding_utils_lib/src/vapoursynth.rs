@@ -443,77 +443,94 @@ pub fn match_distorted_resolution(
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
-pub fn auto_synchronize_clips(
+#[derive(Debug, Clone)]
+pub enum ClipTarget {
+    Reference,
+    Distorted,
+}
+
+#[derive(Debug, Clone)]
+pub struct Trim {
+    pub first: usize,
+    pub last: usize,
+    pub clip_target: ClipTarget,
+}
+
+impl FromStr for Trim {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split(',').collect();
+        if parts.len() != 3 {
+            return Err("Expected format: first,last,clip".into());
+        }
+
+        let first = parts[0]
+            .parse::<usize>()
+            .map_err(|_| "Invalid first value")?;
+        let last = parts[1]
+            .parse::<usize>()
+            .map_err(|_| "Invalid last value")?;
+
+        let clip_target = match parts[2].to_lowercase().as_str() {
+            "r" | "reference" => ClipTarget::Reference,
+            "d" | "distorted" => ClipTarget::Distorted,
+            other => return Err(format!("Invalid clip target: '{}'", other)),
+        };
+
+        Ok(Trim {
+            first,
+            last,
+            clip_target,
+        })
+    }
+}
+
+pub fn synchronize_clips(
     core: &Core,
     reference: &VideoNode,
     distorted: &VideoNode,
+    clip: &Trim,
 ) -> Result<(VideoNode, VideoNode)> {
     let std = std(core)?;
-    let ref_info = reference.info();
-    let dist_info = distorted.info();
 
-    match ref_info.num_frames.cmp(&dist_info.num_frames) {
-        std::cmp::Ordering::Equal => {
-            // No synchronization needed
-            Ok((reference.clone(), distorted.clone()))
-        }
-        std::cmp::Ordering::Greater => {
-            // Reference is longer - trim it to match distorted
-            println!("Frame mismatch: Reference is longer - trimming it to match distorted");
-            let frames_to_trim = ref_info.num_frames - dist_info.num_frames;
-            let mut args = Map::default();
-            args.set(
-                KeyStr::from_cstr(&"clip".to_cstring()),
-                Value::VideoNode(reference.to_owned()),
-                Replace,
-            )?;
-            args.set(
-                KeyStr::from_cstr(&"first".to_cstring()),
-                Value::Int(frames_to_trim as i64),
-                Replace,
-            )?;
+    let mut args = Map::default();
+    let (target_clip, _, is_reference) = match clip.clip_target {
+        ClipTarget::Reference => (reference, distorted, true),
+        ClipTarget::Distorted => (distorted, reference, false),
+    };
 
-            let func = std.invoke(&"Trim".to_cstring(), args);
-            if let Some(err) = func.get_error() {
-                return Err(eyre::eyre!(
-                    "Failed to trim reference clip by {} frames: {}",
-                    frames_to_trim,
-                    err.to_string_lossy()
-                ));
-            }
+    args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(target_clip.to_owned()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"first".to_cstring()),
+        Value::Int(clip.first as i64),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"last".to_cstring()),
+        Value::Int(clip.last as i64),
+        Replace,
+    )?;
 
-            let reference = func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+    let func = std.invoke(&"Trim".to_cstring(), args);
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "Failed to trim selected clip ({}–{}): {}",
+            clip.first,
+            clip.last,
+            err.to_string_lossy()
+        ));
+    }
 
-            Ok((reference, distorted.clone()))
-        }
-        std::cmp::Ordering::Less => {
-            // Distorted is longer - trim it to match reference
-            println!("Frame mismatch: Distorted is longer - trimming it to match reference");
-            let frames_to_trim = dist_info.num_frames - ref_info.num_frames;
-            let mut args = Map::default();
-            args.set(
-                KeyStr::from_cstr(&"clip".to_cstring()),
-                Value::VideoNode(distorted.to_owned()),
-                Replace,
-            )?;
-            args.set(
-                KeyStr::from_cstr(&"first".to_cstring()),
-                Value::Int(frames_to_trim as i64),
-                Replace,
-            )?;
+    let trimmed = func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
 
-            let func = std.invoke(&"Trim".to_cstring(), args);
-            if let Some(err) = func.get_error() {
-                return Err(eyre::eyre!(
-                    "Failed to trim distorted clip by {} frames: {}",
-                    frames_to_trim,
-                    err.to_string_lossy()
-                ));
-            }
-
-            let distorted = func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
-
-            Ok((reference.clone(), distorted))
-        }
+    if is_reference {
+        Ok((trimmed, distorted.clone()))
+    } else {
+        Ok((reference.clone(), trimmed))
     }
 }
