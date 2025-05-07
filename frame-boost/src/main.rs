@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{OptionExt, Result};
-use encoding_utils_lib::main_loop::run_loop;
+use encoding_utils_lib::{main_loop::run_loop, vapoursynth::ImporterPlugin};
 use std::{fs, path::{absolute, PathBuf}};
 
 /// Scene-based boost that dynamically adjusts CRF.
@@ -60,6 +60,10 @@ struct Args {
     )]
     no_force: bool,
 
+    /// Importer plugin
+    #[arg(short, long = "metric-importer", default_value = "lsmash")]
+    metric_importer_plugin: ImporterPlugin,
+
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
@@ -114,6 +118,7 @@ fn main() -> Result<()> {
         args.target_quality,
         args.velocity_preset,
         args.step as usize,
+        args.metric_importer_plugin,
         !args.keep_files,
         args.verbose,
         &temp_folder
