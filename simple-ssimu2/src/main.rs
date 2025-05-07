@@ -57,20 +57,20 @@ fn main() -> Result<()> {
         // If scenes file provided, use scene-based processing
         let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
         if args.middle_frames {
+            encoding_utils_lib::ssimulacra2::ssimu2_frames_scenes(
+                &args.reference,
+                &args.distorted,
+                &scene_list,
+                args.importer_plugin,
+                !args.only_stats,
+            )?
+        } else {
             encoding_utils_lib::ssimulacra2::ssimu2_scenes(
                 &args.reference,
                 &args.distorted,
                 &scene_list,
                 args.importer_plugin,
                 args.trim,
-                !args.only_stats,
-            )?
-        } else {
-            encoding_utils_lib::ssimulacra2::ssimu2_frames_scenes(
-                &args.reference,
-                &args.distorted,
-                &scene_list,
-                args.importer_plugin,
                 !args.only_stats,
             )?
         }
