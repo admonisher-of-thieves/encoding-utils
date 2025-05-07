@@ -34,8 +34,8 @@ pub fn ssimu2_scenes(
     };
 
     if verbose {
-        println!("Reference: {:#?}", reference.info());
-        println!("Distorted: {:#?}", distorted.info());
+        println!("Reference: {:?}", reference.info());
+        println!("Distorted: {:?}", distorted.info());
     }
 
     // Match resolutions
@@ -69,7 +69,7 @@ pub fn ssimu2_scenes(
             let props = frame.properties().ok_or_eyre("Props not found")?;
             let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             if verbose {
-                println!("Frame: {}, Score: {}", x, score);
+                println!("Frame: {:6}, Score: {:6.2}", x, score);
             }
             Ok(Score {
                 frame: x,
@@ -108,8 +108,8 @@ pub fn ssimu2_frames_scenes(
     };
 
     if verbose {
-        println!("Reference: {:#?}", reference.info());
-        println!("Distorted: {:#?}", distorted.info());
+        println!("Reference: {:?}", reference.info());
+        println!("Distorted: {:?}", distorted.info());
     }
 
     // Match resolutions
@@ -140,7 +140,7 @@ pub fn ssimu2_frames_scenes(
             let props = frame.properties().ok_or_eyre("Props not found")?;
             let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             if verbose {
-                println!("i: {}, Frame: {}, Score: {}", i, x, score);
+                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, x, score);
             }
             Ok(Score {
                 frame: x,
@@ -179,8 +179,8 @@ pub fn ssimu2(
     };
 
     if verbose {
-        println!("Reference: {:#?}", reference.info());
-        println!("Distorted: {:#?}", distorted.info());
+        println!("Reference: {:?}", reference.info());
+        println!("Distorted: {:?}", distorted.info());
     }
 
     // Match resolutions
@@ -220,7 +220,7 @@ pub fn ssimu2(
             let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             let n_frame = u32::try_from(i)? * u32::try_from(step)?;
             if verbose {
-                println!("Frame: {}, Score: {}", n_frame, score);
+                println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
             }
             Ok(Score {
                 frame: n_frame,

@@ -67,7 +67,6 @@ pub fn run_loop<'a>(
             av1an_params,
             &temp_encoder_params,
             // ssimu2_score,
-            verbose,
         );
         filtered_scene_list_with_zones.update_preset(velocity_preset);
         let scene_list_middle_frames = filtered_scene_list_with_zones.as_middle_frames();
@@ -123,6 +122,19 @@ pub fn run_loop<'a>(
             }
         }
 
+        if verbose {
+            for chunk in &chunk_list.chunks {
+                println!(
+                    "crf: {:3}, score: {:6.2}, frame: {:6}, scene-range: {:6} {:6}",
+                    chunk.crf,
+                    chunk.score.value.round(),
+                    chunk.score.frame,
+                    chunk.scene.start_frame,
+                    chunk.scene.end_frame
+                );
+            }
+        }
+
         if clean {
             fs::remove_file(&scenes_path)?;
             fs::remove_file(&vpy_path)?;
@@ -134,8 +146,7 @@ pub fn run_loop<'a>(
         }
     }
 
-    let scene_list_with_zones =
-        chunk_list.to_scene_list_with_zones(av1an_params, &encoder_params, verbose);
+    let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, &encoder_params);
     write_scene_list_to_file(&scene_list_with_zones, scene_boosted)?;
 
     if clean && temp_folder.exists() {
