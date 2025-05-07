@@ -1,6 +1,6 @@
 use crate::{
     main_loop::update_extra_split_and_min_scene_len,
-    math::Score,
+    math::{Score, ScoreList},
     scenes::{Scene, SceneList, ZoneOverrides},
 };
 
@@ -57,6 +57,12 @@ impl ChunkList {
         SceneList {
             scenes,
             frames: scenes_len as u32,
+        }
+    }
+
+    pub fn to_score_list(self) -> ScoreList {
+        ScoreList {
+            scores: self.chunks.into_iter().map(|chunk| chunk.score).collect(),
         }
     }
 }
