@@ -1,6 +1,7 @@
 use clap::{ArgAction, Parser};
-use eyre::{OptionExt, Result};
+use eyre::{Context, OptionExt, Result, eyre};
 use encoding_utils_lib::{main_loop::run_loop, vapoursynth::ImporterPlugin};
+
 use std::{fs, path::{absolute, PathBuf}};
 
 /// Scene-based boost that dynamically adjusts CRF.
@@ -26,7 +27,7 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --crf 21~36 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"
+        default_value = "--preset 2 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"
     )]
     encoder_params: String,
 
@@ -34,13 +35,22 @@ struct Args {
     #[arg(short = 'q', long, default_value_t = 80.0)]
     target_quality: f64,
 
+    /// Target CRF value(s) (1-70). Can be:
+    /// - Single value (35)
+    /// - Comma-separated list (21,27,35)
+    /// - Range (21..36)
+    /// - Stepped range (21..36:3)
+    #[arg(
+        short = 'q',
+        long,
+        default_value = "21,24,27,30,33,36",
+        value_parser = crf_parser,
+    )]
+    crf: Vec<u8>,
+
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
-
-    /// Frame processing step (1 = every frame)
-    #[arg(short = 's', long, default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
-    step: u32,
 
     /// Keep temporary files (disables automatic cleanup)
     #[arg(
@@ -115,9 +125,9 @@ fn main() -> Result<()> {
         &scene_boosted,
         &args.av1an_params,
         &args.encoder_params,
+        &args.crf,
         args.target_quality,
         args.velocity_preset,
-        args.step as usize,
         args.metric_importer_plugin,
         !args.keep_files,
         args.verbose,
@@ -125,4 +135,82 @@ fn main() -> Result<()> {
     )?;
 
     Ok(())
+}
+
+
+
+/// Enhanced CRF parser supporting:
+/// - Single values (35)
+/// - Comma-separated lists (21,27,35)
+/// - Simple ranges (21..36)
+/// - Stepped ranges (21..36:3)
+fn crf_parser(s: &str) -> Result<Vec<u8>> {
+    const CRF_RANGE: std::ops::RangeInclusive<u8> = 1..=70;
+    
+    // Handle stepped ranges (e.g., "21..36:3")
+    if let Some((range_part, step)) = s.split_once(':') {
+        if let Some((start, end)) = range_part.split_once("..") {
+            let start = start.parse()
+                .wrap_err_with(|| format!("Invalid CRF range start: '{}'", start))?;
+            let end = end.parse()
+                .wrap_err_with(|| format!("Invalid CRF range end: '{}'", end))?;
+            let step = step.parse()
+                .wrap_err_with(|| format!("Invalid step value: '{}'", step))?;
+            
+            if start > end {
+                return Err(eyre!("Range start must be <= end (got {start}..{end})"));
+            }
+            if step == 0 {
+                return Err(eyre!("Step value must be > 0"));
+            }
+            if !CRF_RANGE.contains(&start) || !CRF_RANGE.contains(&end) {
+                return Err(eyre!("CRF must be between {}-{} (got {start}..{end})",
+                    CRF_RANGE.start(), CRF_RANGE.end()));
+            }
+
+            let mut values = Vec::new();
+            let mut current = start;
+            while current <= end {
+                values.push(current);
+                current = match current.checked_add(step) {
+                    Some(v) => v,
+                    None => break, // Prevent overflow
+                };
+            }
+            return Ok(values);
+        }
+    }
+
+    // Handle simple ranges (e.g., "21..36")
+    if let Some((start, end)) = s.split_once("..") {
+        let start = start.parse()
+            .wrap_err_with(|| format!("Invalid CRF range start: '{}'", start))?;
+        let end = end.parse()
+            .wrap_err_with(|| format!("Invalid CRF range end: '{}'", end))?;
+        
+        if start > end {
+            return Err(eyre!("Range start must be <= end (got {start}..{end})"));
+        }
+        if !CRF_RANGE.contains(&start) || !CRF_RANGE.contains(&end) {
+            return Err(eyre!("CRF must be between {}-{} (got {start}..{end})",
+                CRF_RANGE.start(), CRF_RANGE.end()));
+        }
+        
+        return Ok((start..=end).collect());
+    }
+
+    // Handle comma-separated values
+    s.split(',')
+        .map(|part| {
+            let value = part.trim().parse()
+                .wrap_err_with(|| format!("Invalid CRF value: '{}'", part))?;
+            
+            if CRF_RANGE.contains(&value) {
+                Ok(value)
+            } else {
+                Err(eyre!("CRF must be between {}-{} (got {value})",
+                    CRF_RANGE.start(), CRF_RANGE.end()))
+            }
+        })
+        .collect()
 }

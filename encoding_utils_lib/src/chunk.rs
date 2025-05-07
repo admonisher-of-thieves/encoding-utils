@@ -63,7 +63,7 @@ impl ChunkList {
 
 #[derive(Debug, Default, Clone)]
 pub struct Chunk {
-    pub crf: u32,
+    pub crf: u8,
     pub score: Score,
     pub scene: Scene,
 }

@@ -8,7 +8,7 @@ use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
 use crate::vapoursynth::ImporterPlugin;
 use crate::vpy_files::create_frames_vpy_file;
-use eyre::{OptionExt, Result};
+use eyre::Result;
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_loop<'a>(
@@ -16,9 +16,9 @@ pub fn run_loop<'a>(
     scene_boosted: &'a Path,
     av1an_params: &'a str,
     encoder_params: &'a str,
+    crf: &[u8],
     ssimu2_score: f64,
     velocity_preset: i32,
-    step: usize,
     metric_importer: ImporterPlugin,
     clean: bool,
     verbose: bool,
@@ -31,15 +31,11 @@ pub fn run_loop<'a>(
     let original_scenes_file = get_scene_file(input, &original_scenes_path, av1an_params, clean)?;
     let scene_list = parse_scene_file(original_scenes_file)?;
 
-    // Creating crf list
-    let (crf, encoder_params) = parse_crf_and_strip(encoder_params);
-    let crf = crf.ok_or_eyre("CRF not found")?;
-
     let chunks: Vec<Chunk> = scene_list
         .scenes
         .iter()
         .map(|scene| Chunk {
-            crf: crf.max,
+            crf: *crf.last().unwrap(),
             score: Score::default(),
             scene: scene.clone(),
         })
@@ -49,24 +45,22 @@ pub fn run_loop<'a>(
         frames: scene_list.frames,
     };
 
-    let temp_encoder_params = update_preset(velocity_preset, &encoder_params);
+    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
 
-    let mut crfs: Vec<u32> = (crf.min + 1..=crf.max).rev().step_by(step).collect();
-    crfs.reverse();
-    crfs.push(0);
-    crfs.reverse();
+    let mut crfs = crf.to_vec();
+    crfs.insert(0, 0);
 
-    for (i, i_crf) in crfs.iter().enumerate() {
-        println!("\nCycle: {}, CRF: {}\n", i, i_crf);
-        let scenes_path = temp_folder.join(format!("scenes_{}.json", i_crf));
-        let vpy_path = temp_folder.join(format!("vpy_{}.vpy", i_crf));
-        let encode_path = temp_folder.join(format!("encode_{}.mkv", i_crf));
+    for (i, crf) in crfs.iter().rev().skip(1).enumerate() {
+        println!("\nCycle: {}, CRF: {}\n", i, crf);
+        let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
+        let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
+        let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
 
         // Scenes
-        let mut filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones(
+        let mut filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones_filtered(
             av1an_params,
             &temp_encoder_params,
-            // ssimu2_score,
+            ssimu2_score,
         );
         filtered_scene_list_with_zones.update_preset(velocity_preset);
         let scene_list_middle_frames = filtered_scene_list_with_zones.as_middle_frames();
@@ -102,7 +96,7 @@ pub fn run_loop<'a>(
             println!("\n{}", stats)
         }
 
-        if *i_crf == 0 {
+        if *crf == 0 {
             for (chunk, score) in chunk_list.chunks.iter_mut().zip(&score_list.scores) {
                 chunk.score = *score
             }
@@ -115,7 +109,7 @@ pub fn run_loop<'a>(
                 {
                     values.score = *new_score;
                     values.crf = match new_score.value {
-                        x if x <= ssimu2_score => values.crf.saturating_sub(step.try_into()?),
+                        x if x <= ssimu2_score => crfs[i + 1],
                         _ => values.crf,
                     };
                 }

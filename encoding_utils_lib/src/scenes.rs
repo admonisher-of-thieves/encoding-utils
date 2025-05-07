@@ -114,7 +114,7 @@ pub struct ZoneOverrides {
 }
 
 impl ZoneOverrides {
-    pub fn from(av1an_params: &str, encoder_params: &str, crf: u32) -> ZoneOverrides {
+    pub fn from(av1an_params: &str, encoder_params: &str, crf: u8) -> ZoneOverrides {
         let mut encoder = None;
         let mut passes = None;
         let mut photon_noise = None;
