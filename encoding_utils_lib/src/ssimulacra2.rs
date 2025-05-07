@@ -34,8 +34,9 @@ pub fn ssimu2_scenes(
     };
 
     if verbose {
-        println!("Reference: {:?}", reference.info());
-        println!("Distorted: {:?}", distorted.info());
+        println!("Original\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
     }
 
     // Match resolutions
@@ -53,6 +54,12 @@ pub fn ssimu2_scenes(
     let distorted = resize_bicubic(&core, &distorted)?;
 
     let middle_frames = scene_list.middle_frames();
+
+    if verbose {
+        println!("Ready to compare\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
+    }
 
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
@@ -108,8 +115,9 @@ pub fn ssimu2_frames_scenes(
     };
 
     if verbose {
-        println!("Reference: {:?}", reference.info());
-        println!("Distorted: {:?}", distorted.info());
+        println!("Original\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
     }
 
     // Match resolutions
@@ -123,10 +131,15 @@ pub fn ssimu2_frames_scenes(
     let reference = resize_bicubic(&core, &reference)?;
     let distorted = resize_bicubic(&core, &distorted)?;
 
+    if verbose {
+        println!("Ready to compare\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
+    }
+
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
     if verbose {
-        println!();
         println!("\nObtaining SSIMU2 Scores\n");
     }
     let mut scores: Vec<Score> = middle_frames
@@ -179,8 +192,9 @@ pub fn ssimu2(
     };
 
     if verbose {
-        println!("Reference: {:?}", reference.info());
-        println!("Distorted: {:?}", distorted.info());
+        println!("Original\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
     }
 
     // Match resolutions
@@ -198,13 +212,18 @@ pub fn ssimu2(
     let reference = resize_bicubic(&core, &reference)?;
     let distorted = resize_bicubic(&core, &distorted)?;
 
+    if verbose {
+        println!("Ready to compare\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
+    }
+
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
     let info = ssimu2.info();
     let num_frames = info.num_frames;
 
     if verbose {
-        println!();
         println!("\nObtaining SSIMU2 Scores\n");
     }
 
