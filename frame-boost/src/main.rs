@@ -13,11 +13,11 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
-    /// Output scene file (default: "[BOOST]-<input>.json" if no output given)
+    /// Output scene file (default: "[BOOST]_<input>.json" if no output given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     output: Option<PathBuf>,
 
-    /// Temp folder (default: "[Temp]-<input>.json" if no temp folder given)
+    /// Temp folder (default: "[Temp]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
 
@@ -91,7 +91,7 @@ fn main() -> Result<()> {
         Some(output) => output, 
         None => { 
             let output_name = format!(
-                "[BOOST]-{}.json",
+                "[BOOST]_{}.json",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?
@@ -118,7 +118,7 @@ fn main() -> Result<()> {
         Some(temp) => temp, 
         None => { 
             let temp_folder = args.input.with_file_name(format!(
-                "[Temp]-{}",
+                "[Temp]_{}",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?
