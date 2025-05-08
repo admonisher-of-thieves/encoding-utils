@@ -13,9 +13,13 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
-    /// Output scene file (default: "[BOOST] <input>.json" if no output given)
+    /// Output scene file (default: "[BOOST]-<input>.json" if no output given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     output: Option<PathBuf>,
+
+    /// Temp folder (default: "[Temp]-<input>.json" if no temp folder given)
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    temp: Option<PathBuf>,
 
     /// AV1an encoding parameters
     #[arg(
@@ -110,14 +114,21 @@ fn main() -> Result<()> {
         }
     }
 
-    let temp_folder = args.input.with_file_name(format!(
-        "[TEMP]-{}",
-        args.input
-            .file_stem()
-            .ok_or_eyre("No file name")?
-            .to_str()
-            .ok_or_eyre("Invalid UTF-8 in input path")?
-    ));
+    let temp_folder = match args.temp {
+        Some(temp) => temp, 
+        None => { 
+            let temp_folder = args.input.with_file_name(format!(
+                "[Temp]-{}",
+                args.input
+                    .file_stem()
+                    .ok_or_eyre("No file name")?
+                    .to_str()
+                    .ok_or_eyre("Invalid UTF-8 in input path")?
+            ));
+            args.input.with_file_name(temp_folder)
+        }
+    };
+
     fs::create_dir_all(&temp_folder)?;
 
     run_loop(
