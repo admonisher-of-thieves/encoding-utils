@@ -111,7 +111,7 @@ fn main() -> Result<()> {
     }
 
     let temp_folder = args.input.with_file_name(format!(
-        "[TEMP] {}",
+        "[TEMP]-{}",
         args.input
             .file_stem()
             .ok_or_eyre("No file name")?
