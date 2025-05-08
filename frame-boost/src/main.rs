@@ -91,7 +91,7 @@ fn main() -> Result<()> {
         Some(output) => output, 
         None => { 
             let output_name = format!(
-                "[BOOST] {}.json",
+                "[BOOST]-{}.json",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?
