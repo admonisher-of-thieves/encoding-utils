@@ -85,6 +85,9 @@ pub fn run_loop<'a>(
         )?;
 
         // Scores
+        if verbose {
+            println!("\nGet simulacra scores\n")
+        }
         let score_list = ssimu2_frames_scenes(
             input,
             encode,
@@ -115,6 +118,7 @@ pub fn run_loop<'a>(
         }
 
         if verbose {
+            println!("\nUpdate data:\n");
             for (i, chunk) in chunk_list.chunks.iter().enumerate() {
                 println!(
                     "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
