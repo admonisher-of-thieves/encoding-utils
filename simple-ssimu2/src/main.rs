@@ -128,7 +128,7 @@ fn main() -> Result<()> {
     }
 
     println!("{:?}", temp_dir);
-    if !args.keep_files {
+    if !args.keep_files && fs::exists(&temp_dir)? {
         fs::remove_dir_all(&temp_dir)?;
     }
 
