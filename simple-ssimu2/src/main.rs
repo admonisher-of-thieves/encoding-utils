@@ -5,7 +5,7 @@ use encoding_utils_lib::{
     vapoursynth::{ImporterPlugin, Trim},
 };
 use eyre::{OptionExt, Result};
-use std::{env, fs::{self, create_dir_all}, path::PathBuf};
+use std::{fs::{self, create_dir_all}, path::PathBuf};
 
 /// Calculate SSIMULACRA2 metric - Using vszip
 #[derive(Parser, Debug)]
