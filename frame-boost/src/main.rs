@@ -108,7 +108,7 @@ fn main() -> Result<()> {
             println!("\nRemoved existing scene file: {}", scene_boosted.display());
         } else {
             eyre::bail!(
-                "Scene file {} already exists. Use --force to overwrite",
+                "Scene file {} already exists. Remove -F(--no-force) to overwrite",
                 scene_boosted.display()
             );
         }
