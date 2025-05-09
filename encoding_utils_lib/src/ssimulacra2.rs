@@ -16,6 +16,7 @@ pub fn ssimu2_scenes(
     scene_list: &SceneList,
     importer_plugin: ImporterPlugin,
     trim: Option<Trim>,
+    temp_dir: &Path,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -24,12 +25,12 @@ pub fn ssimu2_scenes(
     // Load reference and distorted
     let (mut reference, mut distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
-            lsmash_invoke(&core, reference)?,
-            lsmash_invoke(&core, distorted)?,
+            lsmash_invoke(&core, reference, temp_dir)?,
+            lsmash_invoke(&core, distorted, temp_dir)?,
         ),
         ImporterPlugin::Bestsource => (
-            bestsource_invoke(&core, reference)?,
-            bestsource_invoke(&core, distorted)?,
+            bestsource_invoke(&core, reference, temp_dir)?,
+            bestsource_invoke(&core, distorted, temp_dir)?,
         ),
     };
 
@@ -95,6 +96,7 @@ pub fn ssimu2_frames_scenes(
     distorted: &Path,
     scene_list: &SceneList,
     importer_plugin: ImporterPlugin,
+    temp_dir: &Path,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -105,12 +107,12 @@ pub fn ssimu2_frames_scenes(
     // Load reference and distorted
     let (mut reference, distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
-            lsmash_invoke(&core, reference)?,
-            lsmash_invoke(&core, distorted)?,
+            lsmash_invoke(&core, reference, temp_dir)?,
+            lsmash_invoke(&core, distorted, temp_dir)?,
         ),
         ImporterPlugin::Bestsource => (
-            bestsource_invoke(&core, reference)?,
-            bestsource_invoke(&core, distorted)?,
+            bestsource_invoke(&core, reference, temp_dir)?,
+            bestsource_invoke(&core, distorted, temp_dir)?,
         ),
     };
 
@@ -174,6 +176,7 @@ pub fn ssimu2(
     step: usize,
     importer_plugin: ImporterPlugin,
     trim: Option<Trim>,
+    temp_dir: &Path,
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
@@ -182,12 +185,12 @@ pub fn ssimu2(
     // Load reference and distorted
     let (mut reference, mut distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
-            lsmash_invoke(&core, reference)?,
-            lsmash_invoke(&core, distorted)?,
+            lsmash_invoke(&core, reference, temp_dir)?,
+            lsmash_invoke(&core, distorted, temp_dir)?,
         ),
         ImporterPlugin::Bestsource => (
-            bestsource_invoke(&core, reference)?,
-            bestsource_invoke(&core, distorted)?,
+            bestsource_invoke(&core, reference, temp_dir)?,
+            bestsource_invoke(&core, distorted, temp_dir)?,
         ),
     };
 

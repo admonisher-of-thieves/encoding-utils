@@ -90,6 +90,7 @@ pub fn run_loop<'a>(
             encode,
             &filtered_scene_list_with_zones,
             metric_importer.clone(),
+            temp_folder,
             verbose,
         )?;
 

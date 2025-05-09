@@ -4,8 +4,8 @@ use encoding_utils_lib::{
     ssimulacra2::ssimu2,
     vapoursynth::{ImporterPlugin, Trim},
 };
-use eyre::Result;
-use std::path::PathBuf;
+use eyre::{OptionExt, Result};
+use std::{env, fs::{self, create_dir_all}, path::PathBuf};
 
 /// Calculate SSIMULACRA2 metric - Using vszip
 #[derive(Parser, Debug)]
@@ -47,10 +47,40 @@ struct Args {
     /// Allows you to use a distorted video composed of middle frames. Needs scenes file
     #[arg(short, long = "middle-frames", action = ArgAction::SetTrue, default_value_t = false)]
     middle_frames: bool,
+
+    /// Keep temporary files (disables automatic cleanup)
+    #[arg(
+        short = 'k', 
+        long = "keep-files",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    keep_files: bool,
+
+    /// Temp folder (default: "[Temp]_<input>.json" if no temp folder given)
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    temp: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+
+    let temp_dir = match args.temp {
+        Some(temp) => temp, 
+        None => { 
+            let output_name = format!(
+                "[TEMP]_[SSIMU2]_{}",
+                args.reference
+                    .file_stem()
+                    .ok_or_eyre("No file name")?
+                    .to_str()
+                    .ok_or_eyre("Invalid UTF-8 in input path")?
+            );
+            args.reference.with_file_name(output_name)
+        }
+    };
+
+    create_dir_all(&temp_dir)?;
 
     // Process the videos
     let score_list = if let Some(scenes_file) = args.scenes {
@@ -62,6 +92,7 @@ fn main() -> Result<()> {
                 &args.distorted,
                 &scene_list,
                 args.importer_plugin,
+                &temp_dir,
                 !args.only_stats,
             )?
         } else {
@@ -71,6 +102,7 @@ fn main() -> Result<()> {
                 &scene_list,
                 args.importer_plugin,
                 args.trim,
+                &temp_dir,
                 !args.only_stats,
             )?
         }
@@ -82,6 +114,7 @@ fn main() -> Result<()> {
             args.step as usize,
             args.importer_plugin,
             args.trim,
+            &temp_dir,
             !args.only_stats,
         )?
     };
@@ -92,6 +125,10 @@ fn main() -> Result<()> {
         std::fs::write(output_path, stats)?;
     } else {
         println!("\n{}", stats);
+    }
+
+    if !args.keep_files {
+        fs::remove_file(&temp_dir)?;
     }
 
     Ok(())

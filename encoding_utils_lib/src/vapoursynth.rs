@@ -62,18 +62,34 @@ pub fn resize(core: &Core) -> Result<Plugin> {
         .ok_or_eyre("Plugin [com.vapoursynth.resize] was not found")
 }
 
-pub fn lsmash_invoke(core: &Core, path: &Path) -> Result<VideoNode> {
+pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoNode> {
     let lsmash = lsmash(core)?;
     let mut args = Map::default();
+
+    // Set source path
     args.set(
         KeyStr::from_cstr(&"source".to_cstring()),
         Value::Utf8(path.to_str().unwrap()),
         Replace,
     )?;
 
-    let func = lsmash.invoke(&"LWLibavSource".to_cstring(), args);
+    let cache_path = temp_dir
+        .join(
+            path.file_name()
+                .ok_or(eyre!("Input path has no filename"))?
+                .to_str()
+                .ok_or_eyre("Filename not UTF-8")?,
+        )
+        .with_extension("lwi");
 
-    // Check for errors before getting the video node
+    println!("{:?}", cache_path);
+    args.set(
+        KeyStr::from_cstr(&"cachefile".to_cstring()),
+        Value::Utf8(cache_path.to_str().unwrap()),
+        Replace,
+    )?;
+
+    let func = lsmash.invoke(&"LWLibavSource".to_cstring(), args);
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
             "lsmash LWLibavSource failed: {}",
@@ -84,18 +100,33 @@ pub fn lsmash_invoke(core: &Core, path: &Path) -> Result<VideoNode> {
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
-pub fn bestsource_invoke(core: &Core, path: &Path) -> Result<VideoNode> {
+pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoNode> {
     let bs = bestsource(core)?;
     let mut args = Map::default();
+
+    // Set source path
     args.set(
         KeyStr::from_cstr(&"source".to_cstring()),
         Value::Utf8(path.to_str().unwrap()),
         Replace,
     )?;
 
+    let cache_path = temp_dir
+        .join(
+            path.file_name()
+                .ok_or(eyre!("Input path has no filename"))?
+                .to_str()
+                .ok_or_eyre("Filename not UTF-8")?,
+        )
+        .with_extension("bsi");
+    args.set(
+        KeyStr::from_cstr(&"cachefile".to_cstring()),
+        Value::Utf8(cache_path.to_str().unwrap()),
+        Replace,
+    )?;
+
     let func = bs.invoke(&"VideoSource".to_cstring(), args);
 
-    // Check for errors before getting the video node
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
             "Bestsource VideoSource failed: {}",
@@ -105,7 +136,6 @@ pub fn bestsource_invoke(core: &Core, path: &Path) -> Result<VideoNode> {
 
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
-
 pub fn vszip_metrics(
     core: &Core,
     reference: &VideoNode,
