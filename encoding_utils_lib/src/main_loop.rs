@@ -94,11 +94,6 @@ pub fn run_loop<'a>(
             verbose,
         )?;
 
-        if verbose {
-            let stats = get_stats(&score_list)?;
-            println!("\n{}", stats)
-        }
-
         if *crf == 0 {
             for (chunk, score) in chunk_list.chunks.iter_mut().zip(&score_list.scores) {
                 chunk.score = *score
@@ -130,6 +125,10 @@ pub fn run_loop<'a>(
                     chunk.scene.start_frame,
                     chunk.scene.end_frame
                 );
+
+                let score_list = &chunk_list.to_score_list();
+                let stats = get_stats(score_list)?;
+                println!("\n{}", stats)
             }
         }
 
@@ -147,11 +146,6 @@ pub fn run_loop<'a>(
     let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, encoder_params);
 
     write_scene_list_to_file(&scene_list_with_zones, scene_boosted)?;
-    if verbose {
-        let score_list = chunk_list.to_score_list();
-        let stats = get_stats(&score_list)?;
-        println!("\n{}", stats)
-    }
 
     if clean && temp_folder.exists() {
         fs::remove_dir_all(temp_folder)?;

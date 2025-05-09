@@ -60,9 +60,14 @@ impl ChunkList {
         }
     }
 
-    pub fn to_score_list(self) -> ScoreList {
+    pub fn to_score_list(&self) -> ScoreList {
         ScoreList {
-            scores: self.chunks.into_iter().map(|chunk| chunk.score).collect(),
+            scores: self
+                .chunks
+                .clone()
+                .into_iter()
+                .map(|chunk| chunk.score)
+                .collect(),
         }
     }
 }
