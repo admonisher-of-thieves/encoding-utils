@@ -125,11 +125,10 @@ pub fn run_loop<'a>(
                     chunk.scene.start_frame,
                     chunk.scene.end_frame
                 );
-
-                let score_list = &chunk_list.to_score_list();
-                let stats = get_stats(score_list)?;
-                println!("\n{}", stats)
             }
+            let score_list = &chunk_list.to_score_list();
+            let stats = get_stats(score_list)?;
+            println!("\n{}", stats)
         }
 
         if clean {
