@@ -191,11 +191,11 @@ use std::fmt::Write; // for write! macro
 pub fn get_stats(score_list: &ScoreList) -> Result<String> {
     let mean = mean(score_list);
     let deviation = standard_deviation(score_list);
-    let median = median(score_list)?;
+    // let median = median(score_list)?;
     let mode = mode(score_list)?;
     let percentiles = percentiles(score_list)?;
-    let max = max(score_list)?;
-    let min = min(score_list)?;
+    // let max = max(score_list)?;
+    // let min = min(score_list)?;
 
     let mut output = String::new();
 
@@ -205,35 +205,35 @@ pub fn get_stats(score_list: &ScoreList) -> Result<String> {
     writeln!(output, "Standard Deviation: {:.4}", deviation)?;
     writeln!(output, "Mode: {:.4}, count: {:.4}", mode.value, mode.count)?;
 
-    write!(output, "Median: ")?;
-    for score in &median.scores {
-        write!(
-            output,
-            "Frame: {:.4} - Score {:.4}, ",
-            score.frame, score.value
-        )?;
-    }
-    writeln!(output)?;
+    // write!(output, "Median: ")?;
+    // for score in &median.scores {
+    //     write!(
+    //         output,
+    //         "Frame: {:.4} - Score {:.4}, ",
+    //         score.frame, score.value
+    //     )?;
+    // }
+    // writeln!(output)?;
 
-    write!(output, "Min: ")?;
-    for score in &min.scores {
-        write!(
-            output,
-            "Frame: {:.4} - Score: {:.4}, ",
-            score.frame, score.value
-        )?;
-    }
-    writeln!(output)?;
+    // write!(output, "Min: ")?;
+    // for score in &min.scores {
+    //     write!(
+    //         output,
+    //         "Frame: {:.4} - Score: {:.4}, ",
+    //         score.frame, score.value
+    //     )?;
+    // }
+    // writeln!(output)?;
 
-    write!(output, "Max: ")?;
-    for score in &max.scores {
-        write!(
-            output,
-            "Frame: {:.4} - Score: {:.4}, ",
-            score.frame, score.value
-        )?;
-    }
-    writeln!(output)?;
+    // write!(output, "Max: ")?;
+    // for score in &max.scores {
+    //     write!(
+    //         output,
+    //         "Frame: {:.4} - Score: {:.4}, ",
+    //         score.frame, score.value
+    //     )?;
+    // }
+    // writeln!(output)?;
 
     writeln!(output, "Percentiles:")?;
     for percentile in &percentiles.percentiles {
