@@ -118,7 +118,7 @@ pub fn run_loop<'a>(
         }
 
         if verbose {
-            println!("\nUpdate data:\n");
+            println!("\nUpdated data:\n");
             for (i, chunk) in chunk_list.chunks.iter().enumerate() {
                 println!(
                     "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
