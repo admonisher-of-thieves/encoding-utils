@@ -342,7 +342,13 @@ pub fn write_crf_data(
             )?;
         }
 
-        println!("CRF data successfully written to {}", crf_data_file);
+        println!(
+            "CRF data successfully written to {}",
+            crf_data_file
+                .as_os_str()
+                .to_str()
+                .ok_or_eyre("Invalid UTF-8")?
+        );
     }
 
     Ok(())
