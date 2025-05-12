@@ -77,6 +77,10 @@ struct Args {
     #[arg(short, long = "metric-importer", default_value = "lsmash")]
     metric_importer_plugin: ImporterPlugin,
 
+    /// Path to save the updated crf data
+    #[arg(short, long = "crf-data-file")]
+    crf_data_file: Option<PathBuf>,
+
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
@@ -140,6 +144,7 @@ fn main() -> Result<()> {
         args.target_quality,
         args.velocity_preset,
         args.metric_importer_plugin,
+        args.crf_data_file.as_deref(),
         !args.keep_files,
         args.verbose,
         &temp_folder

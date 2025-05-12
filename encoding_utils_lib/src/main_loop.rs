@@ -1,4 +1,5 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::Path;
 
 use crate::chunk::{Chunk, ChunkList};
@@ -20,6 +21,7 @@ pub fn run_loop<'a>(
     ssimu2_score: f64,
     velocity_preset: i32,
     metric_importer: ImporterPlugin,
+    crf_data_file: Option<&'a Path>,
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
@@ -132,7 +134,25 @@ pub fn run_loop<'a>(
             }
             let score_list = &chunk_list.to_score_list();
             let stats = get_stats(score_list)?;
-            println!("\n{}", stats)
+            println!("\n{}", stats);
+        }
+
+        if iter_crfs.last() == Some(crf) {
+            if let Some(crf_data_file) = crf_data_file {
+                let mut file = File::create(crf_data_file)?;
+                for (i, chunk) in chunk_list.chunks.iter().enumerate() {
+                    writeln!(
+                        file,
+                        "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
+                        i,
+                        chunk.crf,
+                        chunk.score.value,
+                        chunk.score.frame,
+                        chunk.scene.start_frame,
+                        chunk.scene.end_frame
+                    )?;
+                }
+            }
         }
 
         if clean {
