@@ -35,9 +35,9 @@ struct Args {
     #[arg(short, long = "importer-plugin", default_value = "lsmash")]
     importer_plugin: ImporterPlugin,
 
-    /// Path to output file (if not provided, stats will only be printed)
-    #[arg(short, long)]
-    output: Option<PathBuf>,
+    /// Path to stats file (if not provided, stats will only be printed)
+    #[arg(short, long = "stats-file")]
+    stats_file: Option<PathBuf>,
 
     /// Trim to sync video: format is "first,last,clip"
     /// Example: "6,18,distorted" or "6,18,d"
@@ -120,7 +120,7 @@ fn main() -> Result<()> {
     };
 
     let stats = get_stats(&score_list)?;
-    if let Some(output_path) = args.output {
+    if let Some(output_path) = args.stats_file {
         println!("\n{}", stats);
         std::fs::write(output_path, stats)?;
     } else {
