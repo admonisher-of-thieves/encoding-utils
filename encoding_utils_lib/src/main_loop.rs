@@ -9,7 +9,7 @@ use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
 use crate::vapoursynth::ImporterPlugin;
 use crate::vpy_files::create_frames_vpy_file;
-use eyre::Result;
+use eyre::{OptionExt, Result};
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_loop<'a>(
@@ -140,7 +140,7 @@ pub fn run_loop<'a>(
         if iter_crfs.last() == Some(crf) {
             if let Some(crf_data_file) = crf_data_file {
                 let mut file = File::create(crf_data_file)?;
-                writeln!(file, "{:?}", input.file_name())?;
+                writeln!(file, "{:?}", input.file_name().ok_or_eyre("Error getting file name")?)?;
                 for (i, chunk) in chunk_list.chunks.iter().enumerate() {
                     writeln!(
                         file,
