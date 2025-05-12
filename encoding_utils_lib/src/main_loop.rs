@@ -140,7 +140,15 @@ pub fn run_loop<'a>(
         if iter_crfs.last() == Some(crf) {
             if let Some(crf_data_file) = crf_data_file {
                 let mut file = File::create(crf_data_file)?;
-                writeln!(file, "{:?}", input.file_name().ok_or_eyre("Error getting file name")?)?;
+                writeln!(
+                    file,
+                    "{}",
+                    input
+                        .file_name()
+                        .ok_or_eyre("Error getting file name")?
+                        .to_str()
+                        .ok_or_eyre("Invalid UTF-8")?
+                )?;
                 for (i, chunk) in chunk_list.chunks.iter().enumerate() {
                     writeln!(
                         file,
