@@ -137,33 +137,6 @@ pub fn run_loop<'a>(
             println!("\n{}", stats);
         }
 
-        if iter_crfs.last() == Some(crf) {
-            if let Some(crf_data_file) = crf_data_file {
-                let mut file = File::create(crf_data_file)?;
-                writeln!(
-                    file,
-                    "{}",
-                    input
-                        .file_name()
-                        .ok_or_eyre("Error getting file name")?
-                        .to_str()
-                        .ok_or_eyre("Invalid UTF-8")?
-                )?;
-                for (i, chunk) in chunk_list.chunks.iter().enumerate() {
-                    writeln!(
-                        file,
-                        "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
-                        i,
-                        chunk.crf,
-                        chunk.score.value,
-                        chunk.score.frame,
-                        chunk.scene.start_frame,
-                        chunk.scene.end_frame
-                    )?;
-                }
-            }
-        }
-
         if clean {
             fs::remove_file(&scenes_path)?;
             fs::remove_file(&vpy_path)?;
@@ -171,7 +144,12 @@ pub fn run_loop<'a>(
         }
 
         if score_list.scores.iter().all(|x| x.value >= ssimu2_score) {
+            write_crf_data(crf_data_file, input, &chunk_list)?;
             break;
+        }
+
+        if iter_crfs.last() == Some(crf) {
+            write_crf_data(crf_data_file, input, &chunk_list)?;
         }
     }
 
@@ -332,4 +310,40 @@ pub fn check_chunk_method(params: &str) -> Option<ImporterPlugin> {
         "bestsource" => Some(ImporterPlugin::Bestsource),
         _ => None,
     }
+}
+
+pub fn write_crf_data(
+    crf_data_file: Option<&Path>,
+    input: &std::path::Path,
+    chunk_list: &ChunkList,
+) -> Result<()> {
+    if let Some(crf_data_file) = crf_data_file {
+        let mut file = File::create(crf_data_file)?;
+        writeln!(
+            file,
+            "{}",
+            input
+                .file_name()
+                .ok_or_eyre("Error getting file name")?
+                .to_str()
+                .ok_or_eyre("Invalid UTF-8")?
+        )?;
+
+        for (i, chunk) in chunk_list.chunks.iter().enumerate() {
+            writeln!(
+                file,
+                "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
+                i,
+                chunk.crf,
+                chunk.score.value,
+                chunk.score.frame,
+                chunk.scene.start_frame,
+                chunk.scene.end_frame
+            )?;
+        }
+
+        println!("CRF data successfully written to {}", crf_data_file);
+    }
+
+    Ok(())
 }
