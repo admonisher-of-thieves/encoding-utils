@@ -142,6 +142,15 @@ pub fn run_loop<'a>(
                     chunk.scene.end_frame
                 );
             }
+
+            let percentages = calculate_crf_percentages(&chunk_list);
+            let line = percentages
+                .iter()
+                .map(|(crf, pct)| format!("CRF {}: {}%", crf, pct.round() as u8))
+                .collect::<Vec<String>>()
+                .join(", ");
+            println!("{}", line);
+
             let score_list = &chunk_list.to_score_list();
             let stats = get_stats(score_list)?;
             println!("\n{}", stats);
@@ -339,11 +348,10 @@ pub fn write_crf_data(
                 .ok_or_eyre("Invalid UTF-8")?
         )?;
 
-        let crf_values: Vec<u8> = chunk_list.chunks.iter().map(|chunk| chunk.crf).collect();
-        let percentages = calculate_crf_percentages(crf_values);
+        let percentages = calculate_crf_percentages(chunk_list);
         let line = percentages
             .iter()
-            .map(|(crf, pct)| format!("CRF {}: {:.2}%", crf, pct))
+            .map(|(crf, pct)| format!("CRF {}: {}%", crf, pct.round() as u8))
             .collect::<Vec<String>>()
             .join(", ");
         writeln!(file, "{}", line)?;
@@ -373,10 +381,8 @@ pub fn write_crf_data(
     Ok(())
 }
 
-pub fn calculate_crf_percentages<I>(crf_values: I) -> Vec<(u8, f64)>
-where
-    I: IntoIterator<Item = u8>,
-{
+pub fn calculate_crf_percentages(chunk_list: &ChunkList) -> Vec<(u8, f64)> {
+    let crf_values: Vec<u8> = chunk_list.chunks.iter().map(|chunk| chunk.crf).collect();
     let crf_vec: Vec<u8> = crf_values.into_iter().collect();
     let total = crf_vec.len() as f64;
 
