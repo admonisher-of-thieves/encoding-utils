@@ -170,13 +170,8 @@ pub fn vszip_metrics(
         Value::VideoNode(distorted.to_owned()),
         Replace,
     )?;
-    args.set(
-        KeyStr::from_cstr(&"mode".to_cstring()),
-        Value::Int(0),
-        Replace,
-    )?;
 
-    let func = vszip.invoke(&"Metrics".to_cstring(), args);
+    let func = vszip.invoke(&"SSIMULACRA2".to_cstring(), args);
 
     // Check for errors before getting the video node
     if let Some(err) = func.get_error() {
