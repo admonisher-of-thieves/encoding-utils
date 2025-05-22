@@ -73,9 +73,9 @@ struct Args {
     )]
     no_force: bool,
 
-    /// Importer plugin, only for the calculates of ssimu2
-    #[arg(short, long = "metric-importer", default_value = "lsmash")]
-    metric_importer_plugin: ImporterPlugin,
+    /// Importer plugin for metrics and encoding frames, excluding scene detection
+    #[arg(short, long = "importer", default_value = "lsmash")]
+    importer_plugin: ImporterPlugin,
 
     /// Path to save the updated crf data
     #[arg(short, long = "crf-data-file")]
@@ -157,7 +157,7 @@ fn main() -> Result<()> {
         &crf_values,
         args.target_quality,
         args.velocity_preset,
-        args.metric_importer_plugin,
+        args.importer_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,

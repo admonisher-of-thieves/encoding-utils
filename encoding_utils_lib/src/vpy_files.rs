@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use crate::{main_loop::check_chunk_method, scenes::SceneList, vapoursynth::ImporterPlugin};
+use crate::{scenes::SceneList, vapoursynth::ImporterPlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
 
@@ -8,7 +8,7 @@ pub fn create_frames_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
-    av1an_params: &'a str,
+    importer: &'a ImporterPlugin,
     crop: Option<&str>,
     downscale: bool,
     override_file: bool,
@@ -28,7 +28,6 @@ pub fn create_frames_vpy_file<'a>(
         .collect::<Vec<String>>()
         .join(", ");
 
-    let importer = check_chunk_method(av1an_params).unwrap_or(ImporterPlugin::Bestsource);
     let importer = match importer {
         ImporterPlugin::Lsmash => "core.lsmas.LWLibavSource",
         ImporterPlugin::Bestsource => "core.bs.VideoSource",
