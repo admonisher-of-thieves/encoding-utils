@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::chunk::{self, Chunk, ChunkList};
+use crate::chunk::{Chunk, ChunkList};
 use crate::encode::encode_frames;
 use crate::math::{Score, get_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
