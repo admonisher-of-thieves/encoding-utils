@@ -86,7 +86,13 @@ struct Args {
     crop: Option<String>,
 
     /// Downscale, using Box Kernel 0.5
-    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
+    #[arg(
+        short, 
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
     downscale: bool,
 
     // Enable verbose output
