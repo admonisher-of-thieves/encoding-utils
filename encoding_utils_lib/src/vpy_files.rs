@@ -98,7 +98,14 @@ src = box
     }
 
     vpy_script += r#"
-set_output(src)
+out = core.resize.Bicubic(
+    src,
+    primaries_s="709",
+    matrix_s="709",
+    transfer_s="709",
+    format=vs.YUV420P10,
+)
+set_output(out)
 "#;
 
     fs::write(vpy_file, vpy_script)?;
