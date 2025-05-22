@@ -62,6 +62,11 @@ pub fn resize(core: &Core) -> Result<Plugin> {
         .ok_or_eyre("Plugin [com.vapoursynth.resize] was not found")
 }
 
+pub fn fmtconv(core: &Core) -> Result<Plugin> {
+    core.get_plugin_by_id(&"fmtconv".to_cstring())
+        .ok_or_eyre("Plugin [fmtconv] was not found")
+}
+
 pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoNode> {
     let lsmash = lsmash(core)?;
     let mut args = Map::default();
@@ -399,78 +404,61 @@ pub fn match_distorted_resolution(
     reference: &VideoNode,
     distorted: &VideoNode,
 ) -> Result<VideoNode> {
-    let resize = resize(core)?;
+    use vapoursynth4_rs::{
+        ffi::VSMapAppendMode::Replace,
+        map::{KeyStr, Map, Value},
+    };
+
+    // Get plugin handles
+    let fmtconv_plugin = fmtconv(core)?;
+
     let ref_info = reference.info();
     let dist_info = distorted.info();
 
-    // Early return if resolutions already match
-    if ref_info.width == dist_info.width {
+    if ref_info.width == dist_info.width && ref_info.height == dist_info.height {
         return Ok(reference.clone());
     }
 
-    // Validate target dimensions
-    if dist_info.width <= 0 || dist_info.height <= 0 {
+    // Throw an error if distorted is larger than reference
+    if dist_info.width > ref_info.width || dist_info.height > ref_info.height {
         return Err(eyre::eyre!(
-            "Invalid target dimensions: {}x{}",
+            "Distorted resolution ({:?}x{:?}) is larger than reference ({:?}x{:?})",
             dist_info.width,
-            dist_info.height
+            dist_info.height,
+            ref_info.width,
+            ref_info.height
         ));
     }
-    // Calculate proportional height based on width difference
-    let target_width = dist_info.width as i64;
-    let target_height = (ref_info.height as i64 * target_width) / ref_info.width as i64;
 
-    let mut args = Map::default();
-    args.set(
+    // Step 2: Box downscale (scale = 0.5)
+    let mut fmt_args = Map::default();
+    fmt_args.set(
         KeyStr::from_cstr(&"clip".to_cstring()),
         Value::VideoNode(reference.to_owned()),
         Replace,
     )?;
-    args.set(
-        KeyStr::from_cstr(&"width".to_cstring()),
-        Value::Int(target_width),
+    fmt_args.set(
+        KeyStr::from_cstr(&"kernel".to_cstring()),
+        Value::Utf8("box"),
         Replace,
     )?;
-    args.set(
-        KeyStr::from_cstr(&"height".to_cstring()),
-        Value::Int(target_height),
+    fmt_args.set(
+        KeyStr::from_cstr(&"scale".to_cstring()),
+        Value::Float(0.5),
         Replace,
     )?;
 
-    // Choose the appropriate resize function
-    let func = if dist_info.width > ref_info.width {
-        // Upscaling - use Lanczos
-        args.set(
-            KeyStr::from_cstr(&"filter_param_a".to_cstring()),
-            Value::Float(3.0), // Lanczos taps
-            Replace,
-        )?;
-        resize.invoke(&"Lanczos".to_cstring(), args)
-    } else {
-        // Downscaling - use Bicubic
-        args.set(
-            KeyStr::from_cstr(&"filter_param_a".to_cstring()),
-            Value::Float(0.0), // b parameter
-            Replace,
-        )?;
-        args.set(
-            KeyStr::from_cstr(&"filter_param_b".to_cstring()),
-            Value::Float(0.5), // c parameter
-            Replace,
-        )?;
-        resize.invoke(&"Bicubic".to_cstring(), args)
-    };
-
-    if let Some(err) = func.get_error() {
+    let resampled = fmtconv_plugin.invoke(&"resample".to_cstring(), fmt_args);
+    if let Some(err) = resampled.get_error() {
         return Err(eyre::eyre!(
-            "Resize failed ({} → {}): {}",
-            format!("{}x{}", ref_info.width, ref_info.height),
-            format!("{}x{}", dist_info.width, dist_info.height),
+            "Box resample failed: {}",
             err.to_string_lossy()
         ));
     }
 
-    Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
+    let box_clip = resampled.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+
+    Ok(box_clip)
 }
 
 #[derive(Debug, Clone)]

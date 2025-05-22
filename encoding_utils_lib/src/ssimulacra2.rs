@@ -40,6 +40,9 @@ pub fn ssimu2_scenes(
         println!("Distorted: {:?}\n", distorted.info());
     }
 
+    reference = resize_bicubic(&core, &reference)?;
+    distorted = resize_bicubic(&core, &distorted)?;
+
     // Match resolutions
     reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
@@ -50,9 +53,6 @@ pub fn ssimu2_scenes(
     if let Some(trim) = trim {
         (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
     }
-
-    let reference = resize_bicubic(&core, &reference)?;
-    let distorted = resize_bicubic(&core, &distorted)?;
 
     let middle_frames = scene_list.middle_frames();
 
@@ -105,7 +105,7 @@ pub fn ssimu2_frames_scenes(
     let middle_frames = scene_list.middle_frames();
 
     // Load reference and distorted
-    let (mut reference, distorted) = match importer_plugin {
+    let (mut reference, mut distorted) = match importer_plugin {
         ImporterPlugin::Lsmash => (
             lsmash_invoke(&core, reference, temp_dir)?,
             lsmash_invoke(&core, distorted, temp_dir)?,
@@ -122,6 +122,9 @@ pub fn ssimu2_frames_scenes(
         println!("Distorted: {:?}\n", distorted.info());
     }
 
+    reference = resize_bicubic(&core, &reference)?;
+    distorted = resize_bicubic(&core, &distorted)?;
+
     // Match resolutions
     reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
@@ -129,9 +132,6 @@ pub fn ssimu2_frames_scenes(
     reference = crop_reference_to_match(&core, &reference, &distorted)?;
 
     let reference = select_frames(&core, &reference, &middle_frames)?;
-
-    let reference = resize_bicubic(&core, &reference)?;
-    let distorted = resize_bicubic(&core, &distorted)?;
 
     if verbose {
         println!("Ready to compare\n");
@@ -200,6 +200,9 @@ pub fn ssimu2(
         println!("Distorted: {:?}\n", distorted.info());
     }
 
+    reference = resize_bicubic(&core, &reference)?;
+    distorted = resize_bicubic(&core, &distorted)?;
+
     // Match resolutions
     reference = match_distorted_resolution(&core, &reference, &distorted)?;
 
@@ -210,10 +213,6 @@ pub fn ssimu2(
     if let Some(trim) = trim {
         (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
     }
-
-    // Resize after cropping
-    let reference = resize_bicubic(&core, &reference)?;
-    let distorted = resize_bicubic(&core, &distorted)?;
 
     if verbose {
         println!("Ready to compare\n");
