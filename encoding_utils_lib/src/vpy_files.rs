@@ -48,7 +48,7 @@ from vstools import (
     Transfer,
 )
 
-src = {importer}(\"{input_str}\")
+src = {importer}("{input_str}")
 
 src = initialize_clip(
     src,
