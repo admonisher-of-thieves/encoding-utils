@@ -91,7 +91,7 @@ fn main() -> Result<()> {
                 &args.reference,
                 &args.distorted,
                 &scene_list,
-                args.importer_plugin,
+                &args.importer_plugin,
                 &temp_dir,
                 !args.only_stats,
             )?

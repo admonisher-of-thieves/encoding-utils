@@ -95,7 +95,7 @@ pub fn ssimu2_frames_scenes(
     reference: &Path,
     distorted: &Path,
     scene_list: &SceneList,
-    importer_plugin: ImporterPlugin,
+    importer_plugin: &ImporterPlugin,
     temp_dir: &Path,
     verbose: bool,
 ) -> Result<ScoreList> {

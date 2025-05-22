@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use crate::{scenes::SceneList, vapoursynth::ImporterPlugin};
+use crate::{main_loop::check_chunk_method, scenes::SceneList, vapoursynth::ImporterPlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
 
@@ -8,6 +8,9 @@ pub fn create_frames_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
+    av1an_params: &'a str,
+    crop: Option<&str>,
+    downscale: bool,
     override_file: bool,
 ) -> Result<&'a Path> {
     if override_file && vpy_file.exists() {
@@ -25,17 +28,78 @@ pub fn create_frames_vpy_file<'a>(
         .collect::<Vec<String>>()
         .join(", ");
 
+    let importer = check_chunk_method(av1an_params).unwrap_or(ImporterPlugin::Bestsource);
+    let importer = match importer {
+        ImporterPlugin::Lsmash => "core.lsmas.LWLibavSource",
+        ImporterPlugin::Bestsource => "core.bs.VideoSource",
+    };
+
     // Use string formatting to build the vpy script efficiently
-    let vpy_script = format!(
-        "import vapoursynth as vs\n\
-        core = vs.core\n\n\
-        src = core.bs.VideoSource(\"{}\")\n\n\
-        frames = [{}]\n\n\
-        selected_frames = [src[frame] for frame in frames]\n\n\
-        output = core.std.Splice(selected_frames)\n\
-        output.set_output()\n",
-        input_str, frames_str
+    let mut vpy_script = format!(
+        r#"
+import vapoursynth as vs
+
+from vstools import (
+    core,
+    set_output,
+    initialize_clip,
+    Matrix,
+    Primaries,
+    Transfer,
+)
+
+src = {importer}(\"{input_str}\")
+
+src = initialize_clip(
+    src,
+    matrix=Matrix.BT709,
+    primaries=Primaries.BT709,
+    transfer=Transfer.BT709,
+)
+
+frames = [{frames_str}]
+selected_frames = [src[frame] for frame in frames]
+output = core.std.Splice(selected_frames)
+src = output
+
+"#,
+        importer = importer,
+        input_str = input_str,
+        frames_str = frames_str
     );
+
+    if let Some(crop_str) = crop {
+        let crop_params = CropParams::from_str(crop_str)?;
+        vpy_script += &format!(
+            r#"
+cropped = core.std.CropAbs\(
+    src,
+    width={width},
+    height={height},
+    left={left},
+    top={top}
+src = cropped
+
+"#,
+            width = crop_params.width,
+            height = crop_params.height,
+            left = crop_params.left,
+            top = crop_params.top,
+        );
+    }
+
+    if downscale {
+        vpy_script += r#"
+rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
+box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
+src = box
+
+"#;
+    }
+
+    vpy_script += r#"
+set_output(src)
+"#;
 
     fs::write(vpy_file, vpy_script)?;
 

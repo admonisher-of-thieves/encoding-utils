@@ -81,6 +81,14 @@ struct Args {
     #[arg(short, long = "crf-data-file")]
     crf_data_file: Option<PathBuf>,
 
+    /// Crop string (e.g. 1920:816:0:132)
+    #[arg(short, long)]
+    crop: Option<String>,
+
+    /// Downscale, using Box Kernel 0.5
+    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
+    downscale: bool,
+
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
@@ -145,6 +153,8 @@ fn main() -> Result<()> {
         args.velocity_preset,
         args.metric_importer_plugin,
         args.crf_data_file.as_deref(),
+        args.crop.as_deref(),
+        args.downscale,
         !args.keep_files,
         args.verbose,
         &temp_folder

@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::chunk::{Chunk, ChunkList};
+use crate::chunk::{self, Chunk, ChunkList};
 use crate::encode::encode_frames;
 use crate::math::{Score, get_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
@@ -22,6 +23,8 @@ pub fn run_loop<'a>(
     velocity_preset: i32,
     metric_importer: ImporterPlugin,
     crf_data_file: Option<&'a Path>,
+    crop: Option<&str>,
+    downscale: bool,
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
@@ -72,8 +75,15 @@ pub fn run_loop<'a>(
             write_scene_list_to_file(&scene_list_middle_frames, &scenes_path)?;
 
         // Temp encode
-        let vpy_file =
-            create_frames_vpy_file(input, &vpy_path, &filtered_scene_list_with_zones, clean)?;
+        let vpy_file = create_frames_vpy_file(
+            input,
+            &vpy_path,
+            &filtered_scene_list_with_zones,
+            av1an_params,
+            crop,
+            downscale,
+            clean,
+        )?;
         let new_av1an_params = update_split_method(av1an_params, "none".to_owned());
         let new_av1an_params =
             update_extra_split_and_min_scene_len(&new_av1an_params, Some(0), Some(1));
@@ -94,7 +104,7 @@ pub fn run_loop<'a>(
             input,
             encode,
             &filtered_scene_list_with_zones,
-            metric_importer.clone(),
+            &metric_importer,
             temp_folder,
             verbose,
         )?;
@@ -288,7 +298,7 @@ pub fn update_split_method(params: &str, new_split_method: String) -> String {
 }
 
 /// Extracts the value of a command-line argument from a parameter string
-fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
+pub fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
     let mut tokens = params.split_whitespace().peekable();
 
     while let Some(token) = tokens.next() {
@@ -329,6 +339,15 @@ pub fn write_crf_data(
                 .ok_or_eyre("Invalid UTF-8")?
         )?;
 
+        let crf_values: Vec<u8> = chunk_list.chunks.iter().map(|chunk| chunk.crf).collect();
+        let percentages = calculate_crf_percentages(crf_values);
+        let line = percentages
+            .iter()
+            .map(|(crf, pct)| format!("CRF {}: {:.2}%", crf, pct))
+            .collect::<Vec<String>>()
+            .join(", ");
+        writeln!(file, "{}", line)?;
+
         for (i, chunk) in chunk_list.chunks.iter().enumerate() {
             writeln!(
                 file,
@@ -352,4 +371,25 @@ pub fn write_crf_data(
     }
 
     Ok(())
+}
+
+pub fn calculate_crf_percentages<I>(crf_values: I) -> Vec<(u8, f64)>
+where
+    I: IntoIterator<Item = u8>,
+{
+    let crf_vec: Vec<u8> = crf_values.into_iter().collect();
+    let total = crf_vec.len() as f64;
+
+    let mut counts = crf_vec.iter().fold(HashMap::new(), |mut acc, &val| {
+        *acc.entry(val).or_insert(0) += 1;
+        acc
+    });
+
+    let mut percentages: Vec<(u8, f64)> = counts
+        .drain()
+        .map(|(val, count)| (val, (count as f64 / total) * 100.0))
+        .collect();
+
+    percentages.sort_by_key(|&(val, _)| val);
+    percentages
 }
