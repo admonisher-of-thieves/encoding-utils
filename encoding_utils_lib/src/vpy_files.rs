@@ -67,22 +67,17 @@ pub fn create_frames_vpy_file<'a>(
         r#"
 import vapoursynth as vs
 
-from vstools import (
-    core,
-    set_output,
-    initialize_clip,
-    Matrix,
-    Primaries,
-    Transfer,
-)
+core = vs.core
 
 src = {source_plugin}("{input_str}", {cache})
 
-src = initialize_clip(
-    src,
-    matrix=Matrix.BT709,
-    primaries=Primaries.BT709,
-    transfer=Transfer.BT709,
+src = core.resize.Bicubic(
+    source,
+    primaries_in_s="709",
+    matrix_in_s="709",
+    transfer_in_s="709",
+    range_in_s="limited",
+    chromaloc_in_s="left",
 )
 
 frames = [{frames_str}]
@@ -123,21 +118,34 @@ src = cropped
         vpy_script += r#"
 rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
 box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
-src = box
 
-"#;
-    }
-
-    vpy_script += r#"
 out = core.resize.Bicubic(
-    src,
-    primaries_s="709",
+    box,
+    format=vs.YUV420P10,
     matrix_s="709",
     transfer_s="709",
-    format=vs.YUV420P10,
+    primaries_s="709",
+    range_s="limited",
+    chromaloc_s="left",
+    dither_type="error_diffusion",
 )
-set_output(out)
+
+out.set_output()
 "#;
+    } else {
+        vpy_script += r#"
+out = core.resize.Bicubic(
+    src,
+    format=vs.YUV420P10,
+    matrix_s="709",
+    transfer_s="709",
+    primaries_s="709",
+    range_s="limited",
+    chromaloc_s="left",
+)
+out.set_output()
+"#;
+    }
 
     fs::write(vpy_file, vpy_script)?;
 
