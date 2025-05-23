@@ -11,6 +11,7 @@ pub fn create_frames_vpy_file<'a>(
     importer: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
+    temp_folder: &'a Path,
     override_file: bool,
 ) -> Result<&'a Path> {
     if override_file && vpy_file.exists() {
@@ -28,10 +29,27 @@ pub fn create_frames_vpy_file<'a>(
         .collect::<Vec<String>>()
         .join(", ");
 
-    let importer = match importer {
+    let source_plugin = match importer {
         SourcePlugin::Lsmash => "core.lsmas.LWLibavSource",
         SourcePlugin::Bestsource => "core.bs.VideoSource",
     };
+
+    let extension = match importer {
+        SourcePlugin::Lsmash => "lwi",
+        SourcePlugin::Bestsource => "bsi",
+    };
+
+    let cache_path = temp_folder
+        .join(
+            input
+                .file_name()
+                .ok_or_eyre("Input path has no filename")?
+                .to_str()
+                .ok_or_eyre("Filename not UTF-8")?,
+        )
+        .with_extension(extension);
+
+    let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
 
     // Use string formatting to build the vpy script efficiently
     let mut vpy_script = format!(
@@ -47,7 +65,7 @@ from vstools import (
     Transfer,
 )
 
-src = {importer}("{input_str}")
+src = {source_plugin}("{input_str}", cachefile={cache_path})
 
 src = initialize_clip(
     src,
@@ -62,9 +80,10 @@ output = core.std.Splice(selected_frames)
 src = output
 
 "#,
-        importer = importer,
+        source_plugin = source_plugin,
         input_str = input_str,
-        frames_str = frames_str
+        frames_str = frames_str,
+        cache_path = cache_str,
     );
 
     if let Some(crop_str) = crop {

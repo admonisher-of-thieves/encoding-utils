@@ -85,6 +85,7 @@ pub fn run_loop<'a>(
             importer,
             crop,
             downscale,
+            temp_folder,
             clean,
         )?;
         let encode = encode_frames(

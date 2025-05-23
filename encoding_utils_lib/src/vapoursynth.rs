@@ -90,7 +90,7 @@ pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoN
     let cache_path = temp_dir
         .join(
             path.file_name()
-                .ok_or(eyre!("Input path has no filename"))?
+                .ok_or_eyre("Input path has no filename")?
                 .to_str()
                 .ok_or_eyre("Filename not UTF-8")?,
         )
@@ -128,7 +128,7 @@ pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<Vi
     let cache_path = temp_dir
         .join(
             path.file_name()
-                .ok_or(eyre!("Input path has no filename"))?
+                .ok_or_eyre("Input path has no filename")?
                 .to_str()
                 .ok_or_eyre("Filename not UTF-8")?,
         )
