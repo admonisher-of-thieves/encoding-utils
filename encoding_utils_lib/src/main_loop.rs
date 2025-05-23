@@ -356,7 +356,7 @@ pub fn write_crf_data(
         let percentages = calculate_crf_percentages(chunk_list);
         let percentages_line = percentages
             .iter()
-            .map(|(crf, pct)| format!("Percentages: CRF {}: {}%", crf, pct.round() as u8))
+            .map(|(crf, pct)| format!("CRF {}: {}%", crf, pct.round() as u8))
             .collect::<Vec<String>>()
             .join(", ");
         output.push_str(&percentages_line);
