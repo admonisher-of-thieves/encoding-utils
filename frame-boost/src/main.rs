@@ -157,7 +157,7 @@ fn main() -> Result<()> {
         &crf_values,
         args.target_quality,
         args.velocity_preset,
-        args.importer_plugin,
+        &args.importer_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,

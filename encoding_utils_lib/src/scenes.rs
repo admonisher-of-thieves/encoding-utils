@@ -26,8 +26,6 @@ pub fn get_scene_file<'a>(
 
     println!("Obtaining scene file:\n");
 
-    let av1an_params = update_chunk_method(av1an_params, importer);
-
     let av1an_params: Vec<String> = av1an_params
         .split_whitespace()
         .map(str::to_string)
@@ -118,7 +116,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     chunk::Chunk,
-    main_loop::update_chunk_method,
     vapoursynth::{ImporterPlugin, get_dimensions},
 };
 

@@ -21,7 +21,7 @@ pub fn run_loop<'a>(
     crf: &[u8],
     ssimu2_score: f64,
     velocity_preset: i32,
-    importer: ImporterPlugin,
+    importer: &ImporterPlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
@@ -31,16 +31,23 @@ pub fn run_loop<'a>(
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
+    let temp_av1an_params = update_chunk_method(av1an_params, importer);
+    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
+
     // Generating original scenes
     let original_scenes_file = get_scene_file(
         input,
         temp_folder,
-        av1an_params,
-        &importer,
+        &temp_av1an_params,
+        importer,
         downscale,
         clean,
     )?;
     let scene_list = parse_scene_file(&original_scenes_file)?;
+
+    let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
+    let temp_av1an_params =
+        update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(1));
 
     let chunks: Vec<Chunk> = scene_list
         .scenes
@@ -56,8 +63,6 @@ pub fn run_loop<'a>(
         frames: scene_list.frames,
     };
 
-    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
-
     let mut crfs = crf.to_vec();
     let mut iter_crfs: Vec<u8> = crfs.iter().skip(1).rev().copied().collect();
     iter_crfs.insert(0, 0);
@@ -70,12 +75,12 @@ pub fn run_loop<'a>(
         let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
 
         // Scenes
-        let mut filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones_filtered(
-            av1an_params,
+        let filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones_filtered(
+            &temp_av1an_params,
             &temp_encoder_params,
             ssimu2_score,
         );
-        filtered_scene_list_with_zones.update_preset(velocity_preset);
+
         let scene_list_middle_frames = filtered_scene_list_with_zones.as_middle_frames();
         let scenes_file_middle_frames =
             write_scene_list_to_file(&scene_list_middle_frames, &scenes_path)?;
@@ -85,19 +90,16 @@ pub fn run_loop<'a>(
             input,
             &vpy_path,
             &filtered_scene_list_with_zones,
-            &importer,
+            importer,
             crop,
             downscale,
             clean,
         )?;
-        let new_av1an_params = update_split_method(av1an_params, "none".to_owned());
-        let new_av1an_params =
-            update_extra_split_and_min_scene_len(&new_av1an_params, Some(0), Some(1));
         let encode = encode_frames(
             vpy_file,
             scenes_file_middle_frames,
             &encode_path,
-            &new_av1an_params,
+            &temp_av1an_params,
             &temp_encoder_params,
             clean,
         )?;
@@ -110,7 +112,7 @@ pub fn run_loop<'a>(
             input,
             encode,
             &filtered_scene_list_with_zones,
-            &importer,
+            importer,
             temp_folder,
             verbose,
         )?;
