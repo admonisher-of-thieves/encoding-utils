@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, absolute},
+};
 
 use crate::{
     scenes::SceneList,
@@ -51,6 +54,7 @@ pub fn create_frames_vpy_file<'a>(
             .ok_or_eyre("Filename not UTF-8")?,
     );
     let cache_path = add_extension(extension, cache_path);
+    let cache_path = absolute(cache_path)?;
 
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
     let cache = match source_plugin {
@@ -72,7 +76,7 @@ from vstools import (
     Transfer,
 )
 
-src = {source_plugin}("{input_str}", cachefile="{cache}")
+src = {source_plugin}("{input_str}", {cache})
 
 src = initialize_clip(
     src,
