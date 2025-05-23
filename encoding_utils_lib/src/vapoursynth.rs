@@ -32,16 +32,16 @@ pub fn print_vs_plugins() {
 
 /// Chunking plugin
 #[derive(Debug, Clone, ValueEnum)]
-pub enum ImporterPlugin {
+pub enum SourcePlugin {
     Lsmash,
     Bestsource,
 }
 
-impl ImporterPlugin {
+impl SourcePlugin {
     pub fn as_str(&self) -> &'static str {
         match self {
-            ImporterPlugin::Lsmash => "lsmash",
-            ImporterPlugin::Bestsource => "bestsource",
+            SourcePlugin::Lsmash => "lsmash",
+            SourcePlugin::Bestsource => "bestsource",
         }
     }
 }
@@ -559,15 +559,15 @@ pub fn synchronize_clips(
 
 pub fn get_dimensions(
     input: &Path,
-    importer_plugin: &ImporterPlugin,
+    importer_plugin: &SourcePlugin,
     temp_dir: &Path,
 ) -> Result<Dimensions> {
     let api = Api::default();
     let core = Core::builder().api(api).build();
     // Load reference and distorted
     let reference = match importer_plugin {
-        ImporterPlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
-        ImporterPlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
+        SourcePlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
     };
 
     let info = reference.info();

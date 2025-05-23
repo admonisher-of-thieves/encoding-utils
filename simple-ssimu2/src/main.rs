@@ -2,7 +2,7 @@ use clap::{ArgAction, Parser};
 use encoding_utils_lib::{
     math::get_stats,
     ssimulacra2::ssimu2,
-    vapoursynth::{ImporterPlugin, Trim},
+    vapoursynth::{SourcePlugin, Trim},
 };
 use eyre::{OptionExt, Result};
 use std::{fs::{self, create_dir_all}, path::PathBuf};
@@ -33,7 +33,7 @@ struct Args {
 
     /// Importer plugin
     #[arg(short, long = "importer-plugin", default_value = "lsmash")]
-    importer_plugin: ImporterPlugin,
+    importer_plugin: SourcePlugin,
 
     /// Path to stats file (if not provided, stats will only be printed)
     #[arg(short, long = "stats-file")]

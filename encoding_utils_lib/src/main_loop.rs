@@ -9,7 +9,7 @@ use crate::encode::encode_frames;
 use crate::math::{Score, get_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_scenes;
-use crate::vapoursynth::ImporterPlugin;
+use crate::vapoursynth::SourcePlugin;
 use crate::vpy_files::create_frames_vpy_file;
 use eyre::{OptionExt, Result};
 
@@ -22,7 +22,7 @@ pub fn run_loop<'a>(
     crf: &[u8],
     ssimu2_score: f64,
     velocity_preset: i32,
-    importer: &ImporterPlugin,
+    importer: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
@@ -32,20 +32,13 @@ pub fn run_loop<'a>(
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
-    let temp_av1an_params = update_chunk_method(av1an_params, importer);
-    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
-
     // Generating original scenes
-    let original_scenes_file = get_scene_file(
-        input,
-        temp_folder,
-        &temp_av1an_params,
-        importer,
-        downscale,
-        clean,
-    )?;
+    let original_scenes_file =
+        get_scene_file(input, temp_folder, av1an_params, importer, downscale, clean)?;
     let scene_list = parse_scene_file(&original_scenes_file)?;
 
+    let temp_av1an_params = update_chunk_method(av1an_params, importer);
+    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
     let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
     let temp_av1an_params =
         update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(1));
@@ -330,12 +323,12 @@ pub fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
 }
 
 /// Checks the chunk method in the params and returns the corresponding ImporterPlugin
-pub fn check_chunk_method(params: &str) -> Option<ImporterPlugin> {
+pub fn check_chunk_method(params: &str) -> Option<SourcePlugin> {
     let chunk_method = get_arg_value(params, "--chunk-method")?;
 
     match chunk_method.as_str() {
-        "lsmash" => Some(ImporterPlugin::Lsmash),
-        "bestsource" => Some(ImporterPlugin::Bestsource),
+        "lsmash" => Some(SourcePlugin::Lsmash),
+        "bestsource" => Some(SourcePlugin::Bestsource),
         _ => None,
     }
 }
@@ -418,7 +411,7 @@ pub fn calculate_crf_percentages(chunk_list: &ChunkList) -> Vec<(u8, f64)> {
     percentages
 }
 
-pub fn update_chunk_method(params: &str, new_chunk_method: &ImporterPlugin) -> String {
+pub fn update_chunk_method(params: &str, new_chunk_method: &SourcePlugin) -> String {
     let mut tokens = params.split_whitespace().peekable();
     let mut updated_tokens: Vec<String> = Vec::new();
     let mut found_chunk_method = false;

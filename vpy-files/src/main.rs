@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use encoding_utils_lib::{vapoursynth::ImporterPlugin, vpy_files::create_filter_vpy_file};
+use encoding_utils_lib::{vapoursynth::SourcePlugin, vpy_files::create_filter_vpy_file};
 use eyre::{OptionExt, Result};
 
 /// Tool to create VapourSynth filter script
@@ -25,8 +25,8 @@ struct Args {
     scale: Option<String>,
 
     /// Importer plugin (lsmash or bestsource)
-    #[arg(short = 'P', long, value_enum, default_value_t = ImporterPlugin::Lsmash)]
-    importer: ImporterPlugin,
+    #[arg(short = 'P', long, value_enum, default_value_t = SourcePlugin::Lsmash)]
+    importer: SourcePlugin,
 
     /// Overwrite output file if it exists
     #[arg(short = 'O', long, default_value_t = false)]

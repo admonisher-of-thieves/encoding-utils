@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use crate::{scenes::SceneList, vapoursynth::ImporterPlugin};
+use crate::{scenes::SceneList, vapoursynth::SourcePlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
 
@@ -8,7 +8,7 @@ pub fn create_frames_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
-    importer: &'a ImporterPlugin,
+    importer: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
     override_file: bool,
@@ -29,8 +29,8 @@ pub fn create_frames_vpy_file<'a>(
         .join(", ");
 
     let importer = match importer {
-        ImporterPlugin::Lsmash => "core.lsmas.LWLibavSource",
-        ImporterPlugin::Bestsource => "core.bs.VideoSource",
+        SourcePlugin::Lsmash => "core.lsmas.LWLibavSource",
+        SourcePlugin::Bestsource => "core.bs.VideoSource",
     };
 
     // Use string formatting to build the vpy script efficiently
@@ -202,7 +202,7 @@ pub fn create_filter_vpy_file<'a>(
     vpy_file: &'a Path,
     crop_str: Option<&str>,
     zscale_str: Option<&str>,
-    importer_plugin: ImporterPlugin,
+    importer_plugin: SourcePlugin,
     override_file: bool,
 ) -> Result<&'a Path> {
     if override_file && vpy_file.exists() {
@@ -217,7 +217,7 @@ pub fn create_filter_vpy_file<'a>(
     let mut current_var = "src".to_string();
 
     match importer_plugin {
-        ImporterPlugin::Lsmash => {
+        SourcePlugin::Lsmash => {
             processing_steps.push(format!(
                 r#"# Load source using L-SMASH
 {current_var} = core.lsmas.LWLibavSource("{input_path}")"#,
@@ -225,7 +225,7 @@ pub fn create_filter_vpy_file<'a>(
                 current_var = current_var
             ));
         }
-        ImporterPlugin::Bestsource => {
+        SourcePlugin::Bestsource => {
             processing_steps.push(format!(
                 r#"# Load source using BestSource
 {current_var} = core.bs.VideoSource("{input_path}")"#,

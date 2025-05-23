@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{Context, OptionExt, Result, eyre};
-use encoding_utils_lib::{main_loop::run_loop, vapoursynth::ImporterPlugin};
+use encoding_utils_lib::{main_loop::run_loop, vapoursynth::SourcePlugin};
 
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -73,9 +73,9 @@ struct Args {
     )]
     no_force: bool,
 
-    /// Importer plugin for metrics and encoding frames, excluding scene detection
+    /// Video Source Plugin for metrics and encoding frames
     #[arg(short, long = "importer", default_value = "lsmash")]
-    importer_plugin: ImporterPlugin,
+    source_plugin: SourcePlugin,
 
     /// Path to save the updated crf data
     #[arg(short, long = "crf-data-file")]
@@ -157,7 +157,7 @@ fn main() -> Result<()> {
         &crf_values,
         args.target_quality,
         args.velocity_preset,
-        &args.importer_plugin,
+        &args.source_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,

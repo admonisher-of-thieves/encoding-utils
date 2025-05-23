@@ -10,7 +10,7 @@ pub fn get_scene_file<'a>(
     input: &'a Path,
     temp_folder: &'a Path,
     av1an_params: &str,
-    importer: &ImporterPlugin,
+    importer: &SourcePlugin,
     downscale: bool,
     override_file: bool,
 ) -> Result<PathBuf> {
@@ -116,7 +116,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     chunk::Chunk,
-    vapoursynth::{ImporterPlugin, get_dimensions},
+    vapoursynth::{SourcePlugin, get_dimensions},
 };
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
