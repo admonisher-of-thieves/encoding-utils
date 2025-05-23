@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs::{self};
 use std::path::Path;
 
 use crate::chunk::{Chunk, ChunkList};
