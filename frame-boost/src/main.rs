@@ -74,7 +74,7 @@ struct Args {
     no_force: bool,
 
     /// Video Source Plugin for metrics and encoding frames
-    #[arg(short, long = "importer", default_value = "lsmash")]
+    #[arg(short, long = "source-plugin", default_value = "lsmash")]
     source_plugin: SourcePlugin,
 
     /// Path to save the updated crf data

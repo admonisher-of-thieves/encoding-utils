@@ -31,9 +31,9 @@ struct Args {
     #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
     only_stats: bool,
 
-    /// Importer plugin
-    #[arg(short, long = "importer-plugin", default_value = "lsmash")]
-    importer_plugin: SourcePlugin,
+    /// Video Source Plugin
+    #[arg(short, long = "source-plugin", default_value = "lsmash")]
+    source_plugin: SourcePlugin,
 
     /// Path to stats file (if not provided, stats will only be printed)
     #[arg(short, long = "stats-file")]
@@ -91,7 +91,7 @@ fn main() -> Result<()> {
                 &args.reference,
                 &args.distorted,
                 &scene_list,
-                &args.importer_plugin,
+                &args.source_plugin,
                 &temp_dir,
                 !args.only_stats,
             )?
@@ -100,7 +100,7 @@ fn main() -> Result<()> {
                 &args.reference,
                 &args.distorted,
                 &scene_list,
-                args.importer_plugin,
+                args.source_plugin,
                 args.trim,
                 &temp_dir,
                 !args.only_stats,
@@ -112,7 +112,7 @@ fn main() -> Result<()> {
             &args.reference,
             &args.distorted,
             args.steps as usize,
-            args.importer_plugin,
+            args.source_plugin,
             args.trim,
             &temp_dir,
             !args.only_stats,
