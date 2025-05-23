@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
@@ -345,37 +346,46 @@ pub fn write_crf_data(
     chunk_list: &ChunkList,
 ) -> Result<()> {
     if let Some(crf_data_file) = crf_data_file {
-        let mut file = File::create(crf_data_file)?;
-        writeln!(
-            file,
-            "{}",
-            input
-                .file_name()
-                .ok_or_eyre("Error getting file name")?
-                .to_str()
-                .ok_or_eyre("Invalid UTF-8")?
-        )?;
+        // Build the entire output string first
+        let mut output = String::new();
 
+        output.push_str("[INFO]\n");
+
+        // Add filename header
+        let video_name = input
+            .file_name()
+            .ok_or_eyre("Error getting file name")?
+            .to_str()
+            .ok_or_eyre("Invalid UTF-8")?;
+        let filename = format!("Video: {}\n", video_name);
+        output.push_str(&filename);
+
+        // Add CRF percentages
         let percentages = calculate_crf_percentages(chunk_list);
-        let line = percentages
+        let percentages_line = percentages
             .iter()
-            .map(|(crf, pct)| format!("CRF {}: {}%", crf, pct.round() as u8))
+            .map(|(crf, pct)| format!("Percentages: CRF {}: {}%", crf, pct.round() as u8))
             .collect::<Vec<String>>()
             .join(", ");
-        writeln!(file, "{}", line)?;
+        output.push_str(&percentages_line);
+        output.push_str("\n\n");
 
+        output.push_str("[DATA]\n");
+        // Add chunk details
         for (i, chunk) in chunk_list.chunks.iter().enumerate() {
-            writeln!(
-                file,
-                "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
+            output.push_str(&format!(
+                "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}\n",
                 i,
                 chunk.crf,
                 chunk.score.value,
                 chunk.score.frame,
                 chunk.scene.start_frame,
                 chunk.scene.end_frame
-            )?;
+            ));
         }
+
+        // Write everything at once
+        std::fs::write(crf_data_file, &output)?;
 
         println!(
             "CRF data successfully written to {}",
