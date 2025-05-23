@@ -199,8 +199,7 @@ pub fn get_stats(score_list: &ScoreList) -> Result<String> {
 
     let mut output = String::new();
 
-    writeln!(output, "STATS - SSIMU2")?;
-    writeln!(output, "################################")?;
+    writeln!(output, "[STATS - SSIMU2]")?;
     writeln!(output, "Mean: {:.4}", mean)?;
     writeln!(output, "Standard Deviation: {:.4}", deviation)?;
     writeln!(output, "Mode: {:.4}, count: {:.4}", mode.value, mode.count)?;
