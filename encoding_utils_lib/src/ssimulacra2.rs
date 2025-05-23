@@ -75,7 +75,7 @@ pub fn ssimu2_scenes(
                 .get_frame(i32::try_from(x)?)
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             if verbose {
                 println!("Frame: {:6}, Score: {:6.2}", x, score);
             }
@@ -153,7 +153,7 @@ pub fn ssimu2_frames_scenes(
                 .get_frame(i32::try_from(i)?)
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             if verbose {
                 println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, x, score);
             }
@@ -238,7 +238,7 @@ pub fn ssimu2(
                 .get_frame(x - 1)
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
             let n_frame = u32::try_from(i)? * u32::try_from(step)?;
             if verbose {
                 println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
