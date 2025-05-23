@@ -145,12 +145,6 @@ pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<Vi
         Replace,
     )?;
 
-    args.set(
-        KeyStr::from_cstr(&"showprogress".to_cstring()),
-        Value::Int(1),
-        Replace,
-    )?;
-
     let func = bs.invoke(&"VideoSource".to_cstring(), args);
 
     if let Some(err) = func.get_error() {
