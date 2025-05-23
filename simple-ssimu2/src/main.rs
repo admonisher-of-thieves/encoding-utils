@@ -25,7 +25,7 @@ struct Args {
 
     /// Frame step value (process every N-th frame)
     #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
-    step: u32,
+    steps: u32,
 
     /// Disable verbose output - Print only stats
     #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
@@ -111,7 +111,7 @@ fn main() -> Result<()> {
         ssimu2(
             &args.reference,
             &args.distorted,
-            args.step as usize,
+            args.steps as usize,
             args.importer_plugin,
             args.trim,
             &temp_dir,
@@ -120,7 +120,7 @@ fn main() -> Result<()> {
     };
 
     let stats = get_stats(&score_list)?;
-    let stats_with_filename = format!("Reference: {}\nDistorted: {}\nStep {}\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.step, stats);
+    let stats_with_filename = format!("Reference: {}\nDistorted: {}\nSteps {}\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
     if let Some(output_path) = args.stats_file {
         println!("\n{}", stats_with_filename);
         std::fs::write(output_path, stats_with_filename)?;
