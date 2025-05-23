@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::ffi::{OsStr, OsString};
+use std::path::{Path, PathBuf};
 use std::{ffi::CString, str::FromStr};
 
 use clap::ValueEnum;
@@ -87,14 +88,13 @@ pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoN
         Replace,
     )?;
 
-    let cache_path = temp_dir
-        .join(
-            path.file_name()
-                .ok_or_eyre("Input path has no filename")?
-                .to_str()
-                .ok_or_eyre("Filename not UTF-8")?,
-        )
-        .with_extension("lwi");
+    let cache_path = temp_dir.join(
+        path.file_name()
+            .ok_or_eyre("Input path has no filename")?
+            .to_str()
+            .ok_or_eyre("Filename not UTF-8")?,
+    );
+    let cache_path = add_extension("lwi", cache_path);
 
     println!("{:?}", cache_path);
     args.set(
@@ -125,16 +125,16 @@ pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<Vi
         Replace,
     )?;
 
-    let cache_path = temp_dir
-        .join(
-            path.file_name()
-                .ok_or_eyre("Input path has no filename")?
-                .to_str()
-                .ok_or_eyre("Filename not UTF-8")?,
-        )
-        .with_extension("bsi");
+    let cache_path = temp_dir.join(
+        path.file_name()
+            .ok_or_eyre("Input path has no filename")?
+            .to_str()
+            .ok_or_eyre("Filename not UTF-8")?,
+    );
+    let cache_path = add_extension(".bsindex", cache_path);
+
     args.set(
-        KeyStr::from_cstr(&"cachefile".to_cstring()),
+        KeyStr::from_cstr(&"cachepath".to_cstring()),
         Value::Utf8(cache_path.to_str().unwrap()),
         Replace,
     )?;
@@ -581,4 +581,11 @@ pub fn get_dimensions(
 pub struct Dimensions {
     pub width: i32,
     pub height: i32,
+}
+
+pub fn add_extension(ext: impl AsRef<OsStr>, path: PathBuf) -> PathBuf {
+    let mut os_string: OsString = path.into();
+    os_string.push(".");
+    os_string.push(ext.as_ref());
+    os_string.into()
 }

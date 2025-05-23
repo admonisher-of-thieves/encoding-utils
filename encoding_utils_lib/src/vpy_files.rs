@@ -1,14 +1,18 @@
 use std::{fs, path::Path};
 
-use crate::{scenes::SceneList, vapoursynth::SourcePlugin};
+use crate::{
+    scenes::SceneList,
+    vapoursynth::{SourcePlugin, add_extension},
+};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_frames_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
-    importer: &'a SourcePlugin,
+    source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
     temp_folder: &'a Path,
@@ -29,27 +33,30 @@ pub fn create_frames_vpy_file<'a>(
         .collect::<Vec<String>>()
         .join(", ");
 
-    let source_plugin = match importer {
+    let source = match source_plugin {
         SourcePlugin::Lsmash => "core.lsmas.LWLibavSource",
         SourcePlugin::Bestsource => "core.bs.VideoSource",
     };
 
-    let extension = match importer {
+    let extension = match source_plugin {
         SourcePlugin::Lsmash => "lwi",
-        SourcePlugin::Bestsource => "bsi",
+        SourcePlugin::Bestsource => "bsindex",
     };
 
-    let cache_path = temp_folder
-        .join(
-            input
-                .file_name()
-                .ok_or_eyre("Input path has no filename")?
-                .to_str()
-                .ok_or_eyre("Filename not UTF-8")?,
-        )
-        .with_extension(extension);
+    let cache_path = temp_folder.join(
+        input
+            .file_name()
+            .ok_or_eyre("Input path has no filename")?
+            .to_str()
+            .ok_or_eyre("Filename not UTF-8")?,
+    );
+    let cache_path = add_extension(extension, cache_path);
 
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
+    let cache = match source_plugin {
+        SourcePlugin::Lsmash => format!("cachefile=\"{}\"", cache_str),
+        SourcePlugin::Bestsource => format!("cachepath=\"{}\"", cache_str),
+    };
 
     // Use string formatting to build the vpy script efficiently
     let mut vpy_script = format!(
@@ -65,7 +72,7 @@ from vstools import (
     Transfer,
 )
 
-src = {source_plugin}("{input_str}", cachefile={cache_path})
+src = {source_plugin}("{input_str}", cachefile="{cache}")
 
 src = initialize_clip(
     src,
@@ -80,10 +87,10 @@ output = core.std.Splice(selected_frames)
 src = output
 
 "#,
-        source_plugin = source_plugin,
+        source_plugin = source,
         input_str = input_str,
         frames_str = frames_str,
-        cache_path = cache_str,
+        cache = cache,
     );
 
     if let Some(crop_str) = crop {
