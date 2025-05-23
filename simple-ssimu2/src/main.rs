@@ -120,11 +120,12 @@ fn main() -> Result<()> {
     };
 
     let stats = get_stats(&score_list)?;
+    let stats_with_filename = format!("Reference: {}\nDistorted: {}\nStep {}\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.step, stats);
     if let Some(output_path) = args.stats_file {
-        println!("\n{}", stats);
-        std::fs::write(output_path, stats)?;
+        println!("\n{}", stats_with_filename);
+        std::fs::write(output_path, stats_with_filename)?;
     } else {
-        println!("\n{}", stats);
+        println!("\n{}", stats_with_filename);
     }
 
     println!("{:?}", temp_dir);
