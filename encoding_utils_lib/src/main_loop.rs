@@ -405,3 +405,31 @@ pub fn calculate_crf_percentages(chunk_list: &ChunkList) -> Vec<(u8, f64)> {
     percentages.sort_by_key(|&(val, _)| val);
     percentages
 }
+
+pub fn update_chunk_method(params: &str, new_chunk_method: &ImporterPlugin) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+    let mut found_chunk_method = false;
+
+    while let Some(token) = tokens.next() {
+        match token {
+            "--chunk-method" | "-m" => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--chunk-method".to_string());
+                updated_tokens.push(new_chunk_method.as_str().to_string());
+                found_chunk_method = true;
+            }
+            _ => {
+                updated_tokens.push(token.to_string());
+            }
+        }
+    }
+
+    // Append if not found
+    if !found_chunk_method {
+        updated_tokens.push("--chunk-method".to_string());
+        updated_tokens.push(new_chunk_method.as_str().to_string());
+    }
+
+    updated_tokens.join(" ")
+}

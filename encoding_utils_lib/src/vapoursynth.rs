@@ -37,6 +37,15 @@ pub enum ImporterPlugin {
     Bestsource,
 }
 
+impl ImporterPlugin {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ImporterPlugin::Lsmash => "lsmash",
+            ImporterPlugin::Bestsource => "bestsource",
+        }
+    }
+}
+
 pub fn lsmash(core: &Core) -> Result<Plugin> {
     core.get_plugin_by_id(&"systems.innocent.lsmas".to_cstring())
         .ok_or_eyre("Plugin [systems.innocent.lsmas] was not found")
