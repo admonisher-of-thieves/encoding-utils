@@ -68,9 +68,10 @@ src = output
     );
 
     if let Some(crop_str) = crop {
-        let crop_params = CropParams::from_str(crop_str)?;
-        vpy_script += &format!(
-            r#"
+        if !crop_str.is_empty() {
+            let crop_params = CropParams::from_str(crop_str)?;
+            vpy_script += &format!(
+                r#"
 cropped = core.std.CropAbs\(
     src,
     width={width},
@@ -80,11 +81,12 @@ cropped = core.std.CropAbs\(
 src = cropped
 
 "#,
-            width = crop_params.width,
-            height = crop_params.height,
-            left = crop_params.left,
-            top = crop_params.top,
-        );
+                width = crop_params.width,
+                height = crop_params.height,
+                left = crop_params.left,
+                top = crop_params.top,
+            );
+        }
     }
 
     if downscale {
