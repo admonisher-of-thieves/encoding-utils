@@ -57,7 +57,7 @@ struct Args {
     )]
     keep_files: bool,
 
-    /// Temp folder (default: "[Temp]_<input>.json" if no temp folder given)
+    /// Temp folder (default: "[TEMP]_[SSIMU2]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
 }
