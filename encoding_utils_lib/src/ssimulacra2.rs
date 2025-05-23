@@ -20,7 +20,7 @@ pub fn ssimu2_scenes(
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
-    let core = Core::builder().api(api).disable_library_unloading().build();
+    let core = Core::builder().api(api).build();
 
     // Load reference and distorted
     let (mut reference, mut distorted) = match importer_plugin {
@@ -100,7 +100,7 @@ pub fn ssimu2_frames_scenes(
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
-    let core = Core::builder().api(api).disable_library_unloading().build();
+    let core = Core::builder().api(api).build();
 
     let middle_frames = scene_list.middle_frames();
 
@@ -180,7 +180,7 @@ pub fn ssimu2(
     verbose: bool,
 ) -> Result<ScoreList> {
     let api = Api::default();
-    let core = Core::builder().api(api).disable_library_unloading().build();
+    let core = Core::builder().api(api).build();
 
     // Load reference and distorted
     let (mut reference, mut distorted) = match importer_plugin {

@@ -547,3 +547,29 @@ pub fn synchronize_clips(
         Ok((reference.clone(), trimmed))
     }
 }
+
+pub fn get_dimensions(
+    input: &Path,
+    importer_plugin: &ImporterPlugin,
+    temp_dir: &Path,
+) -> Result<Dimensions> {
+    let api = Api::default();
+    let core = Core::builder().api(api).build();
+    // Load reference and distorted
+    let reference = match importer_plugin {
+        ImporterPlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
+        ImporterPlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
+    };
+
+    let info = reference.info();
+    Ok(Dimensions {
+        width: info.width,
+        height: info.height,
+    })
+}
+
+#[derive(Debug)]
+pub struct Dimensions {
+    pub width: i32,
+    pub height: i32,
+}

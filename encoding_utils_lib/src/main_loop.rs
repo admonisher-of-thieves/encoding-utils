@@ -32,9 +32,15 @@ pub fn run_loop<'a>(
     println!("\nRunning frame-boost\n");
 
     // Generating original scenes
-    let original_scenes_path = temp_folder.join("scenes.json");
-    let original_scenes_file = get_scene_file(input, &original_scenes_path, av1an_params, clean)?;
-    let scene_list = parse_scene_file(original_scenes_file)?;
+    let original_scenes_file = get_scene_file(
+        input,
+        temp_folder,
+        av1an_params,
+        &importer,
+        downscale,
+        clean,
+    )?;
+    let scene_list = parse_scene_file(&original_scenes_file)?;
 
     let chunks: Vec<Chunk> = scene_list
         .scenes

@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 
@@ -8,24 +8,44 @@ use eyre::{OptionExt, Result};
 
 pub fn get_scene_file<'a>(
     input: &'a Path,
-    scenes_path: &'a Path,
+    temp_folder: &'a Path,
     av1an_params: &str,
+    importer: &ImporterPlugin,
+    downscale: bool,
     override_file: bool,
-) -> Result<&'a Path> {
+) -> Result<PathBuf> {
+    let scenes_path = temp_folder.join("scenes.json");
+
     if override_file && scenes_path.exists() {
-        fs::remove_file(scenes_path)?;
+        fs::remove_file(&scenes_path)?;
     }
 
     let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
-    let scene_str = scenes_path
-        .to_str()
-        .ok_or_eyre("Invalid UTF-8 in scene path")?;
+    let binding = scenes_path.clone();
+    let scene_str = binding.to_str().ok_or_eyre("Invalid UTF-8 in scene path")?;
 
     println!("Obtaining scene file:\n");
 
-    let av1an_params: Vec<&str> = av1an_params.split_whitespace().collect();
+    let av1an_params: Vec<String> = av1an_params
+        .split_whitespace()
+        .map(str::to_string)
+        .collect();
 
-    let mut args = Vec::from(["-i", input_str, "--scenes", scene_str, "--sc-only"]);
+    let mut args: Vec<String> = Vec::from([
+        "-i".to_owned(),
+        input_str.to_owned(),
+        "--scenes".to_owned(),
+        scene_str.to_owned(),
+        "--sc-only".to_owned(),
+    ]);
+
+    if downscale {
+        let dimensions = get_dimensions(input, importer, temp_folder)?;
+        let height = (dimensions.height / 2).to_string(); // Create the String first
+        args.push("--sc-downscale-height".to_owned());
+        args.push(height);
+    }
+
     args.extend(av1an_params);
 
     println!("{}", args.join(" "));
@@ -94,7 +114,10 @@ pub fn get_scene_file_with_zones<'a>(
 
 use serde::{Deserialize, Serialize};
 
-use crate::chunk::Chunk;
+use crate::{
+    chunk::Chunk,
+    vapoursynth::{ImporterPlugin, get_dimensions},
+};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Scene {
