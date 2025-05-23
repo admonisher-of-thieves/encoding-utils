@@ -240,7 +240,7 @@ pub fn resize_bicubic(core: &Core, clip: &VideoNode) -> Result<VideoNode> {
     )?;
     args.set(
         KeyStr::from_cstr(&"transfer_s".to_cstring()),
-        Value::Utf8("linear"),
+        Value::Utf8("709"),
         Replace,
     )?;
     args.set(
