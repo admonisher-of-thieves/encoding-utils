@@ -141,7 +141,7 @@ pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<Vi
 
     args.set(
         KeyStr::from_cstr(&"cachemode".to_cstring()),
-        Value::Int(1),
+        Value::Int(4),
         Replace,
     )?;
 

@@ -55,7 +55,7 @@ pub fn create_frames_vpy_file<'a>(
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
     let cache = match source_plugin {
         SourcePlugin::Lsmash => format!("cachefile=\"{}\"", cache_str),
-        SourcePlugin::Bestsource => format!("cachepath=\"{}\", cachemode=1", cache_str),
+        SourcePlugin::Bestsource => format!("cachepath=\"{}\", cachemode=4", cache_str),
     };
 
     // Use string formatting to build the vpy script efficiently
