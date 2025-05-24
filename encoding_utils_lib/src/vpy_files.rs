@@ -117,6 +117,10 @@ src = cropped
     if downscale {
         vpy_script += r#"
 rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
+
+if \(rgb.height / 2\) % 2 != 0:
+    rgb = core.std.Crop\(rgb, top=1, bottom=1\)
+
 box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
 
 out = core.resize.Bicubic(
