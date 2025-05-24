@@ -123,34 +123,23 @@ if (rgb.height / 2) % 2 != 0:
 
 box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
 
-out = core.resize.Bicubic(
-    box,
-    format=vs.YUV420P10,
-    matrix_s="709",
-    transfer_s="709",
-    primaries_s="709",
-    range_s="limited",
-    chromaloc_s="left",
-    dither_type="error_diffusion",
-)
-
-out.set_output()
-"#;
-    } else {
-        vpy_script += r#"
-out = core.resize.Bicubic(
-    src,
-    format=vs.YUV420P10,
-    matrix_s="709",
-    transfer_s="709",
-    primaries_s="709",
-    range_s="limited",
-    chromaloc_s="left",
-)
-out.set_output()
+src = box
 "#;
     }
 
+    vpy_script += r#"
+    out = core.resize.Bicubic(
+        src,
+        format=vs.YUV420P10,
+        matrix_s="709",
+        transfer_s="709",
+        primaries_s="709",
+        range_s="limited",
+        chromaloc_s="left",
+    )
+    out.set_output()
+    "#;
+    
     fs::write(vpy_file, vpy_script)?;
 
     Ok(vpy_file)
