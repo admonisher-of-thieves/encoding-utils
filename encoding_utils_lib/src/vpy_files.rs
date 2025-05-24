@@ -72,7 +72,7 @@ core = vs.core
 src = {source_plugin}("{input_str}", {cache})
 
 src = core.resize.Bicubic(
-    source,
+    src,
     primaries_in_s="709",
     matrix_in_s="709",
     transfer_in_s="709",
