@@ -431,7 +431,7 @@ pub fn match_distorted_resolution(
     let ref_info = reference.info();
     let dist_info = distorted.info();
 
-    if ref_info.width == dist_info.width && ref_info.height == dist_info.height {
+    if ref_info.width == dist_info.width {
         return Ok(reference.clone());
     }
 
