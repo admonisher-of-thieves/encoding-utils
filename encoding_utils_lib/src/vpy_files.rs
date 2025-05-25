@@ -97,12 +97,13 @@ src = output
             let crop_params = CropParams::from_str(crop_str)?;
             vpy_script += &format!(
                 r#"
-cropped = core.std.CropAbs\(
+cropped = core.std.CropAbs(
     src,
     width={width},
     height={height},
     left={left},
     top={top}
+)
 src = cropped
 
 "#,
@@ -122,24 +123,24 @@ if (rgb.height / 2) % 2 != 0:
     rgb = core.std.Crop(rgb, top=1, bottom=1)
 
 box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
-
 src = box
+
 "#;
     }
 
     vpy_script += r#"
-    out = core.resize.Bicubic(
-        src,
-        format=vs.YUV420P10,
-        matrix_s="709",
-        transfer_s="709",
-        primaries_s="709",
-        range_s="limited",
-        chromaloc_s="left",
-    )
-    out.set_output()
+out = core.resize.Bicubic(
+    src,
+    format=vs.YUV420P10,
+    matrix_s="709",
+    transfer_s="709",
+    primaries_s="709",
+    range_s="limited",
+    chromaloc_s="left",
+)
+out.set_output()
     "#;
-    
+
     fs::write(vpy_file, vpy_script)?;
 
     Ok(vpy_file)
