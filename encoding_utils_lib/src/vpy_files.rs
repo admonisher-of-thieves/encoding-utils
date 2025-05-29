@@ -64,7 +64,7 @@ pub fn create_frames_vpy_file<'a>(
 
     // Use string formatting to build the vpy script efficiently
     let mut vpy_script = format!(
-        r#"
+        r#"`
 import vapoursynth as vs
 
 core = vs.core
