@@ -1,5 +1,8 @@
 # Encoding utils
 
+- [frame-boost](#frame-boost)
+- [simple-ssimu2](#simple-ssimu2)
+
 ## Requirements
 
 - vapoursynth
