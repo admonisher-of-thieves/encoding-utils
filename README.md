@@ -1,5 +1,33 @@
 # Encoding utils
 
+## Requirements
+
+- vapoursynth
+- ffmpeg
+- mkvtoolnix
+- av1an
+
+### Vapoursynth Plugins
+
+- bestsource
+- lsmas
+- vszip
+- fmtconv
+
+## Installation
+
+<https://www.rust-lang.org/tools/install>
+
+```sh
+cd frame-boost
+cargo install --path .
+```
+
+```sh
+cd simple-ssimu2
+cargo install --path .
+```
+
 ## frame-boost
 
 ```sh
@@ -17,7 +45,7 @@ Options:
       --av1an-params <AV1AN_PARAMS>
           AV1an encoding parameters [default: "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24"]
       --encoder-params <ENCODER_PARAMS>
-          SVT-AV1 encoder parameters [default: "--preset 2 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio"]
+          SVT-AV1 encoder parameters [default: "--preset 2 --tune 2 --keyint -1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"]
   -q, --target-quality <TARGET_QUALITY>
           Target SSIMULACRA2 score (0-100) [default: 80]
   -c, --crf <CRF>
