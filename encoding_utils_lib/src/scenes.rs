@@ -41,9 +41,13 @@ pub fn get_scene_file<'a>(
 
     if downscale {
         let dimensions = get_dimensions(input, importer, temp_folder)?;
-        let height = (dimensions.height / 2).to_string(); // Create the String first
+        let mut height = dimensions.height / 2;
+        if height % 2 != 0 {
+            height -= 1;
+        }
+        let height_str = height.to_string();
         args.push("--sc-downscale-height".to_owned());
-        args.push(height);
+        args.push(height_str);
     }
 
     args.extend(av1an_params);
