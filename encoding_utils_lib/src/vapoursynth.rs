@@ -427,6 +427,7 @@ pub fn match_distorted_resolution(
 
     // Get plugin handles
     let fmtconv_plugin = fmtconv(core)?;
+    let std_plugin = std(core)?;
 
     let ref_info = reference.info();
     let dist_info = distorted.info();
@@ -446,11 +447,41 @@ pub fn match_distorted_resolution(
         ));
     }
 
-    // Step 2: Box downscale (scale = 0.5)
+    // Check if height/2 is odd and crop if needed
+    let mut working_clip = reference.clone();
+    if (ref_info.height / 2) % 2 != 0 {
+        let mut crop_args = Map::default();
+        crop_args.set(
+            KeyStr::from_cstr(&"clip".to_cstring()),
+            Value::VideoNode(working_clip.to_owned()),
+            Replace,
+        )?;
+        crop_args.set(
+            KeyStr::from_cstr(&"top".to_cstring()),
+            Value::Int(1),
+            Replace,
+        )?;
+        crop_args.set(
+            KeyStr::from_cstr(&"bottom".to_cstring()),
+            Value::Int(1),
+            Replace,
+        )?;
+        
+        let cropped = std_plugin.invoke(&"Crop".to_cstring(), crop_args);
+        if let Some(err) = cropped.get_error() {
+            return Err(eyre::eyre!(
+                "Crop failed: {}",
+                err.to_string_lossy()
+            ));
+        }
+        working_clip = cropped.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+    }
+
+    // Box downscale (scale = 0.5)
     let mut fmt_args = Map::default();
     fmt_args.set(
         KeyStr::from_cstr(&"clip".to_cstring()),
-        Value::VideoNode(reference.to_owned()),
+        Value::VideoNode(working_clip.to_owned()),
         Replace,
     )?;
     fmt_args.set(
