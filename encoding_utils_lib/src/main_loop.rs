@@ -359,6 +359,7 @@ pub fn write_crf_data(
             .map(|(crf, pct)| format!("CRF {}: {:.2}%", crf, pct))
             .collect::<Vec<String>>()
             .join(", ");
+        output.push_str("Distribution: ");
         output.push_str(&percentages_line);
         output.push_str("\n\n");
 
