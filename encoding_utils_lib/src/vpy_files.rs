@@ -15,6 +15,7 @@ pub fn create_frames_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
+    n_frames: u32,
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
@@ -27,7 +28,7 @@ pub fn create_frames_vpy_file<'a>(
 
     let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
 
-    let frames = scene_list.middle_frames();
+    let frames = scene_list.evenly_spaced_frames(n_frames);
 
     // Build the frames list as a single string
     let frames_str: String = frames

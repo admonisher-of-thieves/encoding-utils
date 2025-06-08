@@ -170,6 +170,86 @@ pub fn ssimu2_frames_scenes(
     // Ok(())
 }
 
+pub fn ssimu2_frames_selected(
+    reference: &Path,
+    distorted: &Path,
+    scene_list: &SceneList,
+    n_frames: u32,
+    importer_plugin: &SourcePlugin,
+    temp_dir: &Path,
+    verbose: bool,
+) -> Result<ScoreList> {
+    let api = Api::default();
+    let core = Core::builder().api(api).build();
+
+    let frames = scene_list.evenly_spaced_frames(n_frames);
+
+    // Load reference and distorted
+    let (mut reference, mut distorted) = match importer_plugin {
+        SourcePlugin::Lsmash => (
+            lsmash_invoke(&core, reference, temp_dir)?,
+            lsmash_invoke(&core, distorted, temp_dir)?,
+        ),
+        SourcePlugin::Bestsource => (
+            bestsource_invoke(&core, reference, temp_dir)?,
+            bestsource_invoke(&core, distorted, temp_dir)?,
+        ),
+    };
+
+    if verbose {
+        println!("Original\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
+    }
+
+    reference = resize_bicubic(&core, &reference)?;
+    distorted = resize_bicubic(&core, &distorted)?;
+
+    // Match resolutions
+    reference = match_distorted_resolution(&core, &reference, &distorted)?;
+
+    // Apply cropping if needed
+    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+
+    let reference = select_frames(&core, &reference, &frames)?;
+
+    if verbose {
+        println!("Ready to compare\n");
+        println!("Reference: {:?}\n", reference.info());
+        println!("Distorted: {:?}\n", distorted.info());
+    }
+
+    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
+
+    if verbose {
+        println!("\nObtaining SSIMU2 Scores\n");
+    }
+    let mut scores: Vec<Score> = frames
+        .iter()
+        .enumerate()
+        .par_bridge()
+        .map(|(i, &x)| {
+            let frame = ssimu2
+                .get_frame(i32::try_from(i)?)
+                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+            let props = frame.properties().ok_or_eyre("Props not found")?;
+            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            if verbose {
+                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, x, score);
+            }
+            Ok(Score {
+                frame: x,
+                value: score,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    scores.sort_by_key(|s| s.frame);
+
+    Ok(ScoreList { scores })
+    // Ok(())
+}
+
 pub fn ssimu2(
     reference: &Path,
     distorted: &Path,

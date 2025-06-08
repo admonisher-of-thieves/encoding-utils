@@ -4,9 +4,9 @@ use std::path::Path;
 
 use crate::chunk::{Chunk, ChunkList};
 use crate::encode::encode_frames;
-use crate::math::{Score, get_stats};
+use crate::math::{self, Score, get_stats};
 use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
-use crate::ssimulacra2::ssimu2_frames_scenes;
+use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::vapoursynth::SourcePlugin;
 use crate::vpy_files::create_frames_vpy_file;
 use eyre::{OptionExt, Result};
@@ -19,6 +19,7 @@ pub fn run_loop<'a>(
     encoder_params: &'a str,
     crf: &[u8],
     ssimu2_score: f64,
+    n_frames: u32,
     velocity_preset: i32,
     importer: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
@@ -46,7 +47,7 @@ pub fn run_loop<'a>(
         .iter()
         .map(|scene| Chunk {
             crf: *crf.last().unwrap(),
-            score: Score::default(),
+            scores: vec![Score::default(); n_frames as usize],
             scene: scene.clone(),
         })
         .collect();
@@ -71,17 +72,20 @@ pub fn run_loop<'a>(
             &temp_av1an_params,
             &temp_encoder_params,
             ssimu2_score,
+            n_frames,
         );
 
-        let scene_list_middle_frames = filtered_scene_list_with_zones.as_middle_frames();
-        let scenes_file_middle_frames =
-            write_scene_list_to_file(&scene_list_middle_frames, &scenes_path)?;
+        let scene_list_selected_frames =
+            filtered_scene_list_with_zones.as_selected_frames(n_frames);
+        let scenes_file_selected_frames =
+            write_scene_list_to_file(&scene_list_selected_frames, &scenes_path)?;
 
         // Temp encode
         let vpy_file = create_frames_vpy_file(
             input,
             &vpy_path,
             &filtered_scene_list_with_zones,
+            n_frames,
             importer,
             crop,
             downscale,
@@ -90,7 +94,7 @@ pub fn run_loop<'a>(
         )?;
         let encode = encode_frames(
             vpy_file,
-            scenes_file_middle_frames,
+            scenes_file_selected_frames,
             &encode_path,
             &temp_av1an_params,
             &temp_encoder_params,
@@ -101,46 +105,70 @@ pub fn run_loop<'a>(
         if verbose {
             println!("\nGet simulacra scores\n")
         }
-        let score_list = ssimu2_frames_scenes(
+        let score_list = ssimu2_frames_selected(
             input,
             encode,
             &filtered_scene_list_with_zones,
+            n_frames,
             importer,
             temp_folder,
             verbose,
         )?;
 
         if *crf == 0 {
-            for (chunk, score) in chunk_list.chunks.iter_mut().zip(&score_list.scores) {
-                chunk.score = *score
+            for (chunk, new_scores) in chunk_list
+                .chunks
+                .iter_mut()
+                .zip(score_list.scores.chunks(n_frames.try_into().unwrap()))
+            {
+                chunk.scores = new_scores.to_vec()
             }
         } else {
-            for new_score in &score_list.scores {
-                if let Some(values) = chunk_list
-                    .chunks
-                    .iter_mut()
-                    .find(|v| v.score.frame == new_score.frame)
-                {
-                    values.score = *new_score;
-                    values.crf = match new_score.value {
-                        x if x <= ssimu2_score => crfs[i],
-                        _ => values.crf,
-                    };
+            for new_scores in score_list.scores.chunks(n_frames.try_into().unwrap()) {
+                if let Some(chunk) = chunk_list.chunks.iter_mut().find(|chunk| {
+                    chunk.scores.first().unwrap().frame == new_scores.first().unwrap().frame
+                }) {
+                    chunk.scores = new_scores.to_vec();
+                    if chunk.scores.iter().any(|score| score.value < ssimu2_score) {
+                        chunk.crf = crfs[i]
+                    }
                 }
             }
+            // for new_score in score_list.scores {
+            //     if let Some(values) = chunk_list
+            //         .chunks
+            //         .iter_mut()
+            //         .find(|v| v.scores.frame == new_score.frame)
+            //     {
+            //         values.score = *new_score;
+            //         values.crf = match new_score.value {
+            //             x if x <= ssimu2_score => crfs[i],
+            //             _ => values.crf,
+            //         };
+            //     }
+            // }
         }
 
         if verbose {
             println!("\nUpdated data:\n");
             for (i, chunk) in chunk_list.chunks.iter().enumerate() {
+                let score_list = chunk.clone().to_score_list();
+                let score_min = math::min(&score_list)?;
+                let score_min = score_min.scores.first().unwrap();
+
+                let score_max = math::max(&score_list)?;
+                let score_max = score_max.scores.first().unwrap();
+
                 println!(
-                    "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}",
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, max-frame: {:6}, max-score: {:6.2}, min-frame: {:6}, min-score: {:6.2}",
                     i,
                     chunk.crf,
-                    chunk.score.value,
-                    chunk.score.frame,
                     chunk.scene.start_frame,
-                    chunk.scene.end_frame
+                    chunk.scene.end_frame,
+                    score_max.frame,
+                    score_max.value,
+                    score_min.frame,
+                    score_min.value,
                 );
             }
 
@@ -366,14 +394,22 @@ pub fn write_crf_data(
         output.push_str("[DATA]\n");
         // Add chunk details
         for (i, chunk) in chunk_list.chunks.iter().enumerate() {
+            let score_list = chunk.clone().to_score_list();
+            let score_min = math::min(&score_list)?;
+            let score_min = score_min.scores.first().unwrap();
+            let score_max = math::max(&score_list)?;
+            let score_max = score_max.scores.first().unwrap();
+
             output.push_str(&format!(
-                "scene: {:4}, crf: {:3}, score: {:6.2}, frame: {:6}, frame-range: {:6} {:6}\n",
+                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, max-frame: {:6}, max-score: {:6.2}, min-frame: {:6}, min-score: {:6.2}\n",
                 i,
                 chunk.crf,
-                chunk.score.value,
-                chunk.score.frame,
                 chunk.scene.start_frame,
-                chunk.scene.end_frame
+                chunk.scene.end_frame,
+                score_max.frame,
+                score_max.value,
+                score_min.frame,
+                score_min.value,
             ));
         }
 

@@ -13,6 +13,12 @@ pub struct ScoreList {
     pub scores: Vec<Score>,
 }
 
+impl From<Vec<Score>> for ScoreList {
+    fn from(vec: Vec<Score>) -> Self {
+        ScoreList { scores: vec }
+    }
+}
+
 #[derive(Debug)]
 pub struct Percentile {
     pub n: u32,

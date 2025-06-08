@@ -37,12 +37,14 @@ impl ChunkList {
         av1an_params: &str,
         encoder_params: &str,
         ssimu2_score: f64,
+        n_frames: u32,
     ) -> SceneList {
-        let av1an_params = update_extra_split_and_min_scene_len(av1an_params, Some(0), Some(1));
+        let av1an_params =
+            update_extra_split_and_min_scene_len(av1an_params, Some(0), Some(n_frames));
         let scenes: Vec<Scene> = self
             .chunks
             .iter()
-            .filter(|chunk| chunk.score.value < ssimu2_score)
+            .filter(|chunk| chunk.scores.iter().any(|score| score.value < ssimu2_score))
             .map(|chunk| {
                 let zone_overrides = ZoneOverrides::from(&av1an_params, encoder_params, chunk.crf);
                 Scene {
@@ -66,7 +68,7 @@ impl ChunkList {
                 .chunks
                 .clone()
                 .into_iter()
-                .map(|chunk| chunk.score)
+                .flat_map(|chunk| chunk.scores)
                 .collect(),
         }
     }
@@ -75,6 +77,14 @@ impl ChunkList {
 #[derive(Debug, Default, Clone)]
 pub struct Chunk {
     pub crf: u8,
-    pub score: Score,
+    pub scores: Vec<Score>,
     pub scene: Scene,
+}
+
+impl Chunk {
+    pub fn to_score_list(self) -> ScoreList {
+        ScoreList {
+            scores: self.scores,
+        }
+    }
 }

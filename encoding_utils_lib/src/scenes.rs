@@ -207,6 +207,40 @@ pub struct SceneList {
 
 impl SceneList {
     /// Returns a vector of middle frames for each scene
+    pub fn first_middle_last_frames(&self) -> Vec<u32> {
+        self.scenes
+            .iter()
+            .flat_map(|scene| {
+                let first = scene.start_frame;
+                let last = scene.end_frame - 1;
+                let middle = (last - first) / 2;
+                [first, middle, last]
+            })
+            .collect()
+    }
+
+    pub fn evenly_spaced_frames(&self, n: u32) -> Vec<u32> {
+        self.scenes
+            .iter()
+            .flat_map(|scene| {
+                let start = scene.start_frame;
+                let end = scene.end_frame.saturating_sub(1);
+                let total = end.saturating_sub(start);
+
+                if n == 0 || total == 0 {
+                    return vec![];
+                }
+
+                let step = total as f32 / (n - 1).max(1) as f32;
+
+                (0..n)
+                    .map(|i| start + (step * i as f32).round() as u32)
+                    .collect::<Vec<_>>()
+            })
+            .collect()
+    }
+
+    /// Returns a vector of middle frames for each scene
     pub fn middle_frames(&self) -> Vec<u32> {
         self.scenes
             .iter()
@@ -240,7 +274,7 @@ impl SceneList {
         }
     }
 
-    pub fn as_middle_frames(&self) -> SceneList {
+    pub fn as_selected_frames(&self, n_frames: u32) -> SceneList {
         let scenes = self
             .scenes
             .iter()
@@ -252,12 +286,12 @@ impl SceneList {
                     video_params: z.video_params.clone(),
                     photon_noise: z.photon_noise,
                     extra_splits_len: Some(0),
-                    min_scene_len: Some(1),
+                    min_scene_len: Some(n_frames),
                 });
 
                 Scene {
-                    start_frame: i as u32,
-                    end_frame: (i + 1) as u32,
+                    start_frame: i as u32 * n_frames,
+                    end_frame: (i as u32 * n_frames) + n_frames,
                     zone_overrides: updated_zone_overrides,
                 }
             })
@@ -265,7 +299,7 @@ impl SceneList {
 
         SceneList {
             scenes,
-            frames: self.scenes.len() as u32,
+            frames: self.scenes.len() as u32 * n_frames,
         }
     }
 
