@@ -52,8 +52,8 @@ struct Args {
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'f', long, default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
-    frames: u32,
+    #[arg(short = 'n', long = "n-frames", default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
+    n_frames: u32,
 
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
@@ -102,6 +102,15 @@ struct Args {
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
+
+    /// Avoid encoding frames that have already reached the quality score
+    #[arg(
+        short = 'f', 
+        long = "filter-frames",
+        action = ArgAction::SetTrue,
+        default_value_t = true,
+    )]
+    filter_frames: bool,
 }
 
 fn main() -> Result<()> {
@@ -160,8 +169,9 @@ fn main() -> Result<()> {
         &args.encoder_params,
         &crf_values,
         args.target_quality,
-        args.frames,
+        args.n_frames,
         args.velocity_preset,
+        args.filter_frames,
         &args.source_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),

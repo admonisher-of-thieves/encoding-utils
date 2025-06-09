@@ -21,6 +21,7 @@ pub fn run_loop<'a>(
     ssimu2_score: f64,
     n_frames: u32,
     velocity_preset: i32,
+    filter_frames: bool,
     importer: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
@@ -68,12 +69,15 @@ pub fn run_loop<'a>(
         let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
 
         // Scenes
-        let filtered_scene_list_with_zones = chunk_list.to_scene_list_with_zones_filtered(
-            &temp_av1an_params,
-            &temp_encoder_params,
-            ssimu2_score,
-            n_frames,
-        );
+        let filtered_scene_list_with_zones = if filter_frames {
+            chunk_list.to_scene_list_with_zones_filtered(
+                &temp_av1an_params,
+                &temp_encoder_params,
+                ssimu2_score,
+            )
+        } else {
+            chunk_list.to_scene_list_with_zones(&temp_av1an_params, &temp_encoder_params)
+        };
 
         let scene_list_selected_frames =
             filtered_scene_list_with_zones.as_selected_frames(n_frames);
