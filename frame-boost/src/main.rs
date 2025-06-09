@@ -36,7 +36,7 @@ struct Args {
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 75.0)]
+    #[arg(short = 'q', long, default_value_t = 80.0)]
     target_quality: f64,
 
     /// Target CRF value(s) (1-70). Can be:
@@ -47,7 +47,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "18,21,24,27,30,33,35",
+        default_value = "21,24,27,30,33,35",
     )]
     crf: String,
 
