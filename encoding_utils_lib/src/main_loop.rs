@@ -9,6 +9,7 @@ use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::vapoursynth::SourcePlugin;
 use crate::vpy_files::create_frames_vpy_file;
+use clap::ValueEnum;
 use eyre::{OptionExt, Result};
 
 #[allow(clippy::too_many_arguments)]
@@ -19,8 +20,9 @@ pub fn run_loop<'a>(
     encoder_params: &'a str,
     crf: &[u8],
     ssimu2_score: f64,
-    n_frames: u32,
     velocity_preset: i32,
+    n_frames: u32,
+    frames_distribution: FramesDistribution,
     filter_frames: bool,
     importer: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
@@ -114,6 +116,7 @@ pub fn run_loop<'a>(
             encode,
             &filtered_scene_list_with_zones,
             n_frames,
+            frames_distribution,
             importer,
             temp_folder,
             verbose,
@@ -477,4 +480,10 @@ pub fn update_chunk_method(params: &str, new_chunk_method: &SourcePlugin) -> Str
     }
 
     updated_tokens.join(" ")
+}
+
+#[derive(ValueEnum, Clone, Debug, Copy)]
+pub enum FramesDistribution {
+    Center,
+    Evenly,
 }

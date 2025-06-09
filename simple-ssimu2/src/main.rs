@@ -1,8 +1,6 @@
 use clap::{ArgAction, Parser};
 use encoding_utils_lib::{
-    math::get_stats,
-    ssimulacra2::ssimu2,
-    vapoursynth::{SourcePlugin, Trim},
+    main_loop::FramesDistribution, math::get_stats, ssimulacra2::ssimu2, vapoursynth::{SourcePlugin, Trim}
 };
 use eyre::{OptionExt, Result};
 use std::{fs::{self, create_dir_all}, path::PathBuf};
@@ -48,6 +46,10 @@ struct Args {
     #[arg(short = 'n', long = "middle-frames", default_value_t = 0)]
     n_frames: u32,
 
+    /// How the frames are distributed when encoding
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
+    frames_distribution: FramesDistribution,
+
     /// Keep temporary files (disables automatic cleanup)
     #[arg(
         short = 'k', 
@@ -92,6 +94,7 @@ fn main() -> Result<()> {
                 &args.distorted,
                 &scene_list,
                 args.n_frames,
+                args.frames_distribution,
                 &args.source_plugin,
                 &temp_dir,
                 !args.only_stats,

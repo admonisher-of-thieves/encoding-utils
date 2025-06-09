@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{Context, OptionExt, Result, eyre};
-use encoding_utils_lib::{main_loop::run_loop, vapoursynth::SourcePlugin};
+use encoding_utils_lib::{main_loop::{run_loop, FramesDistribution}, vapoursynth::SourcePlugin};
 
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -54,6 +54,10 @@ struct Args {
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
     #[arg(short = 'n', long = "n-frames", default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
+
+    /// How the frames are distributed when encoding
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
+    frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
@@ -169,8 +173,9 @@ fn main() -> Result<()> {
         &args.encoder_params,
         &crf_values,
         args.target_quality,
-        args.n_frames,
         args.velocity_preset,
+        args.n_frames,
+        args.frames_distribution,
         args.filter_frames,
         &args.source_plugin,
         args.crf_data_file.as_deref(),

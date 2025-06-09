@@ -220,31 +220,71 @@ impl SceneList {
     }
 
     pub fn evenly_spaced_frames(&self, n: u32) -> Vec<u32> {
-        self.scenes
-            .iter()
-            .flat_map(|scene| {
-                let start = scene.start_frame;
-                let end = scene.end_frame.saturating_sub(1);
-                let total = end.saturating_sub(start);
+        if n == 1 {
+            self.middle_frames()
+        } else {
+            self.scenes
+                .iter()
+                .flat_map(|scene| {
+                    let start = scene.start_frame;
+                    let end = scene.end_frame.saturating_sub(1);
+                    let total = end.saturating_sub(start);
 
-                if n == 0 || total == 0 {
-                    return vec![];
-                }
+                    if n == 0 || total == 0 {
+                        return vec![];
+                    }
 
-                let step = total as f32 / (n - 1).max(1) as f32;
+                    let step = total as f32 / (n - 1).max(1) as f32;
 
-                (0..n)
-                    .map(|i| start + (step * i as f32).round() as u32)
-                    .collect::<Vec<_>>()
-            })
-            .collect()
+                    (0..n)
+                        .map(|i| start + (step * i as f32).round() as u32)
+                        .collect::<Vec<_>>()
+                })
+                .collect()
+        }
+    }
+
+    pub fn center_expanding_frames(&self, n: u32) -> Vec<u32> {
+        if n == 1 {
+            self.middle_frames()
+        } else {
+            self.scenes
+                .iter()
+                .flat_map(|scene| {
+                    let start = scene.start_frame;
+                    let end = scene.end_frame.saturating_sub(1);
+                    let total = end.saturating_sub(start);
+
+                    if n == 0 || total == 0 {
+                        return vec![];
+                    }
+
+                    let middle = (start + end) / 2; // Integer division (center frame)
+
+                    // Generate frames expanding outward from the middle
+                    let mut frames: Vec<u32> = (0..n)
+                        .map(|i| {
+                            if i % 2 == 0 {
+                                middle + (i / 2) // Move right
+                            } else {
+                                middle - i.div_ceil(2) // Move left
+                            }
+                        })
+                        .filter(|&frame| frame >= start && frame <= end) // Ensure within bounds
+                        .collect();
+
+                    frames.sort(); // Sort the frames in ascending order
+                    frames
+                })
+                .collect()
+        }
     }
 
     /// Returns a vector of middle frames for each scene
     pub fn middle_frames(&self) -> Vec<u32> {
         self.scenes
             .iter()
-            .map(|scene| (scene.start_frame + scene.end_frame) / 2)
+            .map(|scene| (scene.start_frame + scene.end_frame - 1) / 2)
             .collect()
     }
 

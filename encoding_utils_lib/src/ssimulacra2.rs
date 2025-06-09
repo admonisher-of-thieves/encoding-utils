@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::main_loop::FramesDistribution;
 use crate::math::{Score, ScoreList};
 use crate::scenes::SceneList;
 use crate::vapoursynth::{
@@ -170,11 +171,13 @@ pub fn ssimu2_frames_scenes(
     // Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn ssimu2_frames_selected(
     reference: &Path,
     distorted: &Path,
     scene_list: &SceneList,
     n_frames: u32,
+    frames_distribution: FramesDistribution,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
@@ -182,7 +185,10 @@ pub fn ssimu2_frames_selected(
     let api = Api::default();
     let core = Core::builder().api(api).build();
 
-    let frames = scene_list.evenly_spaced_frames(n_frames);
+    let frames = match frames_distribution {
+        FramesDistribution::Center => scene_list.center_expanding_frames(n_frames),
+        FramesDistribution::Evenly => scene_list.evenly_spaced_frames(n_frames),
+    };
 
     // Load reference and distorted
     let (mut reference, mut distorted) = match importer_plugin {
