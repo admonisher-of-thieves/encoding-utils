@@ -92,6 +92,7 @@ pub fn run_loop<'a>(
             &vpy_path,
             &filtered_scene_list_with_zones,
             n_frames,
+            frames_distribution,
             importer,
             crop,
             downscale,

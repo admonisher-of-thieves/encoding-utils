@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+    main_loop::FramesDistribution,
     scenes::SceneList,
     vapoursynth::{SourcePlugin, add_extension},
 };
@@ -16,6 +17,7 @@ pub fn create_frames_vpy_file<'a>(
     vpy_file: &'a Path,
     scene_list: &'a SceneList,
     n_frames: u32,
+    frames_distribution: FramesDistribution,
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
@@ -28,7 +30,10 @@ pub fn create_frames_vpy_file<'a>(
 
     let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
 
-    let frames = scene_list.center_expanding_frames(n_frames);
+    let frames = match frames_distribution {
+        FramesDistribution::Center => scene_list.center_expanding_frames(n_frames),
+        FramesDistribution::Evenly => scene_list.evenly_spaced_frames(n_frames),
+    };
 
     // Build the frames list as a single string
     let frames_str: String = frames
