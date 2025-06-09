@@ -44,9 +44,9 @@ struct Args {
     #[arg(short, long)]
     trim: Option<Trim>,
 
-    /// Allows you to use a distorted video composed of middle frames. Needs scenes file
-    #[arg(short, long = "middle-frames", action = ArgAction::SetTrue, default_value_t = false)]
-    middle_frames: bool,
+    /// Allows you to use a distorted video composed of n frames. Needs scenes file
+    #[arg(short = 'n', long = "middle-frames", default_value_t = 0)]
+    n_frames: u32,
 
     /// Keep temporary files (disables automatic cleanup)
     #[arg(
@@ -86,11 +86,12 @@ fn main() -> Result<()> {
     let score_list = if let Some(scenes_file) = args.scenes {
         // If scenes file provided, use scene-based processing
         let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
-        if args.middle_frames {
-            encoding_utils_lib::ssimulacra2::ssimu2_frames_scenes(
+        if args.n_frames > 0 {
+            encoding_utils_lib::ssimulacra2::ssimu2_frames_selected(
                 &args.reference,
                 &args.distorted,
                 &scene_list,
+                args.n_frames,
                 &args.source_plugin,
                 &temp_dir,
                 !args.only_stats,
