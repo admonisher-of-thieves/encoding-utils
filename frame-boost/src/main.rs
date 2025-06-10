@@ -153,7 +153,7 @@ fn main() -> Result<()> {
         Some(temp) => temp, 
         None => { 
             let temp_folder = args.input.with_file_name(format!(
-                "[Temp]_[FRAME-BOOST]_{}",
+                "[TEMP]_[FRAME-BOOST]_{}",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?

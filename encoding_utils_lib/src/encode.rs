@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs::{self, create_dir_all},
     path::Path,
     process::{Command, Stdio},
 };
@@ -24,6 +24,9 @@ pub fn encode_frames<'a>(
             .to_str()
             .ok_or_eyre("Invalid UTF-8 in input path")?,
     );
+
+    create_dir_all(temp_folder)?;
+
     let temp_folder = temp_folder
         .to_str()
         .ok_or_eyre("Invalid UTF-8 in scenes path")?;
