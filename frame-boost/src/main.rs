@@ -47,7 +47,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "21,24,27,30,33,35",
+        default_value = "24,27,30,35",
     )]
     crf: String,
 
