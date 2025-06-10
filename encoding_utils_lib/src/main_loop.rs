@@ -45,11 +45,13 @@ pub fn run_loop<'a>(
     let temp_av1an_params =
         update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(1));
 
+    let last_crf = crf.last().unwrap();
+
     let chunks: Vec<Chunk> = scene_list
         .scenes
         .iter()
         .map(|scene| Chunk {
-            crf: *crf.last().unwrap(),
+            crf: *last_crf,
             scores: vec![Score::default(); n_frames as usize],
             scene: scene.clone(),
         })
@@ -60,12 +62,12 @@ pub fn run_loop<'a>(
     };
 
     let mut crfs = crf.to_vec();
-    let mut iter_crfs: Vec<u8> = crfs.iter().skip(1).rev().copied().collect();
-    iter_crfs.insert(0, 0);
+    let iter_crfs: Vec<u8> = crfs.iter().skip(1).rev().copied().collect();
     crfs.reverse();
+    // iter_crfs.insert(0, 0);
 
     for (i, crf) in iter_crfs.iter().enumerate() {
-        println!("\nCycle: {}, CRF: {}\n", i, crfs[i]);
+        println!("\nCycle: {}, CRF: {}\n", i, crf);
         let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
         let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
         let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
@@ -124,7 +126,8 @@ pub fn run_loop<'a>(
             verbose,
         )?;
 
-        if *crf == 0 {
+        if *crf == *last_crf {
+            println!("CRF == LAST_CRF");
             for (chunk, new_scores) in chunk_list
                 .chunks
                 .iter_mut()
@@ -132,31 +135,31 @@ pub fn run_loop<'a>(
             {
                 chunk.scores = new_scores.to_vec()
             }
-        } else {
-            for new_scores in score_list.scores.chunks(n_frames.try_into().unwrap()) {
-                if let Some(chunk) = chunk_list.chunks.iter_mut().find(|chunk| {
-                    chunk.scores.first().unwrap().frame == new_scores.first().unwrap().frame
-                }) {
-                    chunk.scores = new_scores.to_vec();
-                    if chunk.scores.iter().any(|score| score.value < ssimu2_score) {
-                        chunk.crf = crfs[i]
-                    }
+        }
+
+        for new_scores in score_list.scores.chunks(n_frames.try_into().unwrap()) {
+            if let Some(chunk) = chunk_list.chunks.iter_mut().find(|chunk| {
+                chunk.scores.first().unwrap().frame == new_scores.first().unwrap().frame
+            }) {
+                chunk.scores = new_scores.to_vec();
+                if chunk.scores.iter().any(|score| score.value < ssimu2_score) {
+                    chunk.crf = crfs[i + 1]
                 }
             }
-            // for new_score in score_list.scores {
-            //     if let Some(values) = chunk_list
-            //         .chunks
-            //         .iter_mut()
-            //         .find(|v| v.scores.frame == new_score.frame)
-            //     {
-            //         values.score = *new_score;
-            //         values.crf = match new_score.value {
-            //             x if x <= ssimu2_score => crfs[i],
-            //             _ => values.crf,
-            //         };
-            //     }
-            // }
         }
+        // for new_score in score_list.scores {
+        //     if let Some(values) = chunk_list
+        //         .chunks
+        //         .iter_mut()
+        //         .find(|v| v.scores.frame == new_score.frame)
+        //     {
+        //         values.score = *new_score;
+        //         values.crf = match new_score.value {
+        //             x if x <= ssimu2_score => crfs[i],
+        //             _ => values.crf,
+        //         };
+        //     }
+        // }
 
         if verbose {
             println!("\nUpdated data:\n");
