@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs::{self, create_dir_all},
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -15,10 +15,16 @@ pub fn get_scene_file<'a>(
     override_file: bool,
 ) -> Result<PathBuf> {
     let scenes_path = temp_folder.join("scenes.json");
-
     if override_file && scenes_path.exists() {
         fs::remove_file(&scenes_path)?;
     }
+
+    let mut scene_temp_folder = temp_folder.to_owned();
+    scene_temp_folder.push("scene");
+    create_dir_all(&scene_temp_folder)?;
+    let scene_temp_folder = scene_temp_folder
+        .to_str()
+        .ok_or_eyre("Invalid UTF-8 in scenes path")?;
 
     let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
     let binding = scenes_path.clone();
@@ -37,6 +43,8 @@ pub fn get_scene_file<'a>(
         "--scenes".to_owned(),
         scene_str.to_owned(),
         "--sc-only".to_owned(),
+        "--temp".to_owned(),
+        scene_temp_folder.to_owned(),
     ]);
 
     if downscale {

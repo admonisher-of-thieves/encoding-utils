@@ -18,14 +18,15 @@ pub fn encode_frames<'a>(
     if clean && encode_path.exists() {
         fs::remove_file(encode_path)?;
     }
-    temp_folder.to_owned().push(
+    let mut temp_folder = temp_folder.to_owned();
+    temp_folder.push(
         vpy.file_stem()
             .ok_or_eyre("No file name")?
             .to_str()
             .ok_or_eyre("Invalid UTF-8 in input path")?,
     );
 
-    create_dir_all(temp_folder)?;
+    create_dir_all(&temp_folder)?;
 
     let temp_folder = temp_folder
         .to_str()
