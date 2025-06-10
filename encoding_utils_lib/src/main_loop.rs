@@ -127,7 +127,6 @@ pub fn run_loop<'a>(
         )?;
 
         if *crf == *last_crf {
-            println!("CRF == LAST_CRF");
             for (chunk, new_scores) in chunk_list
                 .chunks
                 .iter_mut()
