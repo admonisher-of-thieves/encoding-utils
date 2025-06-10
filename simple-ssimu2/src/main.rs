@@ -26,7 +26,7 @@ struct Args {
     steps: u32,
 
     /// Enable verbose output - Print all scores
-    #[arg(short = 'v', long = "verbose", action = ArgAction::SetTrue, default_value_t = true)]
+    #[arg(short = 'v', long = "verbose", action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
 
     /// Video Source Plugin
