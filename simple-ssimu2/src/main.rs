@@ -22,12 +22,12 @@ struct Args {
     scenes: Option<PathBuf>,
 
     /// Frame step value (process every N-th frame)
-    #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 's', long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
     steps: u32,
 
-    /// Disable verbose output - Print only stats
-    #[arg(short, long = "only-stats", action = ArgAction::SetTrue, default_value_t = false)]
-    only_stats: bool,
+    /// Enable verbose output - Print all scores
+    #[arg(short = 'v', long = "verbose", action = ArgAction::SetTrue, default_value_t = true)]
+    verbose: bool,
 
     /// Video Source Plugin
     #[arg(short, long = "source-plugin", default_value = "lsmash")]
@@ -97,7 +97,7 @@ fn main() -> Result<()> {
                 args.frames_distribution,
                 &args.source_plugin,
                 &temp_dir,
-                !args.only_stats,
+                args.verbose,
             )?
         } else {
             encoding_utils_lib::ssimulacra2::ssimu2_scenes(
@@ -107,7 +107,7 @@ fn main() -> Result<()> {
                 args.source_plugin,
                 args.trim,
                 &temp_dir,
-                !args.only_stats,
+                args.verbose,
             )?
         }
     } else {
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
             args.source_plugin,
             args.trim,
             &temp_dir,
-            !args.only_stats,
+            args.verbose,
         )?
     };
 
