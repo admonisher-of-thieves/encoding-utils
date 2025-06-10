@@ -71,7 +71,7 @@ fn main() -> Result<()> {
         Some(temp) => temp, 
         None => { 
             let output_name = format!(
-                "[TEMP]_[SSIMU2]_{}",
+                "[TEMP]_{}",
                 args.reference
                     .file_stem()
                     .ok_or_eyre("No file name")?

@@ -24,7 +24,7 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24 --no-defaults"
+        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24 --no-defaults --pix-format yuv420p10le"
     )]
     av1an_params: String,
 
@@ -161,7 +161,7 @@ fn main() -> Result<()> {
         Some(temp) => temp, 
         None => { 
             let temp_folder = args.input.with_file_name(format!(
-                "[TEMP]_[FRAME-BOOST]_{}",
+                "[TEMP]_{}",
                 args.input
                     .file_stem()
                     .ok_or_eyre("No file name")?
