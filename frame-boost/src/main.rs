@@ -89,6 +89,10 @@ struct Args {
     #[arg(short, long = "source-encoding-plugin", default_value = "lsmash")]
     source_encoding_plugin: SourcePlugin,
 
+    /// Video Source Plugin for obtaining the scene file
+    #[arg(short, long = "source-scene-plugin", default_value = "lsmash")]
+    source_scene_plugin: SourcePlugin,
+
     /// Path to save the updated crf data
     #[arg(short, long = "crf-data-file")]
     crf_data_file: Option<PathBuf>,
@@ -183,6 +187,7 @@ fn main() -> Result<()> {
         args.filter_frames,
         &args.source_metric_plugin,
         &args.source_encoding_plugin,
+        &args.source_scene_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,

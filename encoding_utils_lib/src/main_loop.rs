@@ -26,6 +26,7 @@ pub fn run_loop<'a>(
     filter_frames: bool,
     importer_metrics: &SourcePlugin,
     importer_encoding: &SourcePlugin,
+    importer_scene: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
@@ -35,11 +36,13 @@ pub fn run_loop<'a>(
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
+    let temp_av1an_params = update_chunk_method(av1an_params, importer_scene);
+
     // Generating original scenes
     let original_scenes_file = get_scene_file(
         input,
         temp_folder,
-        av1an_params,
+        &temp_av1an_params,
         importer_encoding,
         downscale,
         clean,
