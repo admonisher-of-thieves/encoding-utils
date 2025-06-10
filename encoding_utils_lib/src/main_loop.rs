@@ -44,6 +44,7 @@ pub fn run_loop<'a>(
         temp_folder,
         &temp_av1an_params,
         importer_encoding,
+        crop,
         downscale,
         clean,
     )?;

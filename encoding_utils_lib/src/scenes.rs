@@ -11,22 +11,37 @@ pub fn get_scene_file<'a>(
     temp_folder: &'a Path,
     av1an_params: &str,
     importer: &SourcePlugin,
+    crop: Option<&str>,
     downscale: bool,
-    override_file: bool,
+    clean: bool,
 ) -> Result<PathBuf> {
     let scenes_path = temp_folder.join("scenes.json");
-    if override_file && scenes_path.exists() {
+    if clean && scenes_path.exists() {
         fs::remove_file(&scenes_path)?;
     }
 
+    let vpy_file = temp_folder.join("scene.vpy");
+    let vpy_path = create_scene_vpy(
+        input,
+        &vpy_file,
+        importer,
+        crop,
+        downscale,
+        temp_folder,
+        clean,
+    )?;
+    let vpy_str = vpy_path
+        .to_str()
+        .ok_or_eyre("Invalid UTF-8 in scenes path")?;
+
     let mut scene_temp_folder = temp_folder.to_owned();
     scene_temp_folder.push("scene");
-    create_dir_all(&scene_temp_folder)?;
+    // create_dir_all(&scene_temp_folder)?;
     let scene_temp_folder = scene_temp_folder
         .to_str()
         .ok_or_eyre("Invalid UTF-8 in scenes path")?;
 
-    let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
+    // let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
     let binding = scenes_path.clone();
     let scene_str = binding.to_str().ok_or_eyre("Invalid UTF-8 in scene path")?;
 
@@ -39,7 +54,7 @@ pub fn get_scene_file<'a>(
 
     let mut args: Vec<String> = Vec::from([
         "-i".to_owned(),
-        input_str.to_owned(),
+        vpy_str.to_owned(),
         "--scenes".to_owned(),
         scene_str.to_owned(),
         "--sc-only".to_owned(),
@@ -47,15 +62,19 @@ pub fn get_scene_file<'a>(
         scene_temp_folder.to_owned(),
     ]);
 
-    if downscale {
-        let dimensions = get_dimensions(input, importer, temp_folder)?;
-        let mut height = dimensions.height / 2;
-        if height % 2 != 0 {
-            height -= 1;
-        }
-        let height_str = height.to_string();
-        args.push("--sc-downscale-height".to_owned());
-        args.push(height_str);
+    // if downscale {
+    //     let dimensions = get_dimensions(input, importer, temp_folder)?;
+    //     let mut height = dimensions.height / 2;
+    //     if height % 2 != 0 {
+    //         height -= 1;
+    //     }
+    //     let height_str = height.to_string();
+    //     args.push("--sc-downscale-height".to_owned());
+    //     args.push(height_str);
+    // }
+
+    if !clean {
+        args.push("--keep".to_owned());
     }
 
     args.extend(av1an_params);
@@ -126,10 +145,7 @@ pub fn get_scene_file_with_zones<'a>(
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    chunk::Chunk,
-    vapoursynth::{SourcePlugin, get_dimensions},
-};
+use crate::{chunk::Chunk, vapoursynth::SourcePlugin, vpy_files::create_scene_vpy};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Scene {

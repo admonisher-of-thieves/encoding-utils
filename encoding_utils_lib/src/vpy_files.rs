@@ -151,6 +151,124 @@ out.set_output()
     Ok(vpy_file)
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn create_scene_vpy<'a>(
+    input: &'a Path,
+    vpy_file: &'a Path,
+    source_plugin: &'a SourcePlugin,
+    crop: Option<&str>,
+    downscale: bool,
+    temp_folder: &'a Path,
+    override_file: bool,
+) -> Result<&'a Path> {
+    if override_file && vpy_file.exists() {
+        fs::remove_file(vpy_file)?;
+    }
+
+    let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
+
+    let source = match source_plugin {
+        SourcePlugin::Lsmash => "core.lsmas.LWLibavSource",
+        SourcePlugin::Bestsource => "core.bs.VideoSource",
+    };
+
+    let extension = match source_plugin {
+        SourcePlugin::Lsmash => "lwi",
+        SourcePlugin::Bestsource => "bsindex",
+    };
+
+    let cache_path = temp_folder.join(
+        input
+            .file_name()
+            .ok_or_eyre("Input path has no filename")?
+            .to_str()
+            .ok_or_eyre("Filename not UTF-8")?,
+    );
+    let cache_path = add_extension(extension, cache_path);
+    let cache_path = absolute(cache_path)?;
+
+    let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
+    let cache = match source_plugin {
+        SourcePlugin::Lsmash => format!("cachefile=\"{}\"", cache_str),
+        SourcePlugin::Bestsource => format!("cachepath=\"{}\", cachemode=4", cache_str),
+    };
+
+    // Use string formatting to build the vpy script efficiently
+    let mut vpy_script = format!(
+        r#"import vapoursynth as vs
+
+core = vs.core
+
+src = {source_plugin}("{input_str}", {cache})
+
+src = core.resize.Bicubic(
+    src,
+    primaries_in_s="709",
+    matrix_in_s="709",
+    transfer_in_s="709",
+    range_in_s="limited",
+    chromaloc_in_s="left",
+)
+"#,
+        source_plugin = source,
+        input_str = input_str,
+        cache = cache,
+    );
+
+    if let Some(crop_str) = crop {
+        if !crop_str.is_empty() {
+            let crop_params = CropParams::from_str(crop_str)?;
+            vpy_script += &format!(
+                r#"
+cropped = core.std.CropAbs(
+    src,
+    width={width},
+    height={height},
+    left={left},
+    top={top}
+)
+src = cropped
+
+"#,
+                width = crop_params.width,
+                height = crop_params.height,
+                left = crop_params.left,
+                top = crop_params.top,
+            );
+        }
+    }
+
+    if downscale {
+        vpy_script += r#"
+rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
+
+if (rgb.height / 2) % 2 != 0:
+    rgb = core.std.Crop(rgb, top=1, bottom=1)
+
+box = core.fmtc.resample(rgb, kernel="Box", scale=0.5)
+src = box
+
+"#;
+    }
+
+    vpy_script += r#"
+out = core.resize.Bicubic(
+    src,
+    format=vs.YUV420P10,
+    matrix_s="709",
+    transfer_s="709",
+    primaries_s="709",
+    range_s="limited",
+    chromaloc_s="left",
+)
+out.set_output()
+    "#;
+
+    fs::write(vpy_file, vpy_script)?;
+
+    Ok(vpy_file)
+}
+
 #[derive(Debug)]
 pub struct CropParams {
     pub width: i64,
