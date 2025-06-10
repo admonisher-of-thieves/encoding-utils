@@ -12,11 +12,21 @@ pub fn encode_frames<'a>(
     encode_path: &'a Path,
     av1an_params: &str,
     encoder_params: &str,
-    override_file: bool,
+    clean: bool,
+    temp_folder: &'a Path,
 ) -> Result<&'a Path> {
-    if override_file && encode_path.exists() {
+    if clean && encode_path.exists() {
         fs::remove_file(encode_path)?;
     }
+    temp_folder.to_owned().push(
+        vpy.file_stem()
+            .ok_or_eyre("No file name")?
+            .to_str()
+            .ok_or_eyre("Invalid UTF-8 in input path")?,
+    );
+    let temp_folder = temp_folder
+        .to_str()
+        .ok_or_eyre("Invalid UTF-8 in scenes path")?;
 
     let vpy_str = vpy.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
     let encode_str = encode_path
@@ -27,13 +37,19 @@ pub fn encode_frames<'a>(
         .ok_or_eyre("Invalid UTF-8 in scenes path")?;
 
     let av1an_params: Vec<&str> = av1an_params.split_whitespace().collect();
-    let construct_params: Vec<&str> = Vec::from([
+    let mut construct_params: Vec<&str> = Vec::from([
         "--video-params",
         encoder_params,
         "-y",
         "--scenes",
         scenes_str,
+        "--temp",
+        temp_folder,
     ]);
+
+    if !clean {
+        construct_params.push("--keep");
+    }
 
     let mut args = Vec::from(["-i", vpy_str, "-o", encode_str]);
     args.extend(av1an_params);

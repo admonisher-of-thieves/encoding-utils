@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env::temp_dir;
 use std::fs::{self};
 use std::path::Path;
 
@@ -106,6 +107,7 @@ pub fn run_loop<'a>(
             &temp_av1an_params,
             &temp_encoder_params,
             clean,
+            temp_folder,
         )?;
 
         // Scores
