@@ -81,9 +81,13 @@ struct Args {
     )]
     no_force: bool,
 
-    /// Video Source Plugin for metrics and encoding frames
-    #[arg(short, long = "source-plugin", default_value = "lsmash")]
-    source_plugin: SourcePlugin,
+    /// Video Source Plugin for metrics
+    #[arg(short, long = "source-metric-plugin", default_value = "lsmash")]
+    source_metric_plugin: SourcePlugin,
+    
+    /// Video Source Plugin for encoding
+    #[arg(short, long = "source-encoding-plugin", default_value = "lsmash")]
+    source_encoding_plugin: SourcePlugin,
 
     /// Path to save the updated crf data
     #[arg(short, long = "crf-data-file")]
@@ -177,13 +181,14 @@ fn main() -> Result<()> {
         args.n_frames,
         args.frames_distribution,
         args.filter_frames,
-        &args.source_plugin,
+        &args.source_metric_plugin,
+        &args.source_encoding_plugin,
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,
         !args.keep_files,
         args.verbose,
-        &temp_folder
+        &temp_folder,
     )?;
 
     Ok(())

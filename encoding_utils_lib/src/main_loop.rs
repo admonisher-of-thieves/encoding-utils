@@ -24,7 +24,8 @@ pub fn run_loop<'a>(
     n_frames: u32,
     frames_distribution: FramesDistribution,
     filter_frames: bool,
-    importer: &SourcePlugin,
+    importer_metrics: &SourcePlugin,
+    importer_encoding: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
@@ -35,11 +36,17 @@ pub fn run_loop<'a>(
     println!("\nRunning frame-boost\n");
 
     // Generating original scenes
-    let original_scenes_file =
-        get_scene_file(input, temp_folder, av1an_params, importer, downscale, clean)?;
+    let original_scenes_file = get_scene_file(
+        input,
+        temp_folder,
+        av1an_params,
+        importer_encoding,
+        downscale,
+        clean,
+    )?;
     let scene_list = parse_scene_file(&original_scenes_file)?;
 
-    let temp_av1an_params = update_chunk_method(av1an_params, importer);
+    let temp_av1an_params = update_chunk_method(av1an_params, importer_encoding);
     let temp_encoder_params = update_preset(velocity_preset, encoder_params);
     let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
     let temp_av1an_params =
@@ -95,7 +102,7 @@ pub fn run_loop<'a>(
             &filtered_scene_list_with_zones,
             n_frames,
             frames_distribution,
-            importer,
+            importer_encoding,
             crop,
             downscale,
             temp_folder,
@@ -121,7 +128,7 @@ pub fn run_loop<'a>(
             &filtered_scene_list_with_zones,
             n_frames,
             frames_distribution,
-            importer,
+            importer_metrics,
             temp_folder,
             verbose,
         )?;
