@@ -181,19 +181,19 @@ pub fn run_loop<'a>(
                     score_min.value,
                 );
             }
-
-            let percentages = calculate_crf_percentages(&chunk_list);
-            let line = percentages
-                .iter()
-                .map(|(crf, pct)| format!("\nCRF {}: {:.2}%", crf, pct))
-                .collect::<Vec<String>>()
-                .join(", ");
-            println!("{}", line);
-
-            let score_list = &chunk_list.to_score_list();
-            let stats = get_stats(score_list)?;
-            println!("\n{}", stats);
         }
+
+        let percentages = calculate_crf_percentages(&chunk_list);
+        let line = percentages
+            .iter()
+            .map(|(crf, pct)| format!("\nCRF {}: {:.2}%", crf, pct))
+            .collect::<Vec<String>>()
+            .join(", ");
+        println!("{}", line);
+
+        let score_list = &chunk_list.to_score_list();
+        let stats = get_stats(score_list)?;
+        println!("\n{}", stats);
 
         if clean {
             fs::remove_file(&scenes_path)?;
