@@ -36,7 +36,7 @@ struct Args {
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 80.0)]
+    #[arg(short = 'q', long, default_value_t = 77.0)]
     target_quality: f64,
 
     /// Target CRF value(s) (1-70). Can be:
@@ -47,12 +47,12 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "24,27,30,35",
+        default_value = "21,24,27,30,35",
     )]
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 11, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
 
     /// How the frames are distributed when encoding
