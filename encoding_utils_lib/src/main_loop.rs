@@ -152,7 +152,11 @@ pub fn run_loop<'a>(
                 chunk.scores.first().unwrap().frame == new_scores.first().unwrap().frame
             }) {
                 chunk.scores = new_scores.to_vec();
-                if chunk.scores.iter().any(|score| score.value < ssimu2_score) {
+                let mean = math::mean(&chunk.clone().to_score_list());
+                // if chunk.scores.iter().any(|score| score.value < ssimu2_score) {
+                //     chunk.crf = crfs[i + 1]
+                // }
+                if mean < ssimu2_score {
                     chunk.crf = crfs[i + 1]
                 }
             }
