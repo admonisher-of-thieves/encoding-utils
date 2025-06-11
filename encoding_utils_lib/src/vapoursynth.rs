@@ -131,7 +131,7 @@ pub fn bestsource_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<Vi
             .to_str()
             .ok_or_eyre("Filename not UTF-8")?,
     );
-    let cache_path = add_extension("bsindex", cache_path);
+    // let cache_path = add_extension("bsindex", cache_path);
 
     args.set(
         KeyStr::from_cstr(&"cachepath".to_cstring()),

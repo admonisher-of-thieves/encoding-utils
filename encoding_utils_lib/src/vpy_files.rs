@@ -184,7 +184,12 @@ pub fn create_scene_vpy<'a>(
             .to_str()
             .ok_or_eyre("Filename not UTF-8")?,
     );
-    let cache_path = add_extension(extension, cache_path);
+
+    let cache_path = match source_plugin {
+        SourcePlugin::Lsmash => add_extension("lwi", cache_path),
+        SourcePlugin::Bestsource => cache_path,
+    };
+
     let cache_path = absolute(cache_path)?;
 
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
