@@ -47,10 +47,10 @@ pub fn create_frames_vpy_file<'a>(
         SourcePlugin::Bestsource => "core.bs.VideoSource",
     };
 
-    let extension = match source_plugin {
-        SourcePlugin::Lsmash => "lwi",
-        SourcePlugin::Bestsource => "bsindex",
-    };
+    // let extension = match source_plugin {
+    //     SourcePlugin::Lsmash => "lwi",
+    //     SourcePlugin::Bestsource => "bsindex",
+    // };
 
     let cache_path = temp_folder.join(
         input
@@ -59,7 +59,12 @@ pub fn create_frames_vpy_file<'a>(
             .to_str()
             .ok_or_eyre("Filename not UTF-8")?,
     );
-    let cache_path = add_extension(extension, cache_path);
+
+    let cache_path = match source_plugin {
+        SourcePlugin::Lsmash => add_extension("lwi", cache_path),
+        SourcePlugin::Bestsource => cache_path,
+    };
+
     let cache_path = absolute(cache_path)?;
 
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
