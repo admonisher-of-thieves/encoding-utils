@@ -172,10 +172,10 @@ pub fn create_scene_vpy<'a>(
         SourcePlugin::Bestsource => "core.bs.VideoSource",
     };
 
-    let extension = match source_plugin {
-        SourcePlugin::Lsmash => "lwi",
-        SourcePlugin::Bestsource => "bsindex",
-    };
+    // let extension = match source_plugin {
+    //     SourcePlugin::Lsmash => "lwi",
+    //     SourcePlugin::Bestsource => "bsindex",
+    // };
 
     let cache_path = temp_folder.join(
         input
