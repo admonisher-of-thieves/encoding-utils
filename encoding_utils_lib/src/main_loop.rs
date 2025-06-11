@@ -179,20 +179,20 @@ pub fn run_loop<'a>(
             println!("\nUpdated data:\n");
             for (i, chunk) in chunk_list.chunks.iter().enumerate() {
                 let score_list = chunk.clone().to_score_list();
-                let score_min = math::min(&score_list)?;
-                let score_min = score_min.scores.first().unwrap();
+                let mean_score = math::mean(&score_list);
+                // let score_min = score_min.scores.first().unwrap();
 
                 // let score_max = math::max(&score_list)?;
                 // let score_max = score_max.scores.first().unwrap();
 
                 println!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, min-frame: {:6}, min-score: {:6.2}",
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, mean-score: {:6.2}",
                     i,
                     chunk.crf,
                     chunk.scene.start_frame,
                     chunk.scene.end_frame,
-                    score_min.frame,
-                    score_min.value,
+                    // score_min.frame,
+                    mean_score,
                 );
             }
         }
@@ -419,21 +419,20 @@ pub fn write_crf_data(
         // Add chunk details
         for (i, chunk) in chunk_list.chunks.iter().enumerate() {
             let score_list = chunk.clone().to_score_list();
-            let score_min = math::min(&score_list)?;
-            let score_min = score_min.scores.first().unwrap();
+            let mean_score = math::mean(&score_list);
+            // let score_min = score_min.scores.first().unwrap();
             // let score_max = math::max(&score_list)?;
             // let score_max = score_max.scores.first().unwrap();
 
             output.push_str(&format!(
-                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, min-frame: {:6}, min-score: {:6.2}\n",
+                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, mean-score: {:6.2}\n",
                 i,
                 chunk.crf,
                 chunk.scene.start_frame,
                 chunk.scene.end_frame,
                 // score_max.frame,
                 // score_max.value,
-                score_min.frame,
-                score_min.value,
+                mean_score,
             ));
         }
 

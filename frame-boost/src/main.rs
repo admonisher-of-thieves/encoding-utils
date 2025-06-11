@@ -52,7 +52,7 @@ struct Args {
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'n', long = "n-frames", default_value_t = 9, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
 
     /// How the frames are distributed when encoding
