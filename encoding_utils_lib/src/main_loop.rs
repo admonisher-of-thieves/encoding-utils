@@ -43,7 +43,7 @@ pub fn run_loop<'a>(
         input,
         temp_folder,
         &temp_av1an_params,
-        importer_encoding,
+        importer_scene,
         crop,
         downscale,
         clean,
