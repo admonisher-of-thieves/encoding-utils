@@ -17,7 +17,7 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     output: Option<PathBuf>,
 
-    /// Temp folder (default: "[Temp]_[FRAME-BOOST]_<input>" if no temp folder given)
+    /// Temp folder (default: "[Temp]_<input>" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
 
