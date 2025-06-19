@@ -1,0 +1,74 @@
+# [[section]]
+# name = "Episode"
+# frames = { start = 1030, end = 1050 }
+# crop = [{ top = 0, bottom = 0, left = 0, right = 0 }]
+# ocr = "RapidOCR"
+# # ocr_script = """
+# # from rapidocr_onnxruntime import RapidOCR
+# # ocr = RapidOCR()
+# # image_path = @1
+# # result, elapse = ocr(image_path)
+# # for box, text, confidence in result:
+# #     print(f"{@2},{text},{confidence}")
+# # """
+
+[[section]]
+name = "opening"
+frames = { start = 1000, end = 3200 }
+crop = [{ top = 960, bottom = 35, left = 550, right = 550 }]
+
+# [[section]]
+# name = "ad"
+# frames = { start = 3200, end = 3450 }
+# crop = [{ top = 960, bottom = 35, left = 550, right = 550 }]
+
+# [[section]]
+# name = "episode"
+# frames = { start = 3670, end = 27800 }
+# crop = [{ top = 960, bottom = 35, left = 550, right = 550 }]
+
+[[section]]
+name = "ending"
+frames = { start = 27800, end = 29960 }
+crop = [{ top = 950, bottom = 45, left = 150, right = 800 }]
+
+# [[section]]
+# name = "vertical_song"
+# position = "top"
+# frames = { start = 18600, end = 22320 }
+# crop = [
+#     { top = 150, bottom = 80, left = 1775, right = 60 },
+#     { top = 150, bottom = 80, left = 1700, right = 135 },
+# ]
+# ocr = "AppleLiveText"
+
+# [[section]]
+# name = "Donghua Title"
+# frames = { start = 3123, end = 3200 }
+# crop = [
+#     { top = 250, bottom = 335, left = 485, right = 440 },
+#     { top = 745, bottom = 160, left = 590, right = 660 },
+#     { top = 725, bottom = 230, left = 1269, right = 530 },
+# ]
+
+# [[section]]
+# name = "Donghua Title - Red"
+# position = "top"
+# frames = { start = 3123, end = 3200 }
+# crop = [
+#     { top = 400, bottom = 145, left = 1500, right = 230 },
+#     { top = 250, bottom = 680, left = 355, right = 1450 },
+# ]
+
+# [[section]]
+# name = "Episode Title"
+# frames = { start = 3450, end = 3550 }
+# crop = [
+#     { top = 380, bottom = 390, left = 0, right = 0 },
+#     { top = 690, bottom = 280, left = 0, right = 0 },
+# ]
+
+# [[section]]
+# name = "Message Title"
+# frames = { start = 3550, end = 3670 }
+# crop = [{ top = 525, bottom = 450, left = 500, right = 520 }]

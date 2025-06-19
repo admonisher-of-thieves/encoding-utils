@@ -1,5 +1,11 @@
 [workspace]
-members = ["encoding_utils_lib", "simple-ssimu2", "frame-boost", "vpy-files"]
+members = [
+    "encoding_utils_lib",
+    "simple-ssimu2",
+    "frame-boost",
+    "vpy-files",
+    "hard-to-soft",
+]
 resolver = "2"
 
 [workspace.dependencies]
@@ -11,3 +17,4 @@ vapoursynth4-rs = { features = [
     "link-library",
 ], git = "https://github.com/inflation/vapoursynth4-rs", rev = "e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7" }
 clap = { version = "4.5.37", features = ["derive"] }
+tokio = { version = "1.45.1", features = ["full"] }
