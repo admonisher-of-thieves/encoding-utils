@@ -1,5 +1,5 @@
 use std::ffi::{OsStr, OsString};
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, absolute};
 use std::{ffi::CString, str::FromStr};
 
 use clap::ValueEnum;
@@ -32,7 +32,7 @@ pub fn print_vs_plugins() {
 }
 
 /// Chunking plugin
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, ValueEnum, Copy)]
 pub enum SourcePlugin {
     Lsmash,
     Bestsource,
@@ -62,7 +62,7 @@ pub fn vszip(core: &Core) -> Result<Plugin> {
         .ok_or_eyre("Plugin [com.julek.vszip] was not found")
 }
 
-pub fn std(core: &Core) -> Result<Plugin> {
+pub fn vs_std(core: &Core) -> Result<Plugin> {
     core.get_plugin_by_id(&"com.vapoursynth.std".to_cstring())
         .ok_or_eyre("Plugin [com.vapoursynth.std] was not found")
 }
@@ -81,6 +81,9 @@ pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoN
     let lsmash = lsmash(core)?;
     let mut args = Map::default();
 
+    let path = absolute(path)?;
+    let temp_dir = absolute(temp_dir)?;
+
     // Set source path
     args.set(
         KeyStr::from_cstr(&"source".to_cstring()),
@@ -96,7 +99,6 @@ pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoN
     );
     let cache_path = add_extension("lwi", cache_path);
 
-    println!("{:?}", cache_path);
     args.set(
         KeyStr::from_cstr(&"cachefile".to_cstring()),
         Value::Utf8(cache_path.to_str().unwrap()),
@@ -278,7 +280,7 @@ pub fn select_frames(core: &Core, clip: &VideoNode, frames: &[u32]) -> Result<Vi
         return Err(eyre::eyre!("No frames specified for selection"));
     }
 
-    let std = std(core)?;
+    let std = vs_std(core)?;
     let mut splice_args = Map::default();
 
     for (i, &frame) in frames.iter().enumerate() {
@@ -373,7 +375,7 @@ pub fn crop_reference_to_match(
         ));
     }
 
-    let std = std(core)?;
+    let std = vs_std(core)?;
     let mut args = Map::default();
 
     args.set(
@@ -427,7 +429,7 @@ pub fn match_distorted_resolution(
 
     // Get plugin handles
     let fmtconv_plugin = fmtconv(core)?;
-    let std_plugin = std(core)?;
+    let std_plugin = vs_std(core)?;
 
     let ref_info = reference.info();
     let dist_info = distorted.info();
@@ -466,13 +468,10 @@ pub fn match_distorted_resolution(
             Value::Int(1),
             Replace,
         )?;
-        
+
         let cropped = std_plugin.invoke(&"Crop".to_cstring(), crop_args);
         if let Some(err) = cropped.get_error() {
-            return Err(eyre::eyre!(
-                "Crop failed: {}",
-                err.to_string_lossy()
-            ));
+            return Err(eyre::eyre!("Crop failed: {}", err.to_string_lossy()));
         }
         working_clip = cropped.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
     }
@@ -557,7 +556,7 @@ pub fn synchronize_clips(
     distorted: &VideoNode,
     clip: &Trim,
 ) -> Result<(VideoNode, VideoNode)> {
-    let std = std(core)?;
+    let std = vs_std(core)?;
 
     let mut args = Map::default();
     let (target_clip, _, is_reference) = match clip.clip_target {
@@ -618,6 +617,23 @@ pub fn get_dimensions(
         width: info.width,
         height: info.height,
     })
+}
+
+pub fn get_number_of_frames(
+    input: &Path,
+    importer_plugin: &SourcePlugin,
+    temp_dir: &Path,
+) -> Result<i32> {
+    let api = Api::default();
+    let core = Core::builder().api(api).build();
+    // Load reference and distorted
+    let reference = match importer_plugin {
+        SourcePlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
+    };
+
+    let info = reference.info();
+    Ok(info.num_frames)
 }
 
 #[derive(Debug)]

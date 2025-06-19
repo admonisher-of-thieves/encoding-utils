@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use encoding_utils_lib::{vapoursynth::SourcePlugin, vpy_files::create_filter_vpy_file};
+use encoding_utils_lib::{vapoursynth::{crop_reference_to_match, SourcePlugin}, vpy_files::create_filter_vpy_file};
 use eyre::{OptionExt, Result};
 
 /// Tool to create VapourSynth filter script
