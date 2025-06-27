@@ -4,33 +4,21 @@ use std::{
     process::{Command, Stdio},
 };
 
+use crate::chunk::Chunk;
+use clap::ValueEnum;
 use eyre::{OptionExt, Result};
 
 pub fn get_scene_file<'a>(
-    input: &'a Path,
+    scene_vpy_file: &'a Path,
     temp_folder: &'a Path,
     av1an_params: &str,
-    importer: &SourcePlugin,
-    crop: Option<&str>,
-    downscale: bool,
     clean: bool,
 ) -> Result<PathBuf> {
     let scenes_path = temp_folder.join("scenes.json");
     if clean && scenes_path.exists() {
         fs::remove_file(&scenes_path)?;
     }
-
-    let vpy_file = temp_folder.join("scene.vpy");
-    let vpy_path = create_scene_vpy(
-        input,
-        &vpy_file,
-        importer,
-        crop,
-        downscale,
-        temp_folder,
-        clean,
-    )?;
-    let vpy_str = vpy_path
+    let vpy_str = scene_vpy_file
         .to_str()
         .ok_or_eyre("Invalid UTF-8 in scenes path")?;
 
@@ -61,17 +49,6 @@ pub fn get_scene_file<'a>(
         "--temp".to_owned(),
         scene_temp_folder.to_owned(),
     ]);
-
-    // if downscale {
-    //     let dimensions = get_dimensions(input, importer, temp_folder)?;
-    //     let mut height = dimensions.height / 2;
-    //     if height % 2 != 0 {
-    //         height -= 1;
-    //     }
-    //     let height_str = height.to_string();
-    //     args.push("--sc-downscale-height".to_owned());
-    //     args.push(height_str);
-    // }
 
     if !clean {
         args.push("--keep".to_owned());
@@ -144,8 +121,6 @@ pub fn get_scene_file_with_zones<'a>(
 }
 
 use serde::{Deserialize, Serialize};
-
-use crate::{chunk::Chunk, vapoursynth::SourcePlugin, vpy_files::create_scene_vpy};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Scene {
@@ -223,7 +198,7 @@ impl ZoneOverrides {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct SceneList {
     pub scenes: Vec<Scene>,
     pub frames: u32,
@@ -398,4 +373,18 @@ pub fn write_scene_list_to_file<'a>(scene_list: &'a SceneList, path: &'a Path) -
     let json = serde_json::to_string_pretty(scene_list)?; // pretty format for readability
     fs::write(path, json)?;
     Ok(path)
+}
+
+#[derive(ValueEnum, Clone, Debug, Copy)]
+pub enum FramesDistribution {
+    Center,
+    Evenly,
+}
+
+// New struct definition
+#[derive(Debug, Clone)]
+pub struct FrameSelection {
+    pub scene_list: SceneList,
+    pub n_frames: u32,
+    pub distribution: FramesDistribution,
 }

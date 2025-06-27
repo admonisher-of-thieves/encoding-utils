@@ -1,8 +1,7 @@
 use std::path::Path;
 
-use crate::main_loop::FramesDistribution;
 use crate::math::{Score, ScoreList};
-use crate::scenes::SceneList;
+use crate::scenes::{FramesDistribution, SceneList};
 use crate::vapoursynth::{
     SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match, lsmash_invoke,
     match_distorted_resolution, resize_bicubic, select_frames, synchronize_clips, vszip_metrics,

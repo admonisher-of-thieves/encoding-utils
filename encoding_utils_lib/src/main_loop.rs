@@ -5,11 +5,12 @@ use std::path::Path;
 use crate::chunk::{Chunk, ChunkList};
 use crate::encode::encode_frames;
 use crate::math::{self, Score, get_stats};
-use crate::scenes::{get_scene_file, parse_scene_file, write_scene_list_to_file};
+use crate::scenes::{
+    FrameSelection, FramesDistribution, get_scene_file, parse_scene_file, write_scene_list_to_file,
+};
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::vapoursynth::SourcePlugin;
-use crate::vpy_files::create_frames_vpy_file;
-use clap::ValueEnum;
+use crate::vpy_files::create_vpy_file;
 use eyre::{OptionExt, Result};
 
 #[allow(clippy::too_many_arguments)]
@@ -30,26 +31,33 @@ pub fn run_loop<'a>(
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
+    detelecining: bool,
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
-    let temp_av1an_params = update_chunk_method(av1an_params, importer_scene);
-
     // Generating original scenes
-    let original_scenes_file = get_scene_file(
+    let temp_av1an_params = update_chunk_method(av1an_params, importer_scene);
+    let vpy_scene_path = temp_folder.join("scene.vpy");
+    let vpy_scene_file = create_vpy_file(
         input,
-        temp_folder,
-        &temp_av1an_params,
+        &vpy_scene_path,
+        None,
         importer_scene,
         crop,
         downscale,
+        detelecining,
+        encoder_params,
+        temp_folder,
         clean,
     )?;
+    let original_scenes_file =
+        get_scene_file(vpy_scene_file, temp_folder, &temp_av1an_params, clean)?;
     let scene_list = parse_scene_file(&original_scenes_file)?;
 
+    // New params
     let temp_av1an_params = update_chunk_method(av1an_params, importer_encoding);
     let temp_encoder_params = update_preset(velocity_preset, encoder_params);
     let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
@@ -99,16 +107,22 @@ pub fn run_loop<'a>(
         let scenes_file_selected_frames =
             write_scene_list_to_file(&scene_list_selected_frames, &scenes_path)?;
 
+        let frame_selection = FrameSelection {
+            scene_list: filtered_scene_list_with_zones.clone(),
+            n_frames,
+            distribution: frames_distribution,
+        };
+
         // Temp encode
-        let vpy_file = create_frames_vpy_file(
+        let vpy_file = create_vpy_file(
             input,
             &vpy_path,
-            &filtered_scene_list_with_zones,
-            n_frames,
-            frames_distribution,
+            Some(&frame_selection),
             importer_encoding,
             crop,
             downscale,
+            detelecining,
+            encoder_params,
             temp_folder,
             clean,
         )?;
@@ -496,10 +510,4 @@ pub fn update_chunk_method(params: &str, new_chunk_method: &SourcePlugin) -> Str
     }
 
     updated_tokens.join(" ")
-}
-
-#[derive(ValueEnum, Clone, Debug, Copy)]
-pub enum FramesDistribution {
-    Center,
-    Evenly,
 }

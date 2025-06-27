@@ -1,9 +1,0 @@
-[package]
-name = "vpy-files"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-encoding_utils_lib = { path = "../encoding_utils_lib" }
-eyre.workspace = true
-clap.workspace = true

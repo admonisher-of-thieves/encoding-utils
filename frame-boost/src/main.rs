@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{Context, OptionExt, Result, eyre};
-use encoding_utils_lib::{main_loop::{run_loop, FramesDistribution}, vapoursynth::SourcePlugin};
+use encoding_utils_lib::{main_loop::run_loop, scenes::FramesDistribution, vapoursynth::SourcePlugin};
 
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -9,7 +9,7 @@ use std::{fs, path::{absolute, PathBuf}};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Input video file
+    /// Input video file, you can also pass a .vpy script
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
@@ -24,19 +24,19 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24 --no-defaults --pix-format yuv420p10le"
+        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24 --pix-format yuv420p10le --no-defaults"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 4 --tune 2 --keyint -1 --hbd-mds 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --qm-min 8 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 77.0)]
+    #[arg(short = 'q', long, default_value_t = 80.0)]
     target_quality: f64,
 
     /// Target CRF value(s) (1-70). Can be:
@@ -52,7 +52,7 @@ struct Args {
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 9, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
 
     /// How the frames are distributed when encoding
@@ -90,7 +90,7 @@ struct Args {
     source_encoding_plugin: SourcePlugin,
 
     /// Video Source Plugin for obtaining the scene file
-    #[arg(short, long = "source-scene-plugin", default_value = "lsmash")]
+    #[arg(short, long = "source-scene-plugin", default_value = "bestsource")]
     source_scene_plugin: SourcePlugin,
 
     /// Path to save the updated crf data
@@ -110,6 +110,16 @@ struct Args {
         value_parser = clap::value_parser!(bool)
     )]
     downscale: bool,
+
+    /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
+    #[arg(
+        short, 
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
+    detelecining: bool,
 
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
@@ -191,6 +201,7 @@ fn main() -> Result<()> {
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,
+        args.detelecining,
         !args.keep_files,
         args.verbose,
         &temp_folder,
