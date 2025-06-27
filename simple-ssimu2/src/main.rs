@@ -85,7 +85,7 @@ struct Args {
         action = ArgAction::Set,
         value_parser = clap::value_parser!(bool)
     )]
-    detelecining: bool,
+    detelecine: bool,
 
     /// Temp folder (default: "[TEMP]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
@@ -128,7 +128,7 @@ fn main() -> Result<()> {
                 &args.color_metadata,
                 args.crop.as_deref(),
                 args.downscale,
-                args.detelecining,
+                args.detelecine,
             )?
     } else {
         // Otherwise use frame-by-frame processing with step
@@ -143,7 +143,7 @@ fn main() -> Result<()> {
             &args.color_metadata,
             args.crop.as_deref(),
             args.downscale,
-            args.detelecining,
+            args.detelecine,
         )?
     };
 

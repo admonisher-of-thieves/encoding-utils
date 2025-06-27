@@ -94,7 +94,7 @@ pub fn ssimu2_frames_selected(
     color_metadata: &str,
     crop: Option<&str>,
     downscale: bool,
-    detelecining: bool,
+    detelecine: bool,
 ) -> Result<ScoreList> {
     let core = Core::builder().build();
     let frames = match frames_distribution {
@@ -112,7 +112,7 @@ pub fn ssimu2_frames_selected(
         color_metadata,
         crop,
         downscale,
-        detelecining,
+        detelecine,
         None,
     )?;
 
@@ -155,7 +155,7 @@ pub fn ssimu2(
     color_metadata: &str,
     crop: Option<&str>,
     downscale: bool,
-    detelecining: bool,
+    detelecine: bool,
 ) -> Result<ScoreList> {
     let core = Core::builder().build();
 
@@ -169,7 +169,7 @@ pub fn ssimu2(
         color_metadata,
         crop,
         downscale,
-        detelecining,
+        detelecine,
         trim,
     )?;
 

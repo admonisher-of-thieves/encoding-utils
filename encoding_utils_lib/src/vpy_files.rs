@@ -16,7 +16,7 @@ pub fn create_vpy_file<'a>(
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
-    detelecining: bool,
+    detelecine: bool,
     encoder_params: &str,
     temp_folder: &'a Path,
     override_file: bool,
@@ -107,7 +107,7 @@ src = core.std.Splice(selected_frames)
         String::new()
     };
 
-    let detelecining_section = if detelecining {
+    let detelecine_section = if detelecine {
         r#"
 # IVTC for 29.97fps to 23.976fps conversion
 src = core.vivtc.VFM(src, order=1, mode=1)
@@ -186,10 +186,10 @@ src = core.resize.Bicubic(
     };
 
     let vpy_script = format!(
-        "{header}\n{color_metadata}\n{detelecining}\n{frame_selection}\n{crop}\n{downscale}\nsrc.set_output()\n",
+        "{header}\n{color_metadata}\n{detelecine}\n{frame_selection}\n{crop}\n{downscale}\nsrc.set_output()\n",
         header = header,
         color_metadata = color_metadata_section,
-        detelecining = detelecining_section,
+        detelecine = detelecine_section,
         frame_selection = frame_selection_section,
         downscale = downscale_section,
     );

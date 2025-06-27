@@ -119,7 +119,7 @@ struct Args {
         action = ArgAction::Set,
         value_parser = clap::value_parser!(bool)
     )]
-    detelecining: bool,
+    detelecine: bool,
 
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
@@ -201,7 +201,7 @@ fn main() -> Result<()> {
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,
-        args.detelecining,
+        args.detelecine,
         !args.keep_files,
         args.verbose,
         &temp_folder,

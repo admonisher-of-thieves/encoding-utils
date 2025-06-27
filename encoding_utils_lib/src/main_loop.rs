@@ -31,7 +31,7 @@ pub fn run_loop<'a>(
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: bool,
-    detelecining: bool,
+    detelecine: bool,
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
@@ -48,7 +48,7 @@ pub fn run_loop<'a>(
         importer_scene,
         crop,
         downscale,
-        detelecining,
+        detelecine,
         encoder_params,
         temp_folder,
         clean,
@@ -121,7 +121,7 @@ pub fn run_loop<'a>(
             importer_encoding,
             crop,
             downscale,
-            detelecining,
+            detelecine,
             encoder_params,
             temp_folder,
             clean,
@@ -152,7 +152,7 @@ pub fn run_loop<'a>(
             encoder_params,
             crop,
             downscale,
-            detelecining,
+            detelecine,
         )?;
 
         if *crf == *last_crf {
