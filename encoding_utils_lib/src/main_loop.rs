@@ -149,6 +149,10 @@ pub fn run_loop<'a>(
             importer_metrics,
             temp_folder,
             verbose,
+            encoder_params,
+            crop,
+            downscale,
+            detelecining,
         )?;
 
         if *crf == *last_crf {

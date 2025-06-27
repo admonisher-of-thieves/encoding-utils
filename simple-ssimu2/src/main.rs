@@ -58,6 +58,35 @@ struct Args {
     )]
     keep_files: bool,
 
+    /// Color params base on the svt-av1 params
+    #[arg(
+    long,
+        default_value = "--color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+    )]
+    color_metadata: String,
+
+    /// Crop (e.g. 1920:816:0:132)
+    #[arg(long)]
+    crop: Option<String>,
+
+    /// Downscale, using Box Kernel 0.5
+    #[arg(
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
+    downscale: bool,
+
+    /// Removes telecine — A process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
+    #[arg(
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
+    detelecining: bool,
+
     /// Temp folder (default: "[TEMP]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
@@ -87,7 +116,6 @@ fn main() -> Result<()> {
     let score_list = if let Some(scenes_file) = args.scenes {
         // If scenes file provided, use scene-based processing
         let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
-        if args.n_frames > 0 {
             encoding_utils_lib::ssimulacra2::ssimu2_frames_selected(
                 &args.reference,
                 &args.distorted,
@@ -97,18 +125,11 @@ fn main() -> Result<()> {
                 &args.source_plugin,
                 &temp_dir,
                 args.verbose,
+                &args.color_metadata,
+                args.crop.as_deref(),
+                args.downscale,
+                args.detelecining,
             )?
-        } else {
-            encoding_utils_lib::ssimulacra2::ssimu2_scenes(
-                &args.reference,
-                &args.distorted,
-                &scene_list,
-                args.source_plugin,
-                args.trim,
-                &temp_dir,
-                args.verbose,
-            )?
-        }
     } else {
         // Otherwise use frame-by-frame processing with step
         ssimu2(
@@ -119,6 +140,10 @@ fn main() -> Result<()> {
             args.trim,
             &temp_dir,
             args.verbose,
+            &args.color_metadata,
+            args.crop.as_deref(),
+            args.downscale,
+            args.detelecining,
         )?
     };
 

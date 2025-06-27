@@ -1,173 +1,84 @@
-use std::path::Path;
-
-use crate::math::{Score, ScoreList};
-use crate::scenes::{FramesDistribution, SceneList};
-use crate::vapoursynth::{
-    SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match, lsmash_invoke,
-    match_distorted_resolution, resize_bicubic, select_frames, synchronize_clips, vszip_metrics,
+use crate::{
+    math::{Score, ScoreList},
+    scenes::{FramesDistribution, SceneList},
+    vapoursynth::{
+        SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match,
+        downscale_resolution, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata,
+        synchronize_clips, vszip_metrics,
+    },
 };
+
 use eyre::{OptionExt, Result, eyre};
-use rayon::prelude::*;
-use vapoursynth4_rs::{api::Api, core::Core, frame::Frame, map::KeyStr, node::Node};
+use rayon::iter::{ParallelBridge, ParallelIterator};
+use std::path::Path;
+use vapoursynth4_rs::{
+    core::Core,
+    frame::Frame,
+    map::KeyStr,
+    node::{Node, VideoNode},
+};
 
-pub fn ssimu2_scenes(
-    reference: &Path,
-    distorted: &Path,
-    scene_list: &SceneList,
-    importer_plugin: SourcePlugin,
-    trim: Option<Trim>,
-    temp_dir: &Path,
-    verbose: bool,
-) -> Result<ScoreList> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
-
-    // Load reference and distorted
-    let (mut reference, mut distorted) = match importer_plugin {
-        SourcePlugin::Lsmash => (
-            lsmash_invoke(&core, reference, temp_dir)?,
-            lsmash_invoke(&core, distorted, temp_dir)?,
-        ),
-        SourcePlugin::Bestsource => (
-            bestsource_invoke(&core, reference, temp_dir)?,
-            bestsource_invoke(&core, distorted, temp_dir)?,
-        ),
-    };
-
-    if verbose {
-        println!("Original\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
-
-    reference = resize_bicubic(&core, &reference)?;
-    distorted = resize_bicubic(&core, &distorted)?;
-
-    // Match resolutions
-    reference = match_distorted_resolution(&core, &reference, &distorted)?;
-
-    // Apply cropping if needed
-    reference = crop_reference_to_match(&core, &reference, &distorted)?;
-
-    // Apply offset to clips
-    if let Some(trim) = trim {
-        (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
-    }
-
-    let middle_frames = scene_list.middle_frames();
-
-    if verbose {
-        println!("Ready to compare\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
-
-    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
-
-    if verbose {
-        println!();
-        println!("\nObtaining SSIMU2 Scores\n");
-    }
-    let mut scores: Vec<Score> = middle_frames
-        .par_iter()
-        .map(|&x| {
-            let frame = ssimu2
-                .get_frame(i32::try_from(x)?)
-                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
-            let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
-            if verbose {
-                println!("Frame: {:6}, Score: {:6.2}", x, score);
-            }
-            Ok(Score {
-                frame: x,
-                value: score,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    scores.sort_by_key(|s| s.frame);
-
-    Ok(ScoreList { scores })
-}
-
-pub fn ssimu2_frames_scenes(
-    reference: &Path,
-    distorted: &Path,
-    scene_list: &SceneList,
+#[allow(clippy::too_many_arguments)]
+fn prepare_clips(
+    core: &Core,
+    reference_path: &Path,
+    distorted_path: &Path,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
-) -> Result<ScoreList> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
-
-    let middle_frames = scene_list.middle_frames();
-
-    // Load reference and distorted
+    color_metadata: &str,
+    crop: Option<&str>,
+    downscale: bool,
+    detelecine: bool,
+    trim: Option<Trim>,
+) -> Result<(VideoNode, VideoNode)> {
     let (mut reference, mut distorted) = match importer_plugin {
         SourcePlugin::Lsmash => (
-            lsmash_invoke(&core, reference, temp_dir)?,
-            lsmash_invoke(&core, distorted, temp_dir)?,
+            lsmash_invoke(core, reference_path, temp_dir)?,
+            lsmash_invoke(core, distorted_path, temp_dir)?,
         ),
         SourcePlugin::Bestsource => (
-            bestsource_invoke(&core, reference, temp_dir)?,
-            bestsource_invoke(&core, distorted, temp_dir)?,
+            bestsource_invoke(core, reference_path, temp_dir)?,
+            bestsource_invoke(core, distorted_path, temp_dir)?,
         ),
     };
 
     if verbose {
-        println!("Original\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
+        println!(
+            "Original\nReference: {:?}\nDistorted: {:?}\n",
+            reference.info(),
+            distorted.info()
+        );
     }
 
-    reference = resize_bicubic(&core, &reference)?;
-    distorted = resize_bicubic(&core, &distorted)?;
+    reference = set_color_metadata(core, &reference, color_metadata)?;
+    distorted = set_color_metadata(core, &distorted, color_metadata)?;
 
-    // Match resolutions
-    reference = match_distorted_resolution(&core, &reference, &distorted)?;
+    if detelecine {
+        reference = inverse_telecine(core, &reference)?;
+    }
 
-    // Apply cropping if needed
-    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+    if downscale {
+        reference = downscale_resolution(core, &reference)?;
+    }
 
-    let reference = select_frames(&core, &reference, &middle_frames)?;
+    if let Some(crop_str) = crop {
+        reference = crop_reference_to_match(core, &reference, crop_str)?;
+    }
+
+    if let Some(trim) = trim {
+        (reference, distorted) = synchronize_clips(core, &reference, &distorted, &trim)?;
+    }
 
     if verbose {
-        println!("Ready to compare\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
+        println!(
+            "Preprocessed\nReference: {:?}\nDistorted: {:?}\n",
+            reference.info(),
+            distorted.info()
+        );
     }
 
-    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
-
-    if verbose {
-        println!("\nObtaining SSIMU2 Scores\n");
-    }
-    let mut scores: Vec<Score> = middle_frames
-        .iter()
-        .enumerate()
-        .par_bridge()
-        .map(|(i, &x)| {
-            let frame = ssimu2
-                .get_frame(i32::try_from(i)?)
-                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
-            let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
-            if verbose {
-                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, x, score);
-            }
-            Ok(Score {
-                frame: x,
-                value: score,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    scores.sort_by_key(|s| s.frame);
-
-    Ok(ScoreList { scores })
-    // Ok(())
+    Ok((reference, distorted))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -180,81 +91,59 @@ pub fn ssimu2_frames_selected(
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
+    color_metadata: &str,
+    crop: Option<&str>,
+    downscale: bool,
+    detelecining: bool,
 ) -> Result<ScoreList> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
-
+    let core = Core::builder().build();
     let frames = match frames_distribution {
         FramesDistribution::Center => scene_list.center_expanding_frames(n_frames),
         FramesDistribution::Evenly => scene_list.evenly_spaced_frames(n_frames),
     };
 
-    // Load reference and distorted
-    let (mut reference, mut distorted) = match importer_plugin {
-        SourcePlugin::Lsmash => (
-            lsmash_invoke(&core, reference, temp_dir)?,
-            lsmash_invoke(&core, distorted, temp_dir)?,
-        ),
-        SourcePlugin::Bestsource => (
-            bestsource_invoke(&core, reference, temp_dir)?,
-            bestsource_invoke(&core, distorted, temp_dir)?,
-        ),
-    };
-
-    if verbose {
-        println!("Original\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
-
-    reference = resize_bicubic(&core, &reference)?;
-    distorted = resize_bicubic(&core, &distorted)?;
-
-    // Match resolutions
-    reference = match_distorted_resolution(&core, &reference, &distorted)?;
-
-    // Apply cropping if needed
-    reference = crop_reference_to_match(&core, &reference, &distorted)?;
+    let (reference, distorted) = prepare_clips(
+        &core,
+        reference,
+        distorted,
+        importer_plugin,
+        temp_dir,
+        verbose,
+        color_metadata,
+        crop,
+        downscale,
+        detelecining,
+        None,
+    )?;
 
     let reference = select_frames(&core, &reference, &frames)?;
-
-    if verbose {
-        println!("Ready to compare\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
-
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
-    if verbose {
-        println!("\nObtaining SSIMU2 Scores\n");
-    }
     let mut scores: Vec<Score> = frames
         .iter()
         .enumerate()
         .par_bridge()
-        .map(|(i, &x)| {
+        .map(|(i, &frame_num)| {
             let frame = ssimu2
-                .get_frame(i32::try_from(i)?)
+                .get_frame(i as i32)
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
             if verbose {
-                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, x, score);
+                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, frame_num, score);
             }
             Ok(Score {
-                frame: x,
+                frame: frame_num,
                 value: score,
             })
         })
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<Result<_>>()?;
 
     scores.sort_by_key(|s| s.frame);
-
     Ok(ScoreList { scores })
-    // Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn ssimu2(
     reference: &Path,
     distorted: &Path,
@@ -263,56 +152,29 @@ pub fn ssimu2(
     trim: Option<Trim>,
     temp_dir: &Path,
     verbose: bool,
+    color_metadata: &str,
+    crop: Option<&str>,
+    downscale: bool,
+    detelecining: bool,
 ) -> Result<ScoreList> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
+    let core = Core::builder().build();
 
-    // Load reference and distorted
-    let (mut reference, mut distorted) = match importer_plugin {
-        SourcePlugin::Lsmash => (
-            lsmash_invoke(&core, reference, temp_dir)?,
-            lsmash_invoke(&core, distorted, temp_dir)?,
-        ),
-        SourcePlugin::Bestsource => (
-            bestsource_invoke(&core, reference, temp_dir)?,
-            bestsource_invoke(&core, distorted, temp_dir)?,
-        ),
-    };
-
-    if verbose {
-        println!("Original\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
-
-    reference = resize_bicubic(&core, &reference)?;
-    distorted = resize_bicubic(&core, &distorted)?;
-
-    // Match resolutions
-    reference = match_distorted_resolution(&core, &reference, &distorted)?;
-
-    // Apply cropping if needed
-    reference = crop_reference_to_match(&core, &reference, &distorted)?;
-
-    // Apply offset to clips
-    if let Some(trim) = trim {
-        (reference, distorted) = synchronize_clips(&core, &reference, &distorted, &trim)?;
-    }
-
-    if verbose {
-        println!("Ready to compare\n");
-        println!("Reference: {:?}\n", reference.info());
-        println!("Distorted: {:?}\n", distorted.info());
-    }
+    let (reference, distorted) = prepare_clips(
+        &core,
+        reference,
+        distorted,
+        &importer_plugin,
+        temp_dir,
+        verbose,
+        color_metadata,
+        crop,
+        downscale,
+        detelecining,
+        trim,
+    )?;
 
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
-
-    let info = ssimu2.info();
-    let num_frames = info.num_frames;
-
-    if verbose {
-        println!("\nObtaining SSIMU2 Scores\n");
-    }
+    let num_frames = ssimu2.info().num_frames;
 
     let mut scores: Vec<Score> = (1..=num_frames)
         .step_by(step)
@@ -323,7 +185,7 @@ pub fn ssimu2(
                 .get_frame(x - 1)
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"_SSIMULACRA2".to_cstring()), 0)?;
+            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
             let n_frame = u32::try_from(i)? * u32::try_from(step)?;
             if verbose {
                 println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
@@ -333,9 +195,8 @@ pub fn ssimu2(
                 value: score,
             })
         })
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<Result<_>>()?;
 
     scores.sort_by_key(|s| s.frame);
-
     Ok(ScoreList { scores })
 }

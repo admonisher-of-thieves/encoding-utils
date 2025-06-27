@@ -219,7 +219,7 @@ impl SceneList {
     }
 
     pub fn evenly_spaced_frames(&self, n: u32) -> Vec<u32> {
-        if n == 1 {
+        if n <= 1 {
             self.middle_frames()
         } else {
             self.scenes
@@ -244,7 +244,7 @@ impl SceneList {
     }
 
     pub fn center_expanding_frames(&self, n: u32) -> Vec<u32> {
-        if n == 1 {
+        if n <= 1 {
             self.middle_frames()
         } else {
             self.scenes

@@ -13,6 +13,8 @@ use vapoursynth4_rs::{
     plugin::Plugin,
 };
 
+use crate::vpy_files::ColorMetadata;
+
 pub trait ToCString {
     fn to_cstring(self) -> CString;
 }
@@ -75,6 +77,11 @@ pub fn resize(core: &Core) -> Result<Plugin> {
 pub fn fmtconv(core: &Core) -> Result<Plugin> {
     core.get_plugin_by_id(&"fmtconv".to_cstring())
         .ok_or_eyre("Plugin [fmtconv] was not found")
+}
+
+pub fn vivtc(core: &Core) -> Result<Plugin> {
+    core.get_plugin_by_id(&"vivtc".to_cstring())
+        .ok_or_eyre("Plugin [vivtc] was not found")
 }
 
 pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoNode> {
@@ -188,18 +195,12 @@ pub fn vszip_metrics(
         Replace,
     )?;
 
-    args.set(
-        KeyStr::from_cstr(&"mode".to_cstring()),
-        Value::Int(0),
-        Replace,
-    )?;
-
-    let func = vszip.invoke(&"Metrics".to_cstring(), args);
+    let func = vszip.invoke(&"SSIMULACRA2".to_cstring(), args);
 
     // Check for errors before getting the video node
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
-            "Vszip Metrics failed: {}",
+            "Vszip SSIMULACRA2 failed: {}",
             err.to_string_lossy()
         ));
     }
@@ -207,7 +208,8 @@ pub fn vszip_metrics(
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
-pub fn resize_bicubic(core: &Core, clip: &VideoNode) -> Result<VideoNode> {
+pub fn set_color_metadata(core: &Core, clip: &VideoNode, color_params: &str) -> Result<VideoNode> {
+    let color_metadata = ColorMetadata::from_params(color_params);
     let resize = resize(core)?;
     let mut args = Map::default();
 
@@ -217,48 +219,28 @@ pub fn resize_bicubic(core: &Core, clip: &VideoNode) -> Result<VideoNode> {
         Replace,
     )?;
     args.set(
-        KeyStr::from_cstr(&"format".to_cstring()),
-        Value::Int(555745280),
+        KeyStr::from_cstr(&"matrix_in".to_cstring()),
+        Value::Int(color_metadata.matrix.into()),
         Replace,
     )?;
     args.set(
-        KeyStr::from_cstr(&"matrix_in_s".to_cstring()),
-        Value::Utf8("709"),
+        KeyStr::from_cstr(&"transfer_in".to_cstring()),
+        Value::Int(color_metadata.transfer.into()),
         Replace,
     )?;
     args.set(
-        KeyStr::from_cstr(&"transfer_in_s".to_cstring()),
-        Value::Utf8("709"),
+        KeyStr::from_cstr(&"primaries_in".to_cstring()),
+        Value::Int(color_metadata.primaries.into()),
         Replace,
     )?;
     args.set(
-        KeyStr::from_cstr(&"primaries_in_s".to_cstring()),
-        Value::Utf8("709"),
+        KeyStr::from_cstr(&"range_in".to_cstring()),
+        Value::Int(color_metadata.range.into()),
         Replace,
     )?;
     args.set(
-        KeyStr::from_cstr(&"range_in_s".to_cstring()),
-        Value::Utf8("limited"),
-        Replace,
-    )?;
-    args.set(
-        KeyStr::from_cstr(&"matrix_s".to_cstring()),
-        Value::Utf8("rgb"),
-        Replace,
-    )?;
-    args.set(
-        KeyStr::from_cstr(&"transfer_s".to_cstring()),
-        Value::Utf8("709"),
-        Replace,
-    )?;
-    args.set(
-        KeyStr::from_cstr(&"primaries_s".to_cstring()),
-        Value::Utf8("709"),
-        Replace,
-    )?;
-    args.set(
-        KeyStr::from_cstr(&"range_s".to_cstring()),
-        Value::Utf8("full"),
+        KeyStr::from_cstr(&"chromaloc_in".to_cstring()),
+        Value::Int(color_metadata.chromaloc.into()),
         Replace,
     )?;
 
@@ -350,30 +332,10 @@ impl FromStr for CropParams {
 pub fn crop_reference_to_match(
     core: &Core,
     reference: &VideoNode,
-    distorted: &VideoNode,
+    crop: &str,
 ) -> Result<VideoNode> {
-    let dist_info = distorted.info();
+    let crop_params = CropParams::from_str(crop)?;
     let ref_info = reference.info();
-
-    // Early return if dimensions already match
-    if ref_info.width == dist_info.width && ref_info.height == dist_info.height {
-        return Ok(reference.clone());
-    }
-
-    // Calculate centered crop position
-    let left = (ref_info.width as i64 - dist_info.width as i64) / 2;
-    let top = (ref_info.height as i64 - dist_info.height as i64) / 2;
-
-    // Validate crop area
-    if left < 0 || top < 0 {
-        return Err(eyre::eyre!(
-            "Distorted dimensions {}x{} are larger than reference {}x{}",
-            dist_info.width,
-            dist_info.height,
-            ref_info.width,
-            ref_info.height
-        ));
-    }
 
     let std = vs_std(core)?;
     let mut args = Map::default();
@@ -385,31 +347,32 @@ pub fn crop_reference_to_match(
     )?;
     args.set(
         KeyStr::from_cstr(&"width".to_cstring()),
-        Value::Int(dist_info.width as i64),
+        Value::Int(crop_params.width),
         Replace,
     )?;
     args.set(
         KeyStr::from_cstr(&"height".to_cstring()),
-        Value::Int(dist_info.height as i64),
+        Value::Int(crop_params.height),
         Replace,
     )?;
     args.set(
         KeyStr::from_cstr(&"left".to_cstring()),
-        Value::Int(left),
+        Value::Int(crop_params.left),
         Replace,
     )?;
     args.set(
         KeyStr::from_cstr(&"top".to_cstring()),
-        Value::Int(top),
+        Value::Int(crop_params.top),
         Replace,
     )?;
 
     let func = std.invoke(&"CropAbs".to_cstring(), args);
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
-            "Failed to crop reference to {}x{}: {}",
-            dist_info.width,
-            dist_info.height,
+            "Failed to crop reference. Crop: {}. Video: {}x{}. Error: {}",
+            crop,
+            ref_info.width,
+            ref_info.height,
             err.to_string_lossy()
         ));
     }
@@ -417,11 +380,7 @@ pub fn crop_reference_to_match(
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
-pub fn match_distorted_resolution(
-    core: &Core,
-    reference: &VideoNode,
-    distorted: &VideoNode,
-) -> Result<VideoNode> {
+pub fn downscale_resolution(core: &Core, reference: &VideoNode) -> Result<VideoNode> {
     use vapoursynth4_rs::{
         ffi::VSMapAppendMode::Replace,
         map::{KeyStr, Map, Value},
@@ -432,22 +391,6 @@ pub fn match_distorted_resolution(
     let std_plugin = vs_std(core)?;
 
     let ref_info = reference.info();
-    let dist_info = distorted.info();
-
-    if ref_info.width == dist_info.width {
-        return Ok(reference.clone());
-    }
-
-    // Throw an error if distorted is larger than reference
-    if dist_info.width > ref_info.width || dist_info.height > ref_info.height {
-        return Err(eyre::eyre!(
-            "Distorted resolution ({:?}x{:?}) is larger than reference ({:?}x{:?})",
-            dist_info.width,
-            dist_info.height,
-            ref_info.width,
-            ref_info.height
-        ));
-    }
 
     // Check if height/2 is odd and crop if needed
     let mut working_clip = reference.clone();
@@ -647,4 +590,50 @@ pub fn add_extension(ext: impl AsRef<OsStr>, path: PathBuf) -> PathBuf {
     os_string.push(".");
     os_string.push(ext.as_ref());
     os_string.into()
+}
+
+pub fn inverse_telecine(core: &Core, input: &VideoNode) -> Result<VideoNode> {
+    // Load vivtc plugin
+    let vivtc = vivtc(core)?;
+
+    // --- VFM: Field Matching ---
+    let mut vfm_args = Map::default();
+    vfm_args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(input.clone()),
+        Replace,
+    )?;
+    vfm_args.set(
+        KeyStr::from_cstr(&"order".to_cstring()),
+        Value::Int(1), // Top field first
+        Replace,
+    )?;
+    vfm_args.set(
+        KeyStr::from_cstr(&"mode".to_cstring()),
+        Value::Int(1), // Full field matching
+        Replace,
+    )?;
+
+    let vfm_out = vivtc.invoke(&"VFM".to_cstring(), vfm_args);
+    if let Some(err) = vfm_out.get_error() {
+        return Err(eyre::eyre!("VFM failed: {}", err.to_string_lossy()));
+    }
+    let vfm_clip = vfm_out.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+
+    // --- VDecimate: Remove duplicates ---
+    let mut vdecimate_args = Map::default();
+    vdecimate_args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(vfm_clip.clone()),
+        Replace,
+    )?;
+
+    let vdecimate_out = vivtc.invoke(&"VDecimate".to_cstring(), vdecimate_args);
+    if let Some(err) = vdecimate_out.get_error() {
+        return Err(eyre::eyre!("VDecimate failed: {}", err.to_string_lossy()));
+    }
+
+    let decimated_clip =
+        vdecimate_out.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+    Ok(decimated_clip)
 }

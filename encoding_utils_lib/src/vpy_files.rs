@@ -26,41 +26,7 @@ pub fn create_vpy_file<'a>(
     }
 
     // Parse and map color metadata parameters
-    let (matrix, transfer, primaries, range, chromaloc) = {
-        let color_primaries = parse_param(encoder_params, "--color-primaries");
-        let transfer_characteristics = parse_param(encoder_params, "--transfer-characteristics");
-        let matrix_coefficients = parse_param(encoder_params, "--matrix-coefficients");
-        let color_range = parse_param(encoder_params, "--color-range");
-        let chroma_sample_position = parse_param(encoder_params, "--chroma-sample-position");
-
-        (
-            match matrix_coefficients {
-                Some("bt709") => "1",
-                Some("bt2020-ncl") => "9",
-                _ => "1",
-            },
-            match transfer_characteristics {
-                Some("bt709") => "1",
-                Some("smpte2084") => "16",
-                _ => "1",
-            },
-            match color_primaries {
-                Some("bt709") => "1",
-                Some("bt2020") => "9",
-                _ => "1",
-            },
-            match color_range {
-                Some("studio") => "0",
-                Some("full") => "1",
-                _ => "0",
-            },
-            match chroma_sample_position {
-                Some("left") => "0",
-                Some("topleft") => "2",
-                _ => "0",
-            },
-        )
-    };
+    let color_metadata = ColorMetadata::from_params(encoder_params);
 
     let input_str = input.to_str().ok_or_eyre("Invalid UTF-8 in input path")?;
 
@@ -102,7 +68,7 @@ src = {source}("{input_str}", {cache})
         cache = cache
     );
 
-    let color_metadata = format!(
+    let color_metadata_section = format!(
         r#"src = core.resize.Bicubic(
     src,
     matrix_in={matrix},
@@ -112,11 +78,11 @@ src = {source}("{input_str}", {cache})
     chromaloc_in={chromaloc}
 )
 "#,
-        matrix = matrix,
-        transfer = transfer,
-        primaries = primaries,
-        range = range,
-        chromaloc = chromaloc
+        matrix = color_metadata.matrix,
+        transfer = color_metadata.transfer,
+        primaries = color_metadata.primaries,
+        range = color_metadata.range,
+        chromaloc = color_metadata.chromaloc
     );
 
     // Frame selection handling
@@ -141,7 +107,7 @@ src = core.std.Splice(selected_frames)
         String::new()
     };
 
-    let detelecine = if detelecining {
+    let detelecining_section = if detelecining {
         r#"
 # IVTC for 29.97fps to 23.976fps conversion
 src = core.vivtc.VFM(src, order=1, mode=1)
@@ -192,11 +158,11 @@ src = core.resize.Bicubic(
     dither_type="error_diffusion"
 )
 "#,
-            matrix = matrix,
-            transfer = transfer,
-            primaries = primaries,
-            range = range,
-            chromaloc = chromaloc
+            matrix = color_metadata.matrix,
+            transfer = color_metadata.transfer,
+            primaries = color_metadata.primaries,
+            range = color_metadata.range,
+            chromaloc = color_metadata.chromaloc
         )
     } else {
         format!(
@@ -211,19 +177,19 @@ src = core.resize.Bicubic(
     chromaloc={chromaloc}
 )
 "#,
-            matrix = matrix,
-            transfer = transfer,
-            primaries = primaries,
-            range = range,
-            chromaloc = chromaloc
+            matrix = color_metadata.matrix,
+            transfer = color_metadata.transfer,
+            primaries = color_metadata.primaries,
+            range = color_metadata.range,
+            chromaloc = color_metadata.chromaloc
         )
     };
 
     let vpy_script = format!(
-        "{header}\n{color_metadata}\n{detelecine}\n{frame_selection}\n{crop}\n{downscale}\nsrc.set_output()\n",
+        "{header}\n{color_metadata}\n{detelecining}\n{frame_selection}\n{crop}\n{downscale}\nsrc.set_output()\n",
         header = header,
-        color_metadata = color_metadata,
-        detelecine = detelecine,
+        color_metadata = color_metadata_section,
+        detelecining = detelecining_section,
         frame_selection = frame_selection_section,
         downscale = downscale_section,
     );
@@ -271,5 +237,69 @@ impl FromStr for CropParams {
             left: parts[2].parse()?,
             top: parts[3].parse()?,
         })
+    }
+}
+
+#[derive(Debug)]
+pub struct ColorMetadata {
+    pub matrix: u8,
+    pub transfer: u8,
+    pub primaries: u8,
+    pub range: u8,
+    pub chromaloc: u8,
+}
+
+impl Default for ColorMetadata {
+    fn default() -> Self {
+        Self {
+            matrix: 1,    // bt709
+            transfer: 1,  // bt709
+            primaries: 1, // bt709
+            range: 0,     // studio
+            chromaloc: 0, // left
+        }
+    }
+}
+
+impl ColorMetadata {
+    pub fn from_params(params: &str) -> Self {
+        let mut metadata = Self::default();
+
+        if let Some(value) = parse_param(params, "--matrix-coefficients") {
+            metadata.matrix = match value {
+                "bt2020-ncl" => 9,
+                _ => metadata.matrix,
+            };
+        }
+
+        if let Some(value) = parse_param(params, "--transfer-characteristics") {
+            metadata.transfer = match value {
+                "smpte2084" => 16,
+                _ => metadata.transfer,
+            };
+        }
+
+        if let Some(value) = parse_param(params, "--color-primaries") {
+            metadata.primaries = match value {
+                "bt2020" => 9,
+                _ => metadata.primaries,
+            };
+        }
+
+        if let Some(value) = parse_param(params, "--color-range") {
+            metadata.range = match value {
+                "full" => 1,
+                _ => metadata.range,
+            };
+        }
+
+        if let Some(value) = parse_param(params, "--chroma-sample-position") {
+            metadata.chromaloc = match value {
+                "topleft" => 2,
+                _ => metadata.chromaloc,
+            };
+        }
+
+        metadata
     }
 }
