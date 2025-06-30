@@ -62,7 +62,7 @@ fn prepare_clips(
         reference = downscale_resolution(core, &reference)?;
     }
 
-    if let Some(crop_str) = crop {
+    if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
         reference = crop_reference_to_match(core, &reference, crop_str)?;
     }
 
