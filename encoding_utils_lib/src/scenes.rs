@@ -137,7 +137,7 @@ pub struct ZoneOverrides {
     pub photon_noise: Option<u32>,
     pub photon_noise_height: Option<u32>,
     pub photon_noise_width: Option<u32>,
-    pub chroma_noise: Option<bool>,
+    pub chroma_noise: bool,
     pub extra_splits_len: Option<u32>,
     pub min_scene_len: Option<u32>,
 }
