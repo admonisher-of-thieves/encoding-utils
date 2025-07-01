@@ -234,17 +234,14 @@ pub fn run_loop<'a>(
         }
 
         if score_list.scores.iter().all(|x| x.value >= ssimu2_score) {
-            write_crf_data(crf_data_file, input, &chunk_list)?;
             break;
-        }
-
-        if iter_crfs.last() == Some(crf) {
-            write_crf_data(crf_data_file, input, &chunk_list)?;
         }
     }
 
+    
     let scene_list_with_zones = chunk_list.to_scene_list_with_zones(av1an_params, encoder_params);
-
+    
+    write_crf_data(crf_data_file, input, &chunk_list)?;
     write_scene_list_to_file(&scene_list_with_zones, scene_boosted)?;
 
     if clean && temp_folder.exists() {
