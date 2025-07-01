@@ -135,6 +135,9 @@ pub struct ZoneOverrides {
     pub passes: Option<u8>,
     pub video_params: Option<Vec<String>>,
     pub photon_noise: Option<u32>,
+    pub photon_noise_height: Option<u32>,
+    pub photon_noise_width: Option<u32>,
+    pub chroma_noise: Option<bool>,
     pub extra_splits_len: Option<u32>,
     pub min_scene_len: Option<u32>,
 }
@@ -194,6 +197,7 @@ impl ZoneOverrides {
             photon_noise,
             extra_splits_len: extra_splits_len.or(Some(240)),
             min_scene_len: min_scene_len.or(Some(24)),
+            ..Default::default()
         }
     }
 }
@@ -326,6 +330,7 @@ impl SceneList {
                     photon_noise: z.photon_noise,
                     extra_splits_len: Some(0),
                     min_scene_len: Some(n_frames),
+                    ..Default::default()
                 });
 
                 Scene {
