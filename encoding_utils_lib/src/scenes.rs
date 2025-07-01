@@ -149,6 +149,9 @@ impl ZoneOverrides {
         let mut photon_noise = None;
         let mut min_scene_len: Option<u32> = None;
         let mut extra_splits_len: Option<u32> = None;
+        let mut photon_noise_width: Option<u32> = None;
+        let mut photon_noise_height: Option<u32> = None;
+        let mut chroma_noise = false;
 
         let mut av1an_tokens = av1an_params.split_whitespace().peekable();
         while let Some(token) = av1an_tokens.next() {
@@ -168,6 +171,19 @@ impl ZoneOverrides {
                     if let Some(value) = av1an_tokens.next() {
                         photon_noise = value.parse().ok();
                     }
+                }
+                "--photon-noise-width" => {
+                    if let Some(value) = av1an_tokens.next() {
+                        photon_noise_width = value.parse().ok();
+                    }
+                }
+                "--photon-noise-height" => {
+                    if let Some(value) = av1an_tokens.next() {
+                        photon_noise_height = value.parse().ok();
+                    }
+                }
+                "--chroma-noise" => {
+                    chroma_noise = true;
                 }
                 "--min-scene-len" => {
                     if let Some(value) = av1an_tokens.next() {
@@ -195,9 +211,11 @@ impl ZoneOverrides {
             passes: passes.or(Some(1)),
             video_params: Some(video_params_vec),
             photon_noise,
+            photon_noise_height,
+            photon_noise_width,
+            chroma_noise,
             extra_splits_len: extra_splits_len.or(Some(240)),
             min_scene_len: min_scene_len.or(Some(24)),
-            ..Default::default()
         }
     }
 }
@@ -328,9 +346,11 @@ impl SceneList {
                     passes: z.passes,
                     video_params: z.video_params.clone(),
                     photon_noise: z.photon_noise,
+                    chroma_noise: z.chroma_noise,
+                    photon_noise_height: z.photon_noise_height,
+                    photon_noise_width: z.photon_noise_width,
                     extra_splits_len: Some(0),
                     min_scene_len: Some(n_frames),
-                    ..Default::default()
                 });
 
                 Scene {
