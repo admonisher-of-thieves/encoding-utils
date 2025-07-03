@@ -39,11 +39,11 @@ struct Args {
     #[arg(short = 'q', long, default_value_t = 81.0)]
     target_quality: f64,
 
-    /// Target CRF value(s) (1-70). Can be:
+    /// Target CRF value(s) (70-1). Can be:
     /// - Single value (35)
-    /// - Comma-separated list (21,27,35)
-    /// - Range (21..36)
-    /// - Stepped range (21..36:3)
+    /// - Comma-separated list (35,27,21)
+    /// - Range (36..21)
+    /// - Stepped range (36..21:3)
     #[arg(
         short = 'c',
         long,

@@ -140,12 +140,13 @@ pub fn run_loop<'a>(
         } else {
             scene_list_frames.update_crf(crfs[i + 1]);
         }
-        
+
         scene_list.sync_crf_by_index(&scene_list_frames);
 
+        println!("\nUpdated data:");
+        scene_list.print_updated_data();
+
         if verbose {
-            println!("\nUpdated data:");
-            scene_list.print_updated_data();
             scene_list.print_stats()?;
         }
 
