@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{ math::get_stats, scenes::FramesDistribution, ssimulacra2::ssimu2, vapoursynth::{SourcePlugin, Trim}
+use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::ssimu2, vapoursynth::{SourcePlugin, Trim}
 };
 use eyre::{OptionExt, Result};
 use std::{fs::{self, create_dir_all}, path::PathBuf};
@@ -115,13 +115,13 @@ fn main() -> Result<()> {
     // Process the videos
     let score_list = if let Some(scenes_file) = args.scenes {
         // If scenes file provided, use scene-based processing
-        let scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
+        let mut scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
             encoding_utils_lib::ssimulacra2::ssimu2_frames_selected(
                 &args.reference,
                 &args.distorted,
-                &scene_list,
-                args.n_frames,
-                args.frames_distribution,
+                &mut scene_list,
+                // args.n_frames,
+                // args.frames_distribution,
                 &args.source_plugin,
                 &temp_dir,
                 args.verbose,
@@ -129,7 +129,8 @@ fn main() -> Result<()> {
                 args.crop.as_deref(),
                 args.downscale,
                 args.detelecine,
-            )?
+            )?;
+            scene_list.to_score_list()
     } else {
         // Otherwise use frame-by-frame processing with step
         ssimu2(
@@ -147,7 +148,7 @@ fn main() -> Result<()> {
         )?
     };
 
-    let stats = get_stats(&score_list)?;
+    let stats = score_list.get_stats()?;
     let stats_with_filename = format!("[INFO]\nReference: {}\nDistorted: {}\nSteps: {}\n\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
     if let Some(output_path) = args.stats_file {
         println!("\n{}", stats_with_filename);

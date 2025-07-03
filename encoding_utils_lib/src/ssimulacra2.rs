@@ -1,6 +1,6 @@
 use crate::{
-    math::{Score, ScoreList},
-    scenes::{FramesDistribution, SceneList},
+    math::{FrameScore, ScoreList},
+    scenes::SceneList,
     vapoursynth::{
         SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match,
         downscale_resolution, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata,
@@ -9,7 +9,7 @@ use crate::{
 };
 
 use eyre::{OptionExt, Result, eyre};
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
 use std::path::Path;
 use vapoursynth4_rs::{
     core::Core,
@@ -85,9 +85,9 @@ fn prepare_clips(
 pub fn ssimu2_frames_selected(
     reference: &Path,
     distorted: &Path,
-    scene_list: &SceneList,
-    n_frames: u32,
-    frames_distribution: FramesDistribution,
+    scene_list: &mut SceneList,
+    // n_frames: u32,
+    // frames_distribution: FramesDistribution,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
@@ -95,12 +95,8 @@ pub fn ssimu2_frames_selected(
     crop: Option<&str>,
     downscale: bool,
     detelecine: bool,
-) -> Result<ScoreList> {
+) -> Result<()> {
     let core = Core::builder().build();
-    let frames = match frames_distribution {
-        FramesDistribution::Center => scene_list.center_expanding_frames(n_frames),
-        FramesDistribution::Evenly => scene_list.evenly_spaced_frames(n_frames),
-    };
 
     let (reference, distorted) = prepare_clips(
         &core,
@@ -116,31 +112,50 @@ pub fn ssimu2_frames_selected(
         None,
     )?;
 
-    let reference = select_frames(&core, &reference, &frames)?;
+    let all_frames: Vec<u32> = scene_list.all_frames();
+    let reference = select_frames(&core, &reference, &all_frames)?;
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
-    let mut scores: Vec<Score> = frames
-        .iter()
-        .enumerate()
-        .par_bridge()
-        .map(|(i, &frame_num)| {
-            let frame = ssimu2
-                .get_frame(i as i32)
-                .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
-            let props = frame.properties().ok_or_eyre("Props not found")?;
-            let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
-            if verbose {
-                println!("i: {:6}, Frame: {:6}, Score: {:6.2}", i, frame_num, score);
-            }
-            Ok(Score {
-                frame: frame_num,
-                value: score,
-            })
-        })
-        .collect::<Result<_>>()?;
+    for (scene_index, scene) in scene_list.scenes.iter_mut().enumerate() {
+        let updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
+            .into_par_iter()
+            .map(|frame_index| {
+                // Get the FrameScore for this position
+                let frame_score = scene
+                    .frame_scores
+                    .get((frame_index - scene.start_frame) as usize)
+                    .ok_or_eyre(format!(
+                        "Frame index {} out of bounds in scene {}",
+                        frame_index, scene_index
+                    ))?;
 
-    scores.sort_by_key(|s| s.frame);
-    Ok(ScoreList { scores })
+                // Get metrics using the frame index (not the frame number)
+                let frame = ssimu2
+                    .get_frame(frame_index as i32)
+                    .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+
+                let props = frame
+                    .properties()
+                    .ok_or_eyre("Frame properties not found")?;
+                let value = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
+
+                if verbose {
+                    println!(
+                        "Scene: {:3}, Frame: {:6}, Score: {:6.2}",
+                        scene_index, frame_score.frame, value
+                    );
+                }
+
+                Ok(FrameScore {
+                    frame: frame_score.frame, // Keep original frame number
+                    value,
+                })
+            })
+            .collect::<Result<_>>()?;
+
+        scene.frame_scores = updated_scores;
+    }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -176,7 +191,7 @@ pub fn ssimu2(
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
     let num_frames = ssimu2.info().num_frames;
 
-    let mut scores: Vec<Score> = (1..=num_frames)
+    let mut scores: Vec<FrameScore> = (1..=num_frames)
         .step_by(step)
         .enumerate()
         .par_bridge()
@@ -190,7 +205,7 @@ pub fn ssimu2(
             if verbose {
                 println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
             }
-            Ok(Score {
+            Ok(FrameScore {
                 frame: n_frame,
                 value: score,
             })

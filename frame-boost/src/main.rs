@@ -24,19 +24,19 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 24 --pix-format yuv420p10le --no-defaults"
+        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 0 --min-scene-len 0 --no-defaults"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --qm-min 8 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --lp 0 --tile-columns 1 --hbd-mds 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 10  --psy-rd 1 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 80.0)]
+    #[arg(short = 'q', long, default_value_t = 81.0)]
     target_quality: f64,
 
     /// Target CRF value(s) (1-70). Can be:
@@ -47,7 +47,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "21,24,27,30,35",
+        default_value = "35,30,27,24,21",
     )]
     crf: String,
 
@@ -211,83 +211,103 @@ fn main() -> Result<()> {
 }
 
 
+/// Enhanced CRF parser that enforces strictly descending values
+/// Supported formats:
+/// - Single values (35) → [35]
+/// - Comma-separated lists (35,27,21) → [35, 27, 21]
+/// - Backward ranges (36..21) → [36, 35, ..., 21]
+/// - Stepped backward ranges (36..21:3) → [36, 33, 30, ..., 21]
+pub fn crf_parser(s: &str) -> Result<Vec<u8>> {
+    // Parse the raw values first
+    let values = parse_raw_crf_values(s)?;
+    
+    // Validate descending order
+    validate_descending(&values).wrap_err_with(|| {
+        format!("CRF values must be in strictly descending order (got {:?})", values)
+    })?;
+    
+    Ok(values)
+}
 
-/// Enhanced CRF parser supporting:
-/// - Single values (35)
-/// - Comma-separated lists (21,27,35)
-/// - Simple ranges (21..36)
-/// - Stepped ranges (21..36:3)
-fn crf_parser(s: &str) -> Result<Vec<u8>> {
+/// Core parsing logic
+fn parse_raw_crf_values(s: &str) -> Result<Vec<u8>> {
     const CRF_RANGE: std::ops::RangeInclusive<u8> = 1..=70;
     
-    // Handle stepped ranges (e.g., "21..36:3")
+    let validate_crf = |value: u8| {
+        if !CRF_RANGE.contains(&value) {
+            Err(eyre!("CRF must be between {}-{} (got {})", 
+                CRF_RANGE.start(), CRF_RANGE.end(), value))
+        } else {
+            Ok(value)
+        }
+    };
+
+    // Handle stepped ranges (36..21:3)
     if let Some((range_part, step)) = s.split_once(':') {
         if let Some((start, end)) = range_part.split_once("..") {
-            let start = start.parse()
-                .wrap_err_with(|| format!("Invalid CRF range start: '{}'", start))?;
-            let end = end.parse()
-                .wrap_err_with(|| format!("Invalid CRF range end: '{}'", end))?;
-            let step = step.parse()
-                .wrap_err_with(|| format!("Invalid step value: '{}'", step))?;
+            let (start, end, step) = (
+                start.parse().wrap_err_with(|| format!("Invalid range start: '{start}'"))?,
+                end.parse().wrap_err_with(|| format!("Invalid range end: '{end}'"))?,
+                step.parse().wrap_err_with(|| format!("Invalid step value: '{step}'"))?,
+            );
             
-            if start > end {
-                return Err(eyre!("Range start must be <= end (got {start}..{end})"));
+            if start < end {
+                return Err(eyre!(
+                    "Backward range requires start >= end (got {start}..{end})"
+                ));
             }
             if step == 0 {
-                return Err(eyre!("Step value must be > 0"));
-            }
-            if !CRF_RANGE.contains(&start) || !CRF_RANGE.contains(&end) {
-                return Err(eyre!("CRF must be between {}-{} (got {start}..{end})",
-                    CRF_RANGE.start(), CRF_RANGE.end()));
+                return Err(eyre!("Step value must be positive"));
             }
 
             let mut values = Vec::new();
             let mut current = start;
-            while current <= end {
-                values.push(current);
-                current = match current.checked_add(step) {
-                    Some(v) => v,
-                    None => break, // Prevent overflow
-                };
+            while current >= end {
+                values.push(validate_crf(current)?);
+                current = current.saturating_sub(step);
             }
             return Ok(values);
         }
     }
 
-    // Handle simple ranges (e.g., "21..36")
+    // Handle simple ranges (36..21)
     if let Some((start, end)) = s.split_once("..") {
-        let start = start.parse()
-            .wrap_err_with(|| format!("Invalid CRF range start: '{}'", start))?;
-        let end = end.parse()
-            .wrap_err_with(|| format!("Invalid CRF range end: '{}'", end))?;
-        
-        if start > end {
-            return Err(eyre!("Range start must be <= end (got {start}..{end})"));
+        let (start, end) = (
+            start.parse().wrap_err_with(|| format!("Invalid range start: '{start}'"))?,
+            end.parse().wrap_err_with(|| format!("Invalid range end: '{end}'"))?,
+        );
+
+        if start < end {
+            return Err(eyre!(
+                "Backward range requires start >= end (got {start}..{end})"
+            ));
         }
-        if !CRF_RANGE.contains(&start) || !CRF_RANGE.contains(&end) {
-            return Err(eyre!("CRF must be between {}-{} (got {start}..{end})",
-                CRF_RANGE.start(), CRF_RANGE.end()));
-        }
-        
-        return Ok((start..=end).collect());
+
+        return (end..=start)
+            .rev()
+            .map(validate_crf)
+            .collect();
     }
 
-    // Handle comma-separated values
+    // Handle comma-separated or single value
     s.split(',')
         .map(|part| {
-            let value = part.trim().parse()
-                .wrap_err_with(|| format!("Invalid CRF value: '{}'", part))?;
-            
-            if CRF_RANGE.contains(&value) {
-                Ok(value)
-            } else {
-                Err(eyre!("CRF must be between {}-{} (got {value})",
-                    CRF_RANGE.start(), CRF_RANGE.end()))
-            }
+            part.trim()
+                .parse()
+                .wrap_err_with(|| format!("Invalid CRF value: '{}'", part.trim()))
+                .and_then(validate_crf)
         })
         .collect()
 }
 
+/// Validate strict descending order
+fn validate_descending(values: &[u8]) -> Result<()> {
+    if values.windows(2).any(|pair| pair[0] <= pair[1]) {
+        Err(eyre!("Sequence contains non-descending values"))
+    } else {
+        Ok(())
+    }
+}
 #[test]
 fn verify_cli() {
     use clap::CommandFactory;

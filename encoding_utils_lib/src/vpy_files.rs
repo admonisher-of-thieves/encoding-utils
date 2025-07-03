@@ -3,8 +3,8 @@ use std::{
     path::{Path, absolute},
 };
 
-use crate::{scenes::FrameSelection, vapoursynth::SourcePlugin};
-use crate::{scenes::FramesDistribution, vapoursynth::add_extension};
+use crate::vapoursynth::add_extension;
+use crate::{scenes::SceneList, vapoursynth::SourcePlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
 
@@ -12,7 +12,7 @@ use std::str::FromStr;
 pub fn create_vpy_file<'a>(
     input: &'a Path,
     vpy_file: &'a Path,
-    frame_selection: Option<&FrameSelection>,
+    scene_list: Option<&SceneList>,
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: bool,
@@ -86,15 +86,8 @@ src = {source}("{input_str}", {cache})
     );
 
     // Frame selection handling
-    let frame_selection_section = if let Some(fs) = frame_selection {
-        let frames_str = match fs.distribution {
-            FramesDistribution::Center => fs.scene_list.center_expanding_frames(fs.n_frames),
-            FramesDistribution::Evenly => fs.scene_list.evenly_spaced_frames(fs.n_frames),
-        }
-        .iter()
-        .map(|f| f.to_string())
-        .collect::<Vec<_>>()
-        .join(", ");
+    let frame_selection_section = if let Some(scene_list) = scene_list {
+        let frames_str = scene_list.frames_to_string();
 
         format!(
             r#"frames = [{frames_str}]
