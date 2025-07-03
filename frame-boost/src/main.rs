@@ -24,14 +24,14 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 4 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 0 --min-scene-len 0 --no-defaults"
+        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split 120 --min-scene-len 0 --no-defaults"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --lp 0 --tile-columns 1 --hbd-mds 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 10  --psy-rd 1 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --tile-columns 1 --hbd-mds 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 10  --psy-rd 1 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
@@ -54,6 +54,10 @@ struct Args {
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
     #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
+
+    /// Workers to use when encoding
+    #[arg(short = 'w', long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..))]
+    workers: u32,
 
     /// How the frames are distributed when encoding
     #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
@@ -195,6 +199,7 @@ fn main() -> Result<()> {
         args.n_frames,
         args.frames_distribution,
         args.filter_frames,
+        args.workers,
         &args.source_metric_plugin,
         &args.source_encoding_plugin,
         &args.source_scene_plugin,

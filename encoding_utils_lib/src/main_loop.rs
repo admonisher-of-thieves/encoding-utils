@@ -22,6 +22,7 @@ pub fn run_loop<'a>(
     n_frames: u32,
     frames_distribution: FramesDistribution,
     filter_frames: bool,
+    workers: u32,
     importer_metrics: &SourcePlugin,
     importer_encoding: &SourcePlugin,
     importer_scene: &SourcePlugin,
@@ -62,10 +63,11 @@ pub fn run_loop<'a>(
 
     // New params
     let temp_av1an_params = update_chunk_method(av1an_params, importer_encoding);
-    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
     let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
     let temp_av1an_params =
         update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(0));
+    let temp_av1an_params = update_workers(&temp_av1an_params, workers);
+    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
 
     // crfs
     let crfs = crf.to_vec();
@@ -291,6 +293,34 @@ pub fn update_split_method(params: &str, new_split_method: String) -> String {
     if !found_split_method {
         updated_tokens.push("--split-method".to_string());
         updated_tokens.push(new_split_method.to_string());
+    }
+
+    updated_tokens.join(" ")
+}
+
+pub fn update_workers(params: &str, new_workers: u32) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+    let mut found_workers = false;
+
+    while let Some(token) = tokens.next() {
+        match token {
+            "--workers" => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--workers".to_string());
+                updated_tokens.push(new_workers.to_string());
+                found_workers = true;
+            }
+            _ => {
+                updated_tokens.push(token.to_string());
+            }
+        }
+    }
+
+    // Append if not found
+    if !found_workers {
+        updated_tokens.push("--workers".to_string());
+        updated_tokens.push(new_workers.to_string());
     }
 
     updated_tokens.join(" ")
