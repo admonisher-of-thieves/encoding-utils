@@ -67,7 +67,8 @@ pub fn run_loop<'a>(
     let temp_av1an_params =
         update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(0));
     let temp_av1an_params = update_workers(&temp_av1an_params, workers);
-    let temp_encoder_params = update_preset(velocity_preset, encoder_params);
+    let temp_encoder_params = remove_crf_param(encoder_params);
+    let temp_encoder_params = update_preset(velocity_preset, &temp_encoder_params);
 
     // crfs
     let crfs = crf.to_vec();
@@ -321,6 +322,21 @@ pub fn update_workers(params: &str, new_workers: u32) -> String {
     if !found_workers {
         updated_tokens.push("--workers".to_string());
         updated_tokens.push(new_workers.to_string());
+    }
+
+    updated_tokens.join(" ")
+}
+
+pub fn remove_crf_param(params: &str) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+
+    while let Some(token) = tokens.next() {
+        if token == "--crf" {
+            tokens.next(); // Skip the value following --crf
+        } else {
+            updated_tokens.push(token.to_string());
+        }
     }
 
     updated_tokens.join(" ")
