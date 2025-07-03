@@ -149,7 +149,7 @@ fn main() -> Result<()> {
     };
 
     let stats = score_list.get_stats()?;
-    let stats_with_filename = format!("[INFO]\nReference: {}\nDistorted: {}\nSteps: {}\n\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
+    let stats_with_filename = format!("\n[INFO]\nReference: {}\nDistorted: {}\nSteps: {}\n\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
     if let Some(output_path) = args.stats_file {
         println!("\n{}", stats_with_filename);
         std::fs::write(output_path, stats_with_filename)?;

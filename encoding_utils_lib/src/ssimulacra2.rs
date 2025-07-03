@@ -9,6 +9,7 @@ use crate::{
 };
 
 use eyre::{OptionExt, Result, eyre};
+use indicatif::{ProgressBar, ProgressStyle};
 use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
 use std::path::Path;
 use vapoursynth4_rs::{
@@ -116,6 +117,17 @@ pub fn ssimu2_frames_selected(
     let reference = select_frames(&core, &reference, &all_frames)?;
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
 
+    // Calculate total frames to process for progress bar
+    let total_frames = scene_list.all_frames().len();
+
+    println!("Calculating Metrics");
+    let pb = ProgressBar::new(total_frames.try_into().unwrap());
+    pb.set_style(
+        ProgressStyle::with_template("[{elapsed_precise}] {prefix} {wide_bar} {pos}/{len} {msg}")
+            .unwrap(),
+    );
+    pb.set_prefix("SSIMU2");
+
     for (scene_index, scene) in scene_list.scenes.iter_mut().enumerate() {
         let updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
             .into_par_iter()
@@ -146,6 +158,8 @@ pub fn ssimu2_frames_selected(
                     );
                 }
 
+                pb.inc(1); // increment progress bar safely from multiple threads
+
                 Ok(FrameScore {
                     frame: frame_score.frame, // Keep original frame number
                     value,
@@ -155,6 +169,9 @@ pub fn ssimu2_frames_selected(
 
         scene.frame_scores = updated_scores;
     }
+
+    pb.finish_with_message("DONE");
+    println!();
     Ok(())
 }
 
@@ -191,26 +208,42 @@ pub fn ssimu2(
     let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
     let num_frames = ssimu2.info().num_frames;
 
-    let mut scores: Vec<FrameScore> = (1..=num_frames)
+    let frames_to_process: Vec<u32> = (0..num_frames.try_into().unwrap())
         .step_by(step)
-        .enumerate()
+        .collect::<Vec<_>>();
+    let pb = ProgressBar::new(frames_to_process.len() as u64);
+    pb.set_style(
+        ProgressStyle::with_template("[{elapsed_precise}] {prefix} {wide_bar} {pos}/{len} {msg}")
+            .unwrap(),
+    );
+    pb.set_prefix("SSIMU2");
+
+    let mut scores: Vec<FrameScore> = frames_to_process
+        .iter()
         .par_bridge()
-        .map(|(i, x)| {
+        .map(|&i| {
             let frame = ssimu2
-                .get_frame(x - 1)
+                .get_frame(i.try_into().unwrap())
                 .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
             let props = frame.properties().ok_or_eyre("Props not found")?;
             let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
-            let n_frame = u32::try_from(i)? * u32::try_from(step)?;
+
+            let n_frame = i * step as u32;
+
             if verbose {
                 println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
             }
+
+            pb.inc(1); // increment progress bar safely from multiple threads
+
             Ok(FrameScore {
                 frame: n_frame,
                 value: score,
             })
         })
         .collect::<Result<_>>()?;
+
+    pb.finish_with_message("DONE");
 
     scores.sort_by_key(|s| s.frame);
     Ok(ScoreList { scores })
