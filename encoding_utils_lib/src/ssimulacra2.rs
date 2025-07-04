@@ -228,16 +228,14 @@ pub fn ssimu2(
             let props = frame.properties().ok_or_eyre("Props not found")?;
             let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
 
-            let n_frame = i * step as u32;
-
             if verbose {
-                println!("Frame: {:6}, Score: {:6.2}", n_frame, score);
+                println!("Frame: {:6}, Score: {:6.2}", i, score);
             }
 
             pb.inc(1); // increment progress bar safely from multiple threads
 
             Ok(FrameScore {
-                frame: n_frame,
+                frame: i,
                 value: score,
             })
         })
