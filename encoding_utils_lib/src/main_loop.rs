@@ -65,7 +65,7 @@ pub fn run_loop<'a>(
     let temp_av1an_params = update_chunk_method(av1an_params, importer_encoding);
     let temp_av1an_params = update_split_method(&temp_av1an_params, "none".to_owned());
     let temp_av1an_params =
-        update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(0));
+        update_extra_split_and_min_scene_len(&temp_av1an_params, Some(0), Some(0), Some(0));
     let temp_av1an_params = update_workers(&temp_av1an_params, workers);
     let temp_encoder_params = remove_crf_param(encoder_params);
     let temp_encoder_params = update_preset(velocity_preset, &temp_encoder_params);
@@ -80,6 +80,8 @@ pub fn run_loop<'a>(
     }
 
     let mut scene_list_frames = scene_list.clone();
+    scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
+    
     scene_list_frames = match frames_distribution {
         FramesDistribution::Center => scene_list_frames.with_center_expanding_frames(n_frames),
         FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
@@ -227,11 +229,13 @@ pub fn update_preset(velocity_preset: i32, encoder_params: &str) -> String {
 pub fn update_extra_split_and_min_scene_len(
     params: &str,
     new_extra_split: Option<u32>,
+    new_extra_split_sec: Option<u32>,
     new_min_scene_len: Option<u32>,
 ) -> String {
     let mut tokens = params.split_whitespace().peekable();
     let mut updated_tokens: Vec<String> = Vec::new();
     let mut found_extra_split = false;
+    let mut found_extra_split_sec = false;
     let mut found_min_scene_len = false;
 
     while let Some(token) = tokens.next() {
@@ -241,6 +245,12 @@ pub fn update_extra_split_and_min_scene_len(
                 updated_tokens.push("--extra-split".to_string());
                 updated_tokens.push(new_extra_split.unwrap().to_string());
                 found_extra_split = true;
+            }
+            "--extra-split-sec" if new_extra_split_sec.is_some() => {
+                tokens.next(); // skip old value
+                updated_tokens.push("--extra-split-sec".to_string());
+                updated_tokens.push(new_extra_split_sec.unwrap().to_string());
+                found_extra_split_sec = true;
             }
             "--min-scene-len" if new_min_scene_len.is_some() => {
                 tokens.next(); // skip old value
@@ -258,6 +268,13 @@ pub fn update_extra_split_and_min_scene_len(
         if let Some(extra_split) = new_extra_split {
             updated_tokens.push("--extra-split".to_string());
             updated_tokens.push(extra_split.to_string());
+        }
+    }
+
+    if !found_extra_split_sec {
+        if let Some(extra_split_sec) = new_extra_split_sec {
+            updated_tokens.push("--extra-split-sec".to_string());
+            updated_tokens.push(extra_split_sec.to_string());
         }
     }
 
