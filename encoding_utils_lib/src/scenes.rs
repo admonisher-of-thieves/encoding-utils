@@ -231,8 +231,8 @@ impl ZoneOverrides {
             photon_noise_height,
             photon_noise_width,
             chroma_noise,
-            extra_splits_len: extra_splits_len.or(Some(240)),
-            min_scene_len: min_scene_len.or(Some(24)),
+            extra_splits_len: extra_splits_len.or(Some(0)),
+            min_scene_len: min_scene_len.or(Some(0)),
         }
     }
 

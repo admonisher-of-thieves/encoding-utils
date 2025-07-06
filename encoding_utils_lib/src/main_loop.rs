@@ -37,7 +37,7 @@ pub fn run_loop<'a>(
     println!("\nRunning frame-boost\n");
 
     // Generating original scenes
-    let temp_av1an_params = update_chunk_method(av1an_params, importer_scene);
+    let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
     let vpy_scene_path = temp_folder.join("scene.vpy");
 
     let vpy_scene_file = create_vpy_file(
@@ -53,7 +53,7 @@ pub fn run_loop<'a>(
         clean,
     )?;
     let original_scenes_file =
-        get_scene_file(vpy_scene_file, temp_folder, &temp_av1an_params, clean)?;
+        get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
     let mut scene_list = parse_scene_file(&original_scenes_file)?;
 
     let first_crf = crf.first().unwrap();
