@@ -480,52 +480,38 @@ impl SceneList {
 
         for scene in &self.scenes {
             let start = scene.start_frame;
-            let end = scene.end_frame.saturating_sub(1);
-            let total_frames = end.saturating_sub(start) + 1;
+            let end = scene.end_frame.saturating_sub(1); // end is inclusive
+            let total_frames = end - start + 1;
 
-            let frame_values: Vec<u32> = if n_frames == 0 || total_frames == 0 {
+            let frame_values = if n_frames == 0 || total_frames == 0 {
                 vec![]
             } else {
-                // Calculate how many frames to take from each segment
-                let frames_per_segment = n_frames.div_ceil(3); // Round up
+                let base = n_frames / 3;
+                let extra = n_frames % 3;
 
-                // Get frames from start
-                let start_segment: Vec<u32> = (0..frames_per_segment)
-                    .map(|i| start + i * total_frames / (frames_per_segment + 1))
-                    .filter(|&frame| frame >= start && frame <= end)
+                // Start segment (first `base` frames, clamped to total_frames)
+                let start_seg: Vec<_> = (start..start + base).take_while(|&f| f <= end).collect();
+
+                // Middle segment (centered, with extra frames)
+                let middle_frames = base + extra;
+                let middle_center = (start + end) / 2;
+                let middle_start = middle_center.saturating_sub(middle_frames / 2);
+                let middle_seg: Vec<_> = (middle_start..=middle_start + middle_frames - 1)
+                    .filter(|&f| f >= start && f <= end) // Explicit bounds check
                     .collect();
 
-                // Get frames from middle
-                let middle_segment: Vec<u32> = (0..frames_per_segment)
-                    .map(|i| {
-                        let middle = (start + end) / 2;
-                        let offset = i as i32 - frames_per_segment as i32 / 2;
-                        (middle as i32 + offset).max(start as i32) as u32
-                    })
-                    .filter(|&frame| frame >= start && frame <= end)
+                // End segment (last `base` frames, clamped to total_frames)
+                let end_seg: Vec<_> = (end.saturating_sub(base - 1)..=end)
+                    .filter(|&f| f >= start) // Avoid underflow if `base > total_frames`
                     .collect();
 
-                // Get frames from end
-                let end_segment: Vec<u32> = (0..frames_per_segment)
-                    .map(|i| end.saturating_sub(i * total_frames / (frames_per_segment + 1)))
-                    .filter(|&frame| frame >= start && frame <= end)
-                    .collect();
-
-                // Combine all segments and remove duplicates
-                let mut all_frames: Vec<u32> = start_segment
-                    .into_iter()
-                    .chain(middle_segment)
-                    .chain(end_segment)
-                    .collect();
-
-                all_frames.sort();
-                all_frames.dedup();
-
-                // If we have too many frames, trim from the middle segments
-                if all_frames.len() > n_frames as usize {
-                    all_frames.truncate(n_frames as usize);
-                }
-
+                // Combine segments, deduplicate, and truncate
+                let mut all_frames = start_seg;
+                all_frames.extend(middle_seg);
+                all_frames.extend(end_seg);
+                all_frames.sort_unstable(); // Not strictly needed, but ensures order
+                all_frames.dedup(); // Remove duplicates
+                all_frames.truncate(n_frames as usize); // Ensure length ≤ n_frames
                 all_frames
             };
 
