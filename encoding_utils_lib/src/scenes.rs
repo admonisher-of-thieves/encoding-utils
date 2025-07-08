@@ -221,7 +221,7 @@ impl ZoneOverrides {
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
         video_params_vec.push("--crf".to_string());
-        video_params_vec.push(format!("{}", crf));
+        video_params_vec.push(format!("{crf}"));
 
         ZoneOverrides {
             encoder,
@@ -297,7 +297,7 @@ impl ZoneOverrides {
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
         video_params_vec.push("--crf".to_string());
-        video_params_vec.push(format!("{}", crf));
+        video_params_vec.push(format!("{crf}"));
 
         self.encoder = encoder;
         self.passes = passes.or(Some(1));
@@ -471,6 +471,80 @@ impl SceneList {
         }
     }
 
+    pub fn with_start_middle_end_frames(&self, n_frames: u32) -> SceneList {
+        if n_frames <= 1 {
+            return self.with_middle_frames();
+        }
+
+        let mut scenes = Vec::with_capacity(self.scenes.len());
+
+        for scene in &self.scenes {
+            let start = scene.start_frame;
+            let end = scene.end_frame.saturating_sub(1);
+            let total_frames = end.saturating_sub(start) + 1;
+
+            let frame_values: Vec<u32> = if n_frames == 0 || total_frames == 0 {
+                vec![]
+            } else {
+                // Calculate how many frames to take from each segment
+                let frames_per_segment = n_frames.div_ceil(3); // Round up
+
+                // Get frames from start
+                let start_segment: Vec<u32> = (0..frames_per_segment)
+                    .map(|i| start + i * total_frames / (frames_per_segment + 1))
+                    .filter(|&frame| frame >= start && frame <= end)
+                    .collect();
+
+                // Get frames from middle
+                let middle_segment: Vec<u32> = (0..frames_per_segment)
+                    .map(|i| {
+                        let middle = (start + end) / 2;
+                        let offset = i as i32 - frames_per_segment as i32 / 2;
+                        (middle as i32 + offset).max(start as i32) as u32
+                    })
+                    .filter(|&frame| frame >= start && frame <= end)
+                    .collect();
+
+                // Get frames from end
+                let end_segment: Vec<u32> = (0..frames_per_segment)
+                    .map(|i| end.saturating_sub(i * total_frames / (frames_per_segment + 1)))
+                    .filter(|&frame| frame >= start && frame <= end)
+                    .collect();
+
+                // Combine all segments and remove duplicates
+                let mut all_frames: Vec<u32> = start_segment
+                    .into_iter()
+                    .chain(middle_segment)
+                    .chain(end_segment)
+                    .collect();
+
+                all_frames.sort();
+                all_frames.dedup();
+
+                // If we have too many frames, trim from the middle segments
+                if all_frames.len() > n_frames as usize {
+                    all_frames.truncate(n_frames as usize);
+                }
+
+                all_frames
+            };
+
+            scenes.push(Scene {
+                start_frame: scene.start_frame,
+                end_frame: scene.end_frame,
+                zone_overrides: scene.zone_overrides.clone(),
+                frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
+                crf: scene.crf,
+                index: scene.index,
+            });
+        }
+
+        SceneList {
+            scenes,
+            frames: self.frames,
+        }
+    }
+
     pub fn update_preset(&mut self, new_preset: i32) {
         for scene in &mut self.scenes {
             if let Some(ref mut overrides) = scene.zone_overrides {
@@ -546,7 +620,7 @@ impl SceneList {
         let percentages = self.calculate_crf_percentages();
 
         for (crf, pct) in percentages {
-            println!("CRF {}: {:.2}%", crf, pct);
+            println!("CRF {crf}: {pct:.2}%");
         }
     }
 
@@ -574,14 +648,14 @@ impl SceneList {
                 .ok_or_eyre("Error getting file name")?
                 .to_str()
                 .ok_or_eyre("Invalid UTF-8")?;
-            let filename = format!("Video: {}\n", video_name);
+            let filename = format!("Video: {video_name}\n");
             output.push_str(&filename);
 
             // Add CRF percentages
             let percentages = self.calculate_crf_percentages();
             let percentages_line = percentages
                 .iter()
-                .map(|(crf, pct)| format!("CRF {}: {:.2}%", crf, pct))
+                .map(|(crf, pct)| format!("CRF {crf}: {pct:.2}%"))
                 .collect::<Vec<String>>()
                 .join(", ");
             output.push_str("Distribution: ");
@@ -723,6 +797,7 @@ pub fn write_scene_list_to_file(scene_list: SceneList, path: &Path) -> Result<&P
 pub enum FramesDistribution {
     Center,
     Evenly,
+    StartMiddleEnd,
 }
 
 // New struct definition

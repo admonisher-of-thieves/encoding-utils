@@ -60,7 +60,7 @@ struct Args {
     workers: u32,
 
     /// How the frames are distributed when encoding
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::StartMiddleEnd)]
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
@@ -228,7 +228,7 @@ pub fn crf_parser(s: &str) -> Result<Vec<u8>> {
     
     // Validate descending order
     validate_descending(&values).wrap_err_with(|| {
-        format!("CRF values must be in strictly descending order (got {:?})", values)
+        format!("CRF values must be in strictly descending order (got {values:?})")
     })?;
     
     Ok(values)

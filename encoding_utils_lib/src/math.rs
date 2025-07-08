@@ -207,8 +207,8 @@ impl ScoreList {
         let mut output = String::new();
 
         writeln!(output, "[STATS - SSIMU2]")?;
-        writeln!(output, "Mean: {:.4}", mean)?;
-        writeln!(output, "Standard Deviation: {:.4}", deviation)?;
+        writeln!(output, "Mean: {mean:.4}")?;
+        writeln!(output, "Standard Deviation: {deviation:.4}")?;
         writeln!(output, "Mode: {:.4}, count: {:.4}", mode.value, mode.count)?;
 
         // write!(output, "Median: ")?;

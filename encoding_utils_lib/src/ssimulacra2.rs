@@ -137,8 +137,7 @@ pub fn ssimu2_frames_selected(
                     .frame_scores
                     .get((frame_index - scene.start_frame) as usize)
                     .ok_or_eyre(format!(
-                        "Frame index {} out of bounds in scene {}",
-                        frame_index, scene_index
+                        "Frame index {frame_index} out of bounds in scene {scene_index}"
                     ))?;
 
                 // Get metrics using the frame index (not the frame number)
@@ -229,7 +228,7 @@ pub fn ssimu2(
             let score = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
 
             if verbose {
-                println!("Frame: {:6}, Score: {:6.2}", i, score);
+                println!("Frame: {i:6}, Score: {score:6.2}");
             }
 
             pb.inc(1); // increment progress bar safely from multiple threads

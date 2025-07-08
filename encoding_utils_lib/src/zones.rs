@@ -58,7 +58,7 @@ pub fn create_temp_zone_file<'a>(
             } else {
                 (i + 1) as i32
             };
-            format!("{} {} svt-av1 --crf {}", start_frame, end_frame, crf)
+            format!("{start_frame} {end_frame} svt-av1 --crf {crf}")
         })
         .collect::<Vec<_>>()
         .join("\n");

@@ -482,7 +482,7 @@ impl FromStr for Trim {
         let clip_target = match parts[2].to_lowercase().as_str() {
             "r" | "reference" => ClipTarget::Reference,
             "d" | "distorted" => ClipTarget::Distorted,
-            other => return Err(format!("Invalid clip target: '{}'", other)),
+            other => return Err(format!("Invalid clip target: '{other}'")),
         };
 
         Ok(Trim {

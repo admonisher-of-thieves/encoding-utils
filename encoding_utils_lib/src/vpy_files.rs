@@ -47,11 +47,11 @@ pub fn create_vpy_file<'a>(
         match source_plugin {
             SourcePlugin::Lsmash => (
                 "core.lsmas.LWLibavSource",
-                format!("cachefile=\"{}\"", cache_str),
+                format!("cachefile=\"{cache_str}\""),
             ),
             SourcePlugin::Bestsource => (
                 "core.bs.VideoSource",
-                format!("cachepath=\"{}\", cachemode=4", cache_str),
+                format!("cachepath=\"{cache_str}\", cachemode=4"),
             ),
         }
     };
@@ -62,10 +62,7 @@ pub fn create_vpy_file<'a>(
 core = vs.core
 
 src = {source}("{input_str}", {cache})
-"#,
-        source = source,
-        input_str = input_str,
-        cache = cache
+"#
     );
 
     let color_metadata_section = format!(
@@ -93,8 +90,7 @@ src = {source}("{input_str}", {cache})
             r#"frames = [{frames_str}]
 selected_frames = [src[frame] for frame in frames]
 src = core.std.Splice(selected_frames)
-"#,
-            frames_str = frames_str
+"#
         )
     } else {
         String::new()
@@ -179,12 +175,7 @@ src = core.resize.Bicubic(
     };
 
     let vpy_script = format!(
-        "{header}\n{color_metadata}\n{detelecine}\n{frame_selection}\n{crop}\n{downscale}\nsrc.set_output()\n",
-        header = header,
-        color_metadata = color_metadata_section,
-        detelecine = detelecine_section,
-        frame_selection = frame_selection_section,
-        downscale = downscale_section,
+        "{header}\n{color_metadata_section}\n{detelecine_section}\n{frame_selection_section}\n{crop}\n{downscale_section}\nsrc.set_output()\n",
     );
 
     fs::write(vpy_file, vpy_script)?;

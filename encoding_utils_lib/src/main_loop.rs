@@ -81,17 +81,18 @@ pub fn run_loop<'a>(
 
     let mut scene_list_frames = scene_list.clone();
     scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
-    
+
     scene_list_frames = match frames_distribution {
         FramesDistribution::Center => scene_list_frames.with_center_expanding_frames(n_frames),
         FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
+        FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
     };
 
     for (i, crf) in iter_crfs.iter().enumerate() {
-        println!("\nCycle: {}, CRF: {}\n", i, crf);
-        let scenes_path = temp_folder.join(format!("scenes_{}.json", crf));
-        let vpy_path = temp_folder.join(format!("vpy_{}.vpy", crf));
-        let encode_path = temp_folder.join(format!("encode_{}.mkv", crf));
+        println!("\nCycle: {i}, CRF: {crf}\n");
+        let scenes_path = temp_folder.join(format!("scenes_{crf}.json"));
+        let vpy_path = temp_folder.join(format!("vpy_{crf}.vpy"));
+        let encode_path = temp_folder.join(format!("encode_{crf}.mkv"));
 
         scene_list_frames = scene_list_frames.with_contiguous_frames();
         let filter_scene_file = write_scene_list_to_file(scene_list_frames.clone(), &scenes_path)?;
