@@ -86,7 +86,7 @@ struct Args {
         value_parser = clap::value_parser!(bool)
     )]
     detelecine: bool,
-
+    
     /// Save a plot of the SSIMU2 stats (Needs to be an .svg file)
     #[arg(short, long = "plot-file")]
     plot_file: Option<PathBuf>,
@@ -117,27 +117,7 @@ fn main() -> Result<()> {
     create_dir_all(&temp_dir)?;
 
     // Process the videos
-    let score_list = if let Some(scenes_file) = args.scenes {
-        // If scenes file provided, use scene-based processing
-        let mut scene_list = encoding_utils_lib::scenes::parse_scene_file(&scenes_file)?;
-            encoding_utils_lib::ssimulacra2::ssimu2_frames_selected(
-                &args.reference,
-                &args.distorted,
-                &mut scene_list,
-                // args.n_frames,
-                // args.frames_distribution,
-                &args.source_plugin,
-                &temp_dir,
-                args.verbose,
-                &args.color_metadata,
-                args.crop.as_deref(),
-                args.downscale,
-                args.detelecine,
-            )?;
-            scene_list.to_score_list()
-    } else {
-        // Otherwise use frame-by-frame processing with step
-        ssimu2(
+    let score_list = ssimu2(
             &args.reference,
             &args.distorted,
             args.steps as usize,
@@ -149,8 +129,7 @@ fn main() -> Result<()> {
             args.crop.as_deref(),
             args.downscale,
             args.detelecine,
-        )?
-    };
+        )?;
 
     let stats = score_list.get_stats()?;
     let stats_with_filename = format!("\n[INFO]\nReference: {}\nDistorted: {}\nSteps: {}\n\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
@@ -162,7 +141,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(plot_file) = args.plot_file {
-        create_plot(&plot_file, &score_list, &args.reference, &args.distorted)?;
+        create_plot(&plot_file, &score_list, &args.reference, &args.distorted, args.scenes.as_deref())?;
     }
 
     if !args.keep_files && fs::exists(&temp_dir)? {

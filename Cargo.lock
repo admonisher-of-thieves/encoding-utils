@@ -399,8 +399,7 @@ dependencies = [
 [[package]]
 name = "quill"
 version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9efd830869ab90b94da88ef103de5828c8740109348e20b630f881f740c9246"
+source = "git+https://github.com/admonisher-of-thieves/quill?rev=242520d6a744403e62fa1bee960cd64795805f4b#242520d6a744403e62fa1bee960cd64795805f4b"
 dependencies = [
  "bon",
  "svg",

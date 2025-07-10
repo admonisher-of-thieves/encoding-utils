@@ -1,6 +1,6 @@
 use crate::{
     math::{self, FrameScore, ScoreList},
-    scenes::SceneList,
+    scenes::{SceneList, parse_scene_file},
     vapoursynth::{
         SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match,
         downscale_resolution, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata,
@@ -252,12 +252,13 @@ pub fn create_plot(
     score_list: &ScoreList,
     reference: &Path,
     distorted: &Path,
+    scenes: Option<&Path>,
 ) -> Result<()> {
     let score_list = &score_list.scores;
     // let frame_scores = score_list.scores;
-    let frames: Vec<(f64, f64)> = score_list
+    let frames: Vec<(u32, f64)> = score_list
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, frame_score.value))
+        .map(|frame_score| (frame_score.frame, frame_score.value))
         .collect();
     let mean = math::mean(score_list);
     let deviation = math::standard_deviation(score_list);
@@ -266,27 +267,27 @@ pub fn create_plot(
     let percentile_list = math::percentiles(score_list)?;
     let five_percentile = &percentile_list.percentiles[1];
     let min = math::min(score_list)?;
-    let min_frames: Vec<(f64, f64)> = min
+    let min_frames: Vec<(u32, f64)> = min
         .scores
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, frame_score.value))
+        .map(|frame_score| (frame_score.frame, frame_score.value))
         .collect();
 
-    let mean_frames: Vec<(f64, f64)> = score_list
+    let mean_frames: Vec<(u32, f64)> = score_list
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, mean))
+        .map(|frame_score| (frame_score.frame, mean))
         .collect();
-    let deviation_plus_frames: Vec<(f64, f64)> = score_list
+    let deviation_plus_frames: Vec<(u32, f64)> = score_list
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, deviation_plus))
+        .map(|frame_score| (frame_score.frame, deviation_plus))
         .collect();
-    let deviation_minus_frames: Vec<(f64, f64)> = score_list
+    let deviation_minus_frames: Vec<(u32, f64)> = score_list
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, deviation_minus))
+        .map(|frame_score| (frame_score.frame, deviation_minus))
         .collect();
-    let five_percentile_frames: Vec<(f64, f64)> = score_list
+    let five_percentile_frames: Vec<(u32, f64)> = score_list
         .iter()
-        .map(|frame_score| (frame_score.frame as f64, five_percentile.score.value))
+        .map(|frame_score| (frame_score.frame, five_percentile.score.value))
         .collect();
 
     let mean_text = format!("Mean: {mean:.2}");
@@ -317,81 +318,152 @@ pub fn create_plot(
         .ok_or_eyre("Filename not UTF-8")?;
     let distorted_name = format!("Distorted: {distorted_name}");
 
+    // let blue = Color::hex("#89b4fa");
+    let orange = Color::hex("#fab387");
+    let pink = Color::hex("#f5c2e7");
+    let yellow = Color::hex("#f9e2af");
+    let green = Color::hex("#a6e3a1");
+    let red = Color::hex("#f38ba8");
+    let text_color = Color::hex("#cdd6f4");
+    let background_color = Color::hex("#1e1e2e");
+    // let light_gray = Color::hex("#bac2de");
+    let middle_gray = Color::hex("#9399b2");
+    let dark_gray = Color::hex("#6c7086");
+    let surface = Color::hex("#313244");
+
+    let mut plot_data: Vec<Series<'_, u32, f64>> = vec![
+        Series::builder()
+            .name("SSIMU2 Scores")
+            .color(green.clone())
+            .data(frames)
+            .marker(Marker::Circle)
+            .marker_size(1.0)
+            .line(Line::Solid)
+            .interpolation(Interpolation::Linear)
+            .line_width(2.0)
+            .build(),
+        Series::builder()
+            .name(&mean_text)
+            .color(yellow.clone())
+            .data(mean_frames)
+            .marker(Marker::None)
+            .line(Line::Dashed)
+            .line_width(2.0)
+            .build(),
+        Series::builder()
+            .name(&deviation_plus_text)
+            .color(orange.clone())
+            .data(deviation_plus_frames)
+            .marker(Marker::None)
+            .line(Line::Dashed)
+            .line_width(1.0)
+            .build(),
+        Series::builder()
+            .name(&deviation_minus_text)
+            .color(orange.clone())
+            .data(deviation_minus_frames)
+            .marker(Marker::None)
+            .line(Line::Dashed)
+            .line_width(1.0)
+            .build(),
+        Series::builder()
+            .name(&five_percentile_text)
+            .color(pink.clone())
+            .data(five_percentile_frames)
+            .marker(Marker::None)
+            .line(Line::Dashed)
+            .line_width(1.0)
+            .build(),
+        Series::builder()
+            .name(&min_text)
+            .color(red.clone())
+            .data(min_frames)
+            .marker(Marker::Cross)
+            .marker_size(10.0)
+            .line(Line::None)
+            .build(),
+        Series::builder()
+            .name(&reference_name)
+            .data(vec![])
+            .line(Line::None)
+            .color(background_color.clone())
+            .build(),
+        Series::builder()
+            .name(&distorted_name)
+            .data(vec![])
+            .line(Line::None)
+            .color(background_color.clone())
+            .build(),
+    ];
+
+    if let Some(scene_path) = scenes {
+        let scenes = parse_scene_file(scene_path)?;
+        for scene in scenes.scenes.iter() {
+            // let scene_name = format!("Scene {}", i + 1);
+
+            // Start frame line
+            plot_data.push(
+                Series::builder()
+                    // .name(&format!("{} Start", scene_name))
+                    .color(middle_gray.clone())
+                    .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
+                    .marker(Marker::None)
+                    .line(Line::Dashed)
+                    .line_width(1.0)
+                    .show_legend(false)
+                    .build(),
+            );
+        }
+    }
+
     let plot = Plot::builder()
         .dimensions((1280, 720))
         .title("SSIMU2 - Reference vs Distorted")
+        .title_config(TitleConfig {
+            color: text_color.clone(),
+            ..Default::default()
+        })
+        .background_color(background_color.clone())
+        .axis_config(AxisConfig {
+            color: text_color.clone(),
+            ..Default::default()
+        })
+        .grid_config(GridConfig {
+            color: dark_gray.clone(),
+            ..Default::default()
+        })
         .x_label("Frames")
+        .x_label_config(LabelConfig {
+            color: text_color.clone(),
+            ..Default::default()
+        })
         .y_label("Scores")
+        .y_label_config(LabelConfig {
+            color: text_color.clone(),
+            ..Default::default()
+        })
         .x_range(Range::Auto)
         .y_range(Range::Manual {
             min: 0.0,
             max: 100.0,
         })
         .legend(Legend::BottomLeftInside)
+        .legend_config(LegendConfig {
+            text_color: text_color.clone(),
+            border_color: text_color.clone(),
+            background_color: surface.clone(),
+            ..Default::default()
+        })
         .grid(Grid::Dotted)
+        .tick_config(TickConfig {
+            line_color: text_color.clone(),
+            label_color: text_color.clone(),
+            minor_tick_color: text_color.clone(),
+            show_x_decimals: false,
+            ..Default::default()
+        })
         .font("Fredoka")
-        .data([
-            Series::builder()
-                .name("SSIMU2 Scores")
-                .color("Blue")
-                .data(frames)
-                .marker(Marker::Circle)
-                .marker_size(1.0)
-                .line(Line::Solid)
-                .interpolation(Interpolation::Linear)
-                .line_width(1.0)
-                .build(),
-            Series::builder()
-                .name(&mean_text)
-                .color(Color::Green)
-                .data(mean_frames)
-                .marker(Marker::None)
-                .line(Line::Dashed)
-                .line_width(2.0)
-                .build(),
-            Series::builder()
-                .name(&deviation_plus_text)
-                .color(Color::Orange)
-                .data(deviation_plus_frames)
-                .marker(Marker::None)
-                .line(Line::Dashed)
-                .line_width(2.0)
-                .build(),
-            Series::builder()
-                .name(&deviation_minus_text)
-                .color(Color::Orange)
-                .data(deviation_minus_frames)
-                .marker(Marker::None)
-                .line(Line::Dashed)
-                .line_width(2.0)
-                .build(),
-            Series::builder()
-                .name(&five_percentile_text)
-                .color(Color::Magenta)
-                .data(five_percentile_frames)
-                .marker(Marker::None)
-                .line(Line::Dashed)
-                .line_width(2.0)
-                .build(),
-            Series::builder()
-                .name(&min_text)
-                .color(Color::Red)
-                .data(min_frames)
-                .marker(Marker::Cross)
-                .marker_size(10.0)
-                .line(Line::None)
-                .build(),
-            Series::builder()
-                .name(&reference_name)
-                .data(vec![])
-                .line(Line::None)
-                .build(),
-            Series::builder()
-                .name(&distorted_name)
-                .data(vec![])
-                .line(Line::None)
-                .build(),
-        ])
+        .data(plot_data)
         .build();
 
     plot.to_svg(svg_path.to_str().ok_or_eyre("Filename not UTF-8")?)?;

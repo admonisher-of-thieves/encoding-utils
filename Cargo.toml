@@ -13,4 +13,4 @@ vapoursynth4-rs = { features = [
 clap = { version = "4.5.40", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["full"] }
 indicatif = { version = "0.18.0" }
-quill = "0.1.0"
+quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "242520d6a744403e62fa1bee960cd64795805f4b" }
