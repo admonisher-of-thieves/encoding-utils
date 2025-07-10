@@ -141,7 +141,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(plot_file) = args.plot_file {
-        create_plot(&plot_file, &score_list, &args.reference, &args.distorted, args.scenes.as_deref())?;
+        create_plot(&plot_file, &score_list, &args.reference, &args.distorted, args.scenes.as_deref(), args.steps)?;
     }
 
     if !args.keep_files && fs::exists(&temp_dir)? {

@@ -399,7 +399,7 @@ dependencies = [
 [[package]]
 name = "quill"
 version = "0.1.6"
-source = "git+https://github.com/admonisher-of-thieves/quill?rev=242520d6a744403e62fa1bee960cd64795805f4b#242520d6a744403e62fa1bee960cd64795805f4b"
+source = "git+https://github.com/admonisher-of-thieves/quill?rev=35379f5ab5e4e60282b3cf4491b4bf5b0654b8ca#35379f5ab5e4e60282b3cf4491b4bf5b0654b8ca"
 dependencies = [
  "bon",
  "svg",

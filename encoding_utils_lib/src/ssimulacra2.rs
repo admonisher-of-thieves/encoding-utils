@@ -253,6 +253,7 @@ pub fn create_plot(
     reference: &Path,
     distorted: &Path,
     scenes: Option<&Path>,
+    steps: u32,
 ) -> Result<()> {
     let score_list = &score_list.scores;
     // let frame_scores = score_list.scores;
@@ -272,6 +273,7 @@ pub fn create_plot(
         .iter()
         .map(|frame_score| (frame_score.frame, frame_score.value))
         .collect();
+    let min_value = min.scores[0].value;
 
     let mean_frames: Vec<(u32, f64)> = score_list
         .iter()
@@ -310,13 +312,13 @@ pub fn create_plot(
         .ok_or_eyre("Input path has no filename")?
         .to_str()
         .ok_or_eyre("Filename not UTF-8")?;
-    let reference_name = format!("Reference: {reference_name}");
+    let reference_legend = format!("Reference: {reference_name}");
     let distorted_name = distorted
         .file_name()
         .ok_or_eyre("Input path has no filename")?
         .to_str()
         .ok_or_eyre("Filename not UTF-8")?;
-    let distorted_name = format!("Distorted: {distorted_name}");
+    let distorted_legend = format!("Distorted: {distorted_name}");
 
     let blue = Color::hex("#89b4fa");
     let orange = Color::hex("#fab387");
@@ -331,22 +333,23 @@ pub fn create_plot(
     let dark_gray = Color::hex("#6c7086");
     let surface = Color::hex("#313244");
 
+    let scores_title = format!("SSIMU2 Scores (Steps: {steps})");
     let mut plot_data: Vec<Series<'_, u32, f64>> = vec![
         Series::builder()
-            .name("SSIMU2 Scores")
+            .name(&scores_title)
             .color(green.clone())
             .data(frames)
             .marker(Marker::None)
             .line(Line::Solid)
             .interpolation(Interpolation::Linear)
-            .line_width(1.0)
+            .line_width(2.0)
             .build(),
         Series::builder()
             .name(&mean_text)
             .color(blue.clone())
             .data(mean_frames)
             .marker(Marker::None)
-            .line(Line::Dashed)
+            .line(Line::Dotted)
             .line_width(2.0)
             .build(),
         Series::builder()
@@ -354,7 +357,7 @@ pub fn create_plot(
             .color(orange.clone())
             .data(deviation_plus_frames)
             .marker(Marker::None)
-            .line(Line::Dashed)
+            .line(Line::Dotted)
             .line_width(2.0)
             .build(),
         Series::builder()
@@ -362,7 +365,7 @@ pub fn create_plot(
             .color(orange.clone())
             .data(deviation_minus_frames)
             .marker(Marker::None)
-            .line(Line::Dashed)
+            .line(Line::Dotted)
             .line_width(2.0)
             .build(),
         Series::builder()
@@ -370,7 +373,7 @@ pub fn create_plot(
             .color(red.clone())
             .data(five_percentile_frames)
             .marker(Marker::None)
-            .line(Line::Dashed)
+            .line(Line::Dotted)
             .line_width(2.0)
             .build(),
         Series::builder()
@@ -378,17 +381,17 @@ pub fn create_plot(
             .color(yellow.clone())
             .data(min_frames)
             .marker(Marker::Cross)
-            .marker_size(10.0)
+            .marker_size(7.5)
             .line(Line::None)
             .build(),
         Series::builder()
-            .name(&reference_name)
+            .name(&reference_legend)
             .data(vec![])
             .line(Line::None)
             .color(background_color.clone())
             .build(),
         Series::builder()
-            .name(&distorted_name)
+            .name(&distorted_legend)
             .data(vec![])
             .line(Line::None)
             .color(background_color.clone())
@@ -415,9 +418,11 @@ pub fn create_plot(
         }
     }
 
+    let title = format!("SSIMU2 - {distorted_name}");
+
     let plot = Plot::builder()
-        .dimensions((1920, 1080))
-        .title("SSIMU2 - Reference vs Distorted")
+        .dimensions((2000, 1000))
+        .title(&title)
         .title_config(TitleConfig {
             color: text_color.clone(),
             ..Default::default()
@@ -443,7 +448,7 @@ pub fn create_plot(
         })
         .x_range(Range::Auto)
         .y_range(Range::Manual {
-            min: 0.0,
+            min: (min_value - 15.0),
             max: 100.0,
         })
         .legend(Legend::BottomLeftInside)
