@@ -11,6 +11,7 @@ serde_json.workspace = true
 vapoursynth4-rs.workspace = true
 clap.workspace = true
 indicatif.workspace = true
+quill.workspace = true
 
 
 [lib]

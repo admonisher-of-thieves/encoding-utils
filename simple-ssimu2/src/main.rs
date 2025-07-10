@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::ssimu2, vapoursynth::{SourcePlugin, Trim}
+use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{SourcePlugin, Trim}
 };
 use eyre::{OptionExt, Result};
 use std::{fs::{self, create_dir_all}, path::PathBuf};
@@ -87,6 +87,10 @@ struct Args {
     )]
     detelecine: bool,
 
+    /// Save a plot of the SSIMU2 stats (Needs to be an .svg file)
+    #[arg(short, long = "plot-file")]
+    plot_file: Option<PathBuf>,
+
     /// Temp folder (default: "[TEMP]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
@@ -151,10 +155,14 @@ fn main() -> Result<()> {
     let stats = score_list.get_stats()?;
     let stats_with_filename = format!("\n[INFO]\nReference: {}\nDistorted: {}\nSteps: {}\n\n{}", args.reference.to_string_lossy(), args.distorted.to_string_lossy(), args.steps, stats);
     if let Some(output_path) = args.stats_file {
-        println!("\n{}", stats_with_filename);
+        println!("\n{stats_with_filename}");
         std::fs::write(output_path, stats_with_filename)?;
     } else {
-        println!("\n{}", stats_with_filename);
+        println!("\n{stats_with_filename}");
+    }
+
+    if let Some(plot_file) = args.plot_file {
+        create_plot(&plot_file, &score_list, &args.reference, &args.distorted)?;
     }
 
     if !args.keep_files && fs::exists(&temp_dir)? {
