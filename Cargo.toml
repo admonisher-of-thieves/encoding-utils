@@ -13,5 +13,5 @@ vapoursynth4-rs = { features = [
 clap = { version = "4.5.40", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["full"] }
 indicatif = { version = "0.18.0" }
-quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "35379f5ab5e4e60282b3cf4491b4bf5b0654b8ca" }
+quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "482fd373f8e64430a25198dd0462400576126a36" }
 # quill = { path = "../../../maomao/quill/" }
