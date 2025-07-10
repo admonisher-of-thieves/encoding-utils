@@ -318,9 +318,9 @@ pub fn create_plot(
         .ok_or_eyre("Filename not UTF-8")?;
     let distorted_name = format!("Distorted: {distorted_name}");
 
-    // let blue = Color::hex("#89b4fa");
+    let blue = Color::hex("#89b4fa");
     let orange = Color::hex("#fab387");
-    let pink = Color::hex("#f5c2e7");
+    // let pink = Color::hex("#f5c2e7");
     let yellow = Color::hex("#f9e2af");
     let green = Color::hex("#a6e3a1");
     let red = Color::hex("#f38ba8");
@@ -336,15 +336,14 @@ pub fn create_plot(
             .name("SSIMU2 Scores")
             .color(green.clone())
             .data(frames)
-            .marker(Marker::Circle)
-            .marker_size(1.0)
+            .marker(Marker::None)
             .line(Line::Solid)
             .interpolation(Interpolation::Linear)
-            .line_width(2.0)
+            .line_width(1.0)
             .build(),
         Series::builder()
             .name(&mean_text)
-            .color(yellow.clone())
+            .color(blue.clone())
             .data(mean_frames)
             .marker(Marker::None)
             .line(Line::Dashed)
@@ -356,7 +355,7 @@ pub fn create_plot(
             .data(deviation_plus_frames)
             .marker(Marker::None)
             .line(Line::Dashed)
-            .line_width(1.0)
+            .line_width(2.0)
             .build(),
         Series::builder()
             .name(&deviation_minus_text)
@@ -364,19 +363,19 @@ pub fn create_plot(
             .data(deviation_minus_frames)
             .marker(Marker::None)
             .line(Line::Dashed)
-            .line_width(1.0)
+            .line_width(2.0)
             .build(),
         Series::builder()
             .name(&five_percentile_text)
-            .color(pink.clone())
+            .color(red.clone())
             .data(five_percentile_frames)
             .marker(Marker::None)
             .line(Line::Dashed)
-            .line_width(1.0)
+            .line_width(2.0)
             .build(),
         Series::builder()
             .name(&min_text)
-            .color(red.clone())
+            .color(yellow.clone())
             .data(min_frames)
             .marker(Marker::Cross)
             .marker_size(10.0)
@@ -417,7 +416,7 @@ pub fn create_plot(
     }
 
     let plot = Plot::builder()
-        .dimensions((1280, 720))
+        .dimensions((1920, 1080))
         .title("SSIMU2 - Reference vs Distorted")
         .title_config(TitleConfig {
             color: text_color.clone(),
