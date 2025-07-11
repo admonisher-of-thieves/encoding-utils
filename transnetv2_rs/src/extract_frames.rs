@@ -3,6 +3,8 @@ use eyre::eyre;
 use indicatif::{ProgressBar, ProgressStyle};
 use iter_chunks::IterChunks;
 use ndarray::{Array4, ArrayView2, ArrayView4, Axis, ShapeBuilder, s};
+use rayon::iter::ParallelBridge;
+use rayon::iter::ParallelIterator;
 use vapoursynth4_rs::{
     frame::VideoFrame,
     node::{Node, VideoNode},
@@ -54,6 +56,30 @@ impl From<FrameShape> for (i64, i64, i64) {
 }
 
 impl VideoConfig {
+    pub fn get_frames(&self) -> Result<Vec<VideoFrame>> {
+        let pb = self.create_progress_bar("Extracting frames");
+
+        let mut frames: Vec<(usize, VideoFrame)> = (0..self.total_frames)
+            .par_bridge()
+            .map(|n| {
+                let frame = self
+                    .src
+                    .get_frame(n.try_into().unwrap())
+                    .map_err(|e| eyre!("Failed to load frame {}: {}", n, e.to_string_lossy()))?;
+                pb.inc(1);
+                Ok((n, frame))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        pb.finish_with_message("Frame extraction complete");
+
+        // Sort by original index to maintain frame order
+        frames.sort_by_key(|(i, _)| *i);
+
+        // Discard the indices and return only the frames
+        Ok(frames.into_iter().map(|(_, frame)| frame).collect())
+    }
+
     pub fn frame_batches(&self) -> impl Iterator<Item = Result<Vec<VideoFrame>>> + '_ {
         // Create the frame iterator
         let frame_iter = (0..self.total_frames).map(move |n| {
@@ -71,11 +97,9 @@ impl VideoConfig {
 
     /// Main processing pipeline
     pub fn process_frames(&self) -> Result<Array4<f32>> {
-        let pb = self.create_progress_bar("Extracting frames");
         let (height, width, channels) = self.validate_dimensions()?;
 
-        let all_frames = self.extract_frames(&pb, height, width, channels)?;
-        pb.finish_with_message("Frame extraction complete");
+        let all_frames = self.modify_frames(height, width, channels)?;
 
         let frames_f32 = self.concatenate_and_convert(all_frames)?;
         self.create_padded_frames(frames_f32, height, width, channels)
@@ -104,26 +128,24 @@ impl VideoConfig {
     }
 
     /// Extracts frames in batches
-    pub fn extract_frames(
+    pub fn modify_frames(
         &self,
-        pb: &ProgressBar,
         height: usize,
         width: usize,
         channels: usize,
     ) -> Result<Vec<Array4<u8>>> {
-        let mut all_frames = Vec::new();
+        let mut batch_frames = Vec::new();
+        let all_frames = self.get_frames()?;
 
-        for batch_result in self.frame_batches() {
-            let frames = batch_result?;
-            let batch_size = frames.len();
+        for batch in all_frames.chunks(self.batch.try_into().unwrap()) {
+            let batch_size = batch.len();
             let mut batch_arr = Array4::<u8>::zeros((batch_size, height, width, channels));
 
-            self.process_batch(&frames, &mut batch_arr, height, width)?;
-            all_frames.push(batch_arr);
-            pb.inc(batch_size as u64);
+            self.process_batch(batch, &mut batch_arr, height, width)?;
+            batch_frames.push(batch_arr);
         }
 
-        Ok(all_frames)
+        Ok(batch_frames)
     }
 
     /// Processes a single batch of frames
