@@ -12,13 +12,9 @@ struct Args {
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
-    // /// Path to the scene detection VPY script (default: "[SCENE-VPY]_<input>.vpy" if no path given)
-    // #[arg(long, value_parser = clap::value_parser!(PathBuf))]
-    // scene_vpy: Option<PathBuf>,
-
     /// Path to the scenes JSON output file (default: "[SCENES]_<input>.json" if no path given)
-    #[arg(long, value_parser = clap::value_parser!(PathBuf))]
-    scenes: Option<PathBuf>,
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    output: Option<PathBuf>,
 
     /// Path to custom ONNX model (default: uses embedded TransNetV2 model)
     #[arg(long, value_parser = clap::value_parser!(PathBuf))]
@@ -35,10 +31,13 @@ struct Args {
     #[arg(long = "extra-split", value_parser = clap::value_parser!(u32).range(0..))]
     extra_split: Option<u32>,
 
+    /// Minimum number of frames for a scenecut.
+    #[arg(long = "min-scene-len-sec", default_value_t = 1, value_parser = clap::value_parser!(u32).range(0..))]
+    min_scene_len_sec: u32,
 
     /// Minimum number of frames for a scenecut.
-    #[arg(long = "min-scene-len", default_value_t = 0, value_parser = clap::value_parser!(u32).range(0..))]
-    min_scene_len: u32,
+    #[arg(long = "min-scene-len", value_parser = clap::value_parser!(u32).range(0..))]
+    min_scene_len: Option<u32>,
 
     /// Threshold to detect scene cut
     #[arg(long = "threshold", default_value_t = 0.5)]
@@ -103,7 +102,7 @@ fn main() -> eyre::Result<()> {
     let args = Args::parse();
     let input_path = absolute(&args.input)?;
 
-    let scenes = match args.scenes {
+    let scenes = match args.output {
         Some(path) => path,
         None => {
             let output_name = format!(
@@ -135,7 +134,7 @@ fn main() -> eyre::Result<()> {
     fs::create_dir_all(&temp_folder)?;
 
     run_transnetv2(&input_path, &scenes, args.model.as_deref(),
-     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len.into(), args.threshold)?;
+     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len, args.threshold)?;
 
      if !args.keep_files && fs::exists(&temp_folder)? {
      fs::remove_dir_all(&temp_folder)?;

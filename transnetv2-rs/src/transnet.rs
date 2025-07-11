@@ -24,7 +24,8 @@ pub fn run_transnetv2(
     detelecine: bool,
     extra_split_seconds: i64,
     extra_split_frames: Option<i64>,
-    min_scene_len: i64,
+    min_scene_len_sec: i64,
+    min_scene_len: Option<i64>,
     threshold: f32,
 ) -> Result<()> {
     let core = Core::builder().build();
@@ -46,7 +47,15 @@ pub fn run_transnetv2(
     let total_frames = info.num_frames as usize;
     let extra_split = match extra_split_frames {
         Some(frames) => frames,
-        None => (extra_split_seconds * info.fps_num) / info.fps_den,
+        None => {
+            ((extra_split_seconds as f64 * info.fps_num as f64) / info.fps_den as f64).ceil() as i64
+        }
+    };
+    let min_scene_len = match min_scene_len {
+        Some(frames) => frames,
+        None => {
+            ((min_scene_len_sec as f64 * info.fps_num as f64) / info.fps_den as f64).ceil() as i64
+        }
     };
     let video_config = VideoConfig {
         src,
