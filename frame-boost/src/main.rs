@@ -78,12 +78,12 @@ struct Args {
 
     /// Disable overwrite protection (remove the scene file)
     #[arg(
-        short = 'F', 
-        long = "no-force",
+        short = 'f', 
+        long = "force",
         action = ArgAction::SetTrue,
-        default_value_t = false,
+        default_value_t = true,
     )]
-    no_force: bool,
+    force: bool,
 
     /// Video Source Plugin for metrics
     #[arg(short, long = "source-metric-plugin", default_value = "lsmash")]
@@ -107,7 +107,6 @@ struct Args {
 
     /// Downscale, using Box Kernel 0.5
     #[arg(
-        short, 
         long, 
         default_value_t = false,
         action = ArgAction::Set,
@@ -117,7 +116,6 @@ struct Args {
 
     /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
-        short, 
         long, 
         default_value_t = false,
         action = ArgAction::Set,
@@ -131,7 +129,6 @@ struct Args {
 
     /// Avoid encoding frames that have already reached the quality score
     #[arg(
-        short = 'f', 
         long = "filter-frames",
         action = ArgAction::SetTrue,
         default_value_t = true,
@@ -160,12 +157,12 @@ fn main() -> Result<()> {
     };
 
     if scene_boosted.exists() {
-        if !args.no_force {
+        if args.force {
             fs::remove_file(&scene_boosted)?;
             println!("\nRemoved existing scene file: {}", scene_boosted.display());
         } else {
             eyre::bail!(
-                "Scene file {} already exists. Remove -F(--no-force) to overwrite",
+                "Scene file {} already exists. Remove use --force to overwrite",
                 scene_boosted.display()
             );
         }

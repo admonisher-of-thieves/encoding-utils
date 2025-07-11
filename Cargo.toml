@@ -1,6 +1,12 @@
 [workspace]
-members = ["encoding_utils_lib", "simple-ssimu2", "frame-boost", "hard-to-soft"]
-resolver = "2"
+members = [
+    "encoding_utils_lib",
+    "simple-ssimu2",
+    "frame-boost",
+    "hard-to-soft",
+    "transnetv2_rs",
+]
+resolver = "3"
 
 [workspace.dependencies]
 eyre = "0.6.12"
@@ -11,7 +17,9 @@ vapoursynth4-rs = { features = [
     "link-library",
 ], git = "https://github.com/inflation/vapoursynth4-rs", rev = "e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7" }
 clap = { version = "4.5.40", features = ["derive"] }
-tokio = { version = "1.45.1", features = ["full"] }
 indicatif = { version = "0.18.0" }
 quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "482fd373f8e64430a25198dd0462400576126a36" }
-# quill = { path = "../../../maomao/quill/" }
+ndarray = "0.16.1"
+iter-chunks = "0.2.2"
+itertools = "0.14.0"
+tempfile = "3.20.0"

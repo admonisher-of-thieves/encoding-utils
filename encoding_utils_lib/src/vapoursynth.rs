@@ -329,11 +329,7 @@ impl FromStr for CropParams {
     }
 }
 
-pub fn crop_reference_to_match(
-    core: &Core,
-    reference: &VideoNode,
-    crop: &str,
-) -> Result<VideoNode> {
+pub fn to_crop(core: &Core, reference: &VideoNode, crop: &str) -> Result<VideoNode> {
     let crop_params = CropParams::from_str(crop)?;
     let ref_info = reference.info();
 
@@ -636,4 +632,95 @@ pub fn inverse_telecine(core: &Core, input: &VideoNode) -> Result<VideoNode> {
     let decimated_clip =
         vdecimate_out.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
     Ok(decimated_clip)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn prepare_clip(
+    core: &Core,
+    input_path: &Path,
+    importer_plugin: &SourcePlugin,
+    temp_dir: &Path,
+    verbose: bool,
+    color_metadata: &str,
+    crop: Option<&str>,
+    downscale: bool,
+    detelecine: bool,
+) -> Result<VideoNode> {
+    let mut input = match importer_plugin {
+        SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_dir)?,
+    };
+
+    if verbose {
+        println!("Original\nVideo: {:?}\n", input.info(),);
+    }
+
+    input = set_color_metadata(core, &input, color_metadata)?;
+
+    if detelecine {
+        input = inverse_telecine(core, &input)?;
+    }
+
+    if downscale {
+        input = downscale_resolution(core, &input)?;
+    }
+
+    if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
+        input = to_crop(core, &input, crop_str)?;
+    }
+
+    if verbose {
+        println!("Preprocessed\nVideo: {:?}\n", input.info(),);
+    }
+
+    Ok(input)
+}
+
+pub fn resize_format(
+    core: &Core,
+    clip: &VideoNode,
+    width: i64,
+    height: i64,
+    format: &str,
+) -> Result<VideoNode> {
+    let resize = resize(core)?;
+    let mut args = Map::default();
+
+    let format = match format {
+        "RGB24" => 537395200,
+        _ => Err(eyre!("Color format is not supported"))?,
+    };
+
+    args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(clip.to_owned()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"width".to_cstring()),
+        Value::Int(width),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"height".to_cstring()),
+        Value::Int(height),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"format".to_cstring()),
+        Value::Int(format),
+        Replace,
+    )?;
+
+    let func = resize.invoke(&"Bicubic".to_cstring(), args);
+
+    // Check for errors before getting the video node
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "Resize Bicubic failed: {}",
+            err.to_string_lossy()
+        ));
+    }
+
+    Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }

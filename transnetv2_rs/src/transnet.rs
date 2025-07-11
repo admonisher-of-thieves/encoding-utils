@@ -1,0 +1,71 @@
+use std::path::Path;
+
+use encoding_utils_lib::{
+    scenes::write_scene_list_to_file,
+    vapoursynth::{SourcePlugin, prepare_clip, resize_format},
+};
+use eyre::Result;
+use vapoursynth4_rs::{core::Core, node::VideoNode};
+
+use crate::{extract_frames::VideoConfig, interferance::SceneDetector, onnx::TransNetSession};
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_transnetv2(
+    video_path: &Path,
+    scene_path: &Path,
+    model_path: Option<&Path>,
+    use_gpu: bool,
+    importer_plugin: SourcePlugin,
+    temp_dir: &Path,
+    verbose: bool,
+    color_metadata: &str,
+    crop: Option<&str>,
+    downscale: bool,
+    detelecine: bool,
+    extra_split_frames: i64,
+    extra_split_seconds: Option<i64>,
+    min_scene_len: i64,
+    threshold: f32,
+) -> Result<()> {
+    let core = Core::builder().build();
+
+    let src = prepare_clip(
+        &core,
+        video_path,
+        &importer_plugin,
+        temp_dir,
+        verbose,
+        color_metadata,
+        crop,
+        downscale,
+        detelecine,
+    )?;
+
+    let src: VideoNode = resize_format(&core, &src, 48, 27, "RGB24")?;
+    let info = src.info();
+    let total_frames = info.num_frames as usize;
+    let extra_split = match extra_split_seconds {
+        Some(seconds) => (seconds * info.fps_num) / info.fps_den,
+        None => extra_split_frames,
+    };
+    let video_config = VideoConfig {
+        src,
+        total_frames,
+        frame_shape: (27, 48, 3).into(),
+        batch: 100,
+    };
+
+    let transnet_session = TransNetSession::new(model_path, use_gpu)?;
+    let mut scene_detection = SceneDetector::with_params(
+        threshold,
+        min_scene_len.try_into().unwrap(),
+        extra_split as usize,
+    );
+    scene_detection.predictions(transnet_session.session, &video_config)?;
+    let scene_list = scene_detection.predictions_to_scene_list(total_frames);
+    write_scene_list_to_file(scene_list, scene_path)?;
+
+    // println!("{scenes:#?}");
+
+    Ok(())
+}

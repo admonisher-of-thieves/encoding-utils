@@ -1,0 +1,147 @@
+use clap::{ArgAction, Parser};
+use encoding_utils_lib::vapoursynth::SourcePlugin;
+use eyre::OptionExt;
+use transnetv2_rs::transnet::run_transnetv2;
+use std::path::{PathBuf, absolute};
+
+/// Video processing tool with scene detection
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Path to the video file
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    input: PathBuf,
+
+    // /// Path to the scene detection VPY script (default: "[SCENE-VPY]_<input>.vpy" if no path given)
+    // #[arg(long, value_parser = clap::value_parser!(PathBuf))]
+    // scene_vpy: Option<PathBuf>,
+
+    /// Path to the scenes JSON output file (default: "[SCENES]_<input>.json" if no path given)
+    #[arg(long, value_parser = clap::value_parser!(PathBuf))]
+    scenes: Option<PathBuf>,
+
+    /// Enable single pass mode
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
+    single_pass: bool,
+
+    /// Enable GPU acceleration
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = true)]
+    gpu: bool,
+
+    /// Temp folder (default: "[Temp]_<input>" if no temp folder given)
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    temp: Option<PathBuf>,
+
+    /// Video Source Plugin for obtaining the scene file
+    #[arg(short, long = "source-plugin", default_value = "lsmash")]
+    source_plugin: SourcePlugin,
+
+    // Enable verbose output
+    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
+    verbose: bool,
+
+    /// Crop string (e.g. 1920:816:0:132)
+    #[arg(short, long)]
+    crop: Option<String>,
+
+    /// Downscale, using Box Kernel 0.5
+    #[arg(
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
+    downscale: bool,
+
+    /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
+    #[arg(
+        long, 
+        default_value_t = false,
+        action = ArgAction::Set,
+        value_parser = clap::value_parser!(bool)
+    )]
+    detelecine: bool,
+
+    /// Color params base on the svt-av1 params
+    #[arg(
+    long,
+        default_value = "--color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+    )]
+    color_metadata: String,
+
+    /// Path to custom ONNX model (default: uses embedded TransNetV2 model)
+    #[arg(long, value_parser = clap::value_parser!(PathBuf))]
+    model: Option<PathBuf>,
+
+    /// Maximum scene length. 
+    /// When a scenecut is found whose distance to the previous scenecut is greater than the value specified by this option, one or more extra splits (scenecuts) are added. Set this option to 0 to disable adding extra splits.
+    #[arg(long = "extra-split", default_value_t = 240, value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split: u32,
+
+    /// Maximum scene length in seconds. 
+    /// If both `--extra-split` (frames) and `--extra-split-sec` are provided, seconds take priority.
+    #[arg(long = "extra-split-sec", value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split_sec: Option<u32>,
+
+    /// Minimum number of frames for a scenecut.
+    #[arg(long = "min-scene-len", default_value_t = 24, value_parser = clap::value_parser!(u32).range(0..))]
+    min_scene_len: u32,
+
+    /// Threshold to detect scene cut
+    #[arg(long = "threshold", default_value_t = 0.5)]
+    threshold: f32,
+}
+
+fn main() -> eyre::Result<()> {
+    let args = Args::parse();
+    let input_path = absolute(&args.input)?;
+
+    // // Default values for optional paths
+    // let scene_vpy = match args.scene_vpy {
+    //     Some(path) => path,
+    //     None => {
+    //         let output_name = format!(
+    //             "[SCENE-VPY]_{}.vpy",
+    //             args.input
+    //                 .file_stem()
+    //                 .ok_or_eyre("No file name")?
+    //                 .to_str()
+    //                 .ok_or_eyre("Invalid UTF-8 in input path")?
+    //         );
+    //         input_path.with_file_name(output_name)
+    //     }
+    // };
+    let scenes = match args.scenes {
+        Some(path) => path,
+        None => {
+            let output_name = format!(
+                "[SCENES]_{}.json",
+                args.input
+                    .file_stem()
+                    .ok_or_eyre("No file name")?
+                    .to_str()
+                    .ok_or_eyre("Invalid UTF-8 in input path")?
+            );
+            input_path.with_file_name(output_name)
+        }
+    };
+
+    let temp_folder = match args.temp {
+        Some(temp) => temp, 
+        None => { 
+            let temp_folder = args.input.with_file_name(format!(
+                "[TEMP]_{}",
+                args.input
+                    .file_stem()
+                    .ok_or_eyre("No file name")?
+                    .to_str()
+                    .ok_or_eyre("Invalid UTF-8 in input path")?
+            ));
+            args.input.with_file_name(temp_folder)
+        }
+    };
+
+    run_transnetv2(&input_path, &scenes, args.model.as_deref(), args.gpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split.into(), args.extra_split_sec.map(|x| x.into()), args.min_scene_len.into(), args.threshold)?;
+
+    Ok(())
+}

@@ -1,0 +1,25 @@
+[package]
+name = "transnetv2_rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+vapoursynth4-rs = { workspace = true }
+encoding_utils_lib = { path = "../encoding_utils_lib" }
+eyre.workspace = true
+clap.workspace = true
+indicatif.workspace = true
+ndarray.workspace = true
+itertools.workspace = true
+tempfile.workspace = true
+rayon.workspace = true
+iter-chunks.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+ort = { version = "=2.0.0-rc.10", features = ["coreml"] }
+
+[target.'cfg(windows)'.dependencies]
+ort = { version = "=2.0.0-rc.10", features = ["cuda", "tensorrt", "directml"] }
+
+[target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
+ort = { version = "=2.0.0-rc.10", features = ["cuda", "tensorrt", "rocm"] }

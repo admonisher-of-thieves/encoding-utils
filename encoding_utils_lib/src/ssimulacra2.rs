@@ -2,9 +2,9 @@ use crate::{
     math::{self, FrameScore, ScoreList},
     scenes::{SceneList, parse_scene_file},
     vapoursynth::{
-        SourcePlugin, ToCString, Trim, bestsource_invoke, crop_reference_to_match,
-        downscale_resolution, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata,
-        synchronize_clips, vszip_metrics,
+        SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, inverse_telecine,
+        lsmash_invoke, select_frames, set_color_metadata, synchronize_clips, to_crop,
+        vszip_metrics,
     },
 };
 
@@ -21,7 +21,7 @@ use vapoursynth4_rs::{
 };
 
 #[allow(clippy::too_many_arguments)]
-fn prepare_clips(
+pub fn prepare_clips(
     core: &Core,
     reference_path: &Path,
     distorted_path: &Path,
@@ -65,7 +65,7 @@ fn prepare_clips(
     }
 
     if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
-        reference = crop_reference_to_match(core, &reference, crop_str)?;
+        reference = to_crop(core, &reference, crop_str)?;
     }
 
     if let Some(trim) = trim {
@@ -88,8 +88,6 @@ pub fn ssimu2_frames_selected(
     reference: &Path,
     distorted: &Path,
     scene_list: &mut SceneList,
-    // n_frames: u32,
-    // frames_distribution: FramesDistribution,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
@@ -329,9 +327,9 @@ pub fn create_plot(
     let text_color = Color::hex("#cdd6f4");
     let background_color = Color::hex("#1e1e2e");
     // let light_gray = Color::hex("#bac2de");
-    let middle_gray = Color::hex("#9399b2");
+    let middle_gray = Color::hex("#7f849c");
     let dark_gray = Color::hex("#6c7086");
-    let surface = Color::hex("#313244");
+    let surface = Color::hex("#45475a");
 
     let scores_title = format!("SSIMU2 Scores (Steps: {steps})");
     let mut plot_data: Vec<Series<'_, u32, f64>> = vec![
@@ -342,7 +340,7 @@ pub fn create_plot(
             .marker(Marker::None)
             .line(Line::Solid)
             .interpolation(Interpolation::Linear)
-            .line_width(2.0)
+            .line_width(1.0)
             .build(),
         Series::builder()
             .name(&mean_text)
@@ -410,7 +408,7 @@ pub fn create_plot(
                     .color(middle_gray.clone())
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
-                    .line(Line::Dashed)
+                    .line(Line::Solid)
                     .line_width(1.0)
                     .show_legend(false)
                     .build(),
