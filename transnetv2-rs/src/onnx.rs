@@ -25,11 +25,11 @@ pub struct TransNetSession {
 }
 
 impl TransNetSession {
-    pub fn new(model_path: Option<impl AsRef<Path>>, use_gpu: bool) -> Result<Self> {
-        let providers = if use_gpu {
-            Self::preferred_execution_providers()
-        } else {
+    pub fn new(model_path: Option<impl AsRef<Path>>, use_cpu: bool) -> Result<Self> {
+        let providers = if use_cpu {
             vec![]
+        } else {
+            Self::preferred_execution_providers()
         };
         let session = match model_path {
             Some(path) => Self::init_session_from_file(path.as_ref(), &providers)?,

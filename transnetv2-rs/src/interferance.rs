@@ -40,6 +40,13 @@ impl SceneDetector {
     }
 
     pub fn with_params(threshold: f32, min_scene_len: usize, extra_split: usize) -> Self {
+        if extra_split > 0 {
+            assert!(
+                min_scene_len <= extra_split,
+                "min_scene_len ({min_scene_len}) cannot be greater than extra_split ({extra_split})"
+            );
+        }
+
         Self {
             threshold,
             min_scene_len,
@@ -97,7 +104,7 @@ impl SceneDetector {
         Ok(())
     }
 
-    pub fn predictions_to_scenes(&self, total_frames: usize) -> Vec<(usize, usize)> {
+    fn get_initial_scenes(&self, total_frames: usize) -> Vec<(usize, usize)> {
         let scene_changes: Vec<usize> = self
             .predictions
             .iter()
@@ -109,34 +116,64 @@ impl SceneDetector {
         let mut prev_start = 0;
 
         for &change_point in &scene_changes {
-            if change_point >= prev_start + self.min_scene_len {
-                // `change_point + 1` is exclusive end of current scene
+            if change_point >= prev_start {
+                let scene_length = change_point + 1 - prev_start;
+
+                // If scene is too short, skip this change point (merge with next scene)
+                if scene_length < self.min_scene_len {
+                    continue;
+                }
+
                 scenes.push((prev_start, change_point + 1));
                 prev_start = change_point + 1;
             }
         }
 
-        // Add last scene until total_frames (exclusive)
+        // Handle the last scene
         if total_frames > prev_start {
-            scenes.push((prev_start, total_frames));
+            let last_scene_length = total_frames - prev_start;
+
+            // If last scene is too short and we have previous scenes, merge with the last scene
+            if last_scene_length < self.min_scene_len && !scenes.is_empty() {
+                let (last_start, _) = scenes.pop().unwrap();
+                scenes.push((last_start, total_frames));
+            } else {
+                scenes.push((prev_start, total_frames));
+            }
         }
 
-        // Recursively split any scene that exceeds `extra_split`
-        // let mut final_scenes = Vec::new();
-        // let mut queue = scenes;
+        scenes
+    }
 
-        // while let Some((start, end)) = queue.pop() {
-        //     let len = end - start;
-        //     if len > self.extra_split {
-        //         let mid = start + len / 2;
-        //         queue.push((start, mid));
-        //         queue.push((mid, end));
-        //     } else {
-        //         final_scenes.push((start, end));
-        //     }
-        // }
+    pub fn predictions_to_scenes(&self, total_frames: usize) -> Vec<(usize, usize)> {
+        // First get the initial scenes respecting min_scene_len
+        let mut scenes = self.get_initial_scenes(total_frames);
 
-        // final_scenes.sort_by_key(|&(s, _)| s);
+        // Skip splitting if extra_split is 0
+        if self.extra_split == 0 {
+            return scenes;
+        }
+
+        // Then recursively split scenes that are too long
+        let mut i = 0;
+        while i < scenes.len() {
+            let (start, end) = scenes[i];
+            let length = end - start;
+
+            if length > self.extra_split {
+                // Split the scene in half
+                let split_point = start + length / 2;
+
+                // Replace current scene with two halves
+                scenes.remove(i);
+                scenes.insert(i, (split_point, end));
+                scenes.insert(i, (start, split_point));
+
+                // Don't increment i, we need to check the new scenes
+            } else {
+                i += 1;
+            }
+        }
 
         scenes
     }

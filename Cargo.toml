@@ -4,7 +4,7 @@ members = [
     "simple-ssimu2",
     "frame-boost",
     "hard-to-soft",
-    "transnetv2_rs",
+    "transnetv2-rs",
 ]
 resolver = "3"
 

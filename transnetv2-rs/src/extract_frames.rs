@@ -3,8 +3,8 @@ use eyre::eyre;
 use indicatif::{ProgressBar, ProgressStyle};
 use iter_chunks::IterChunks;
 use ndarray::{Array4, ArrayView2, ArrayView4, Axis, ShapeBuilder, s};
-use rayon::iter::ParallelBridge;
-use rayon::iter::ParallelIterator;
+// use rayon::iter::ParallelBridge;
+// use rayon::iter::ParallelIterator;
 use vapoursynth4_rs::{
     frame::VideoFrame,
     node::{Node, VideoNode},
@@ -60,7 +60,7 @@ impl VideoConfig {
         let pb = self.create_progress_bar("Extracting frames");
 
         let mut frames: Vec<(usize, VideoFrame)> = (0..self.total_frames)
-            .par_bridge()
+            // .par_bridge()
             .map(|n| {
                 let frame = self
                     .src

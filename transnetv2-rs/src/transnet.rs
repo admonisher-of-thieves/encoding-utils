@@ -14,7 +14,7 @@ pub fn run_transnetv2(
     video_path: &Path,
     scene_path: &Path,
     model_path: Option<&Path>,
-    use_gpu: bool,
+    use_cpu: bool,
     importer_plugin: SourcePlugin,
     temp_dir: &Path,
     verbose: bool,
@@ -22,8 +22,8 @@ pub fn run_transnetv2(
     crop: Option<&str>,
     downscale: bool,
     detelecine: bool,
-    extra_split_frames: i64,
-    extra_split_seconds: Option<i64>,
+    extra_split_seconds: i64,
+    extra_split_frames: Option<i64>,
     min_scene_len: i64,
     threshold: f32,
 ) -> Result<()> {
@@ -44,9 +44,9 @@ pub fn run_transnetv2(
     let src: VideoNode = resize_format(&core, &src, 48, 27, "RGB24")?;
     let info = src.info();
     let total_frames = info.num_frames as usize;
-    let extra_split = match extra_split_seconds {
-        Some(seconds) => (seconds * info.fps_num) / info.fps_den,
-        None => extra_split_frames,
+    let extra_split = match extra_split_frames {
+        Some(frames) => frames,
+        None => (extra_split_seconds * info.fps_num) / info.fps_den,
     };
     let video_config = VideoConfig {
         src,
@@ -55,7 +55,7 @@ pub fn run_transnetv2(
         batch: 100,
     };
 
-    let transnet_session = TransNetSession::new(model_path, use_gpu)?;
+    let transnet_session = TransNetSession::new(model_path, use_cpu)?;
     let mut scene_detection = SceneDetector::with_params(
         threshold,
         min_scene_len.try_into().unwrap(),
