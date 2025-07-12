@@ -26,8 +26,8 @@ pub fn run_transnetv2(
     min_scene_len: Option<i64>,
     threshold: f32,
     fade_threshold_low: f32,
-    min_fade_len: usize,
-    merge_gap: usize,
+    min_fade_len: i64,
+    merge_gap: i64,
 ) -> Result<SceneList> {
     let core = Core::builder().build();
 
@@ -71,8 +71,8 @@ pub fn run_transnetv2(
         min_scene_len.try_into().unwrap(),
         extra_split as usize,
         fade_threshold_low,
-        min_fade_len,
-        merge_gap,
+        min_fade_len as usize,
+        merge_gap as usize,
     );
     scene_detection.predictions(transnet_session.session, &video_config)?;
     let scene_list = scene_detection.predictions_to_scene_list(total_frames);

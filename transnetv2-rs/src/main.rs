@@ -144,7 +144,7 @@ fn main() -> eyre::Result<()> {
     fs::create_dir_all(&temp_folder)?;
 
     let scene_list = run_transnetv2(&input_path, args.model.as_deref(),
-     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold, args.fade_threshold, args.min_fade_len, args.merge_gap_between_fades)?;
+     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold, args.fade_threshold, args.min_fade_len.into(), args.merge_gap_between_fades.into())?;
     write_scene_list_to_file(scene_list, &scenes)?;
 
 

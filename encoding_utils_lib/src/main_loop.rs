@@ -42,8 +42,8 @@ pub fn run_loop<'a>(
     min_scene_len: Option<i64>,
     threshold: f32,
     fade_threshold_low: f32,
-    min_fade_len: usize,
-    merge_gap: usize,
+    min_fade_len: i64,
+    merge_gap: i64,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 

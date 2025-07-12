@@ -256,8 +256,8 @@ fn main() -> Result<()> {
         args.min_scene_len.map(|x| x.into()),
         args.threshold,
           args.fade_threshold,
-        args.min_fade_len.try_into().unwrap(),
-        args.merge_gap_between_fades.try_into().unwrap()
+        args.min_fade_len.into(),
+        args.merge_gap_between_fades.into()
     )?;
 
     Ok(())
