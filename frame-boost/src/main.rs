@@ -24,14 +24,14 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --no-defaults"
+        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --no-defaults"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --psy-rd 1 --spy-rd 2 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --kf-tf-strength 0 --psy-rd 1 --spy-rd 2 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
@@ -145,7 +145,7 @@ struct Args {
 
     // Maximum scene length in seconds. 
     /// If both `--extra-split` (frames) and `--extra-split-sec` are provided, frames take priority.
-    #[arg(long = "extra-split-sec", default_value_t = 5, value_parser = clap::value_parser!(u32).range(0..))]
+    #[arg(long = "extra-split-sec", default_value_t = 10, value_parser = clap::value_parser!(u32).range(0..))]
     extra_split_sec: u32,
 
     /// Maximum scene length. 
