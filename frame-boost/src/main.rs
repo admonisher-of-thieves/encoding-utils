@@ -68,7 +68,7 @@ struct Args {
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = SceneDetectionMethod::TransnetV2)]
+    #[arg(value_enum, short = 'd', long = "scene-detection-method", default_value_t = SceneDetectionMethod::TransnetV2)]
     scene_detection_method: SceneDetectionMethod,
 
     /// Keep temporary files (disables automatic cleanup)
