@@ -41,6 +41,9 @@ pub fn run_loop<'a>(
     min_scene_len_sec: i64,
     min_scene_len: Option<i64>,
     threshold: f32,
+    fade_threshold_low: f32,
+    min_fade_len: usize,
+    merge_gap: usize,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
@@ -97,6 +100,9 @@ pub fn run_loop<'a>(
                 min_scene_len_sec,
                 min_scene_len,
                 threshold,
+                fade_threshold_low,
+                min_fade_len,
+                merge_gap,
             )?;
             println!();
             write_scene_list_to_file(scene_list.clone(), &temp_folder.join("scenes.json"))?;

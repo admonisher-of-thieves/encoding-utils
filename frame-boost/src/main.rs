@@ -164,6 +164,18 @@ struct Args {
     /// Threshold to detect scene cut
     #[arg(long = "threshold", default_value_t = 0.5)]
     threshold: f32,
+
+    /// Threshold to fade detection
+    #[arg(long = "fade-threshold", default_value_t = 0.05)]
+    fade_threshold: f32,
+
+    /// Minimum fade length in frames
+    #[arg(long = "min-fade-len", default_value_t = 8)]
+    min_fade_len: u32,
+
+    /// Merge fades separated by this many frames or less
+    #[arg(long = "merge-gap-between-fades", default_value_t = 4)]
+    merge_gap_between_fades: u32,
 }
 
 fn main() -> Result<()> {
@@ -240,7 +252,12 @@ fn main() -> Result<()> {
         &temp_folder,
         args.extra_split_sec.into(),
         args.extra_split.map(|x| x.into()),
-        args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold
+        args.min_scene_len_sec.into(),
+        args.min_scene_len.map(|x| x.into()),
+        args.threshold,
+          args.fade_threshold,
+        args.min_fade_len.try_into().unwrap(),
+        args.merge_gap_between_fades.try_into().unwrap()
     )?;
 
     Ok(())

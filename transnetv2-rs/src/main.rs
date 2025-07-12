@@ -21,7 +21,7 @@ struct Args {
 
     // Maximum scene length in seconds. 
     /// If both `--extra-split` (frames) and `--extra-split-sec` are provided, frames take priority.
-    #[arg(long = "extra-split-sec", default_value_t = 5, value_parser = clap::value_parser!(u32).range(0..))]
+    #[arg(long = "extra-split-sec", default_value_t = 10, value_parser = clap::value_parser!(u32).range(0..))]
     extra_split_sec: u32,
 
     /// Maximum scene length. 
@@ -38,8 +38,20 @@ struct Args {
     min_scene_len: Option<u32>,
 
     /// Threshold to detect scene cut
-    #[arg(long = "threshold", default_value_t = 0.5)]
+    #[arg(long = "threshold", default_value_t = 0.4)]
     threshold: f32,
+
+    /// Threshold to fade detection
+    #[arg(long = "fade-threshold", default_value_t = 0.05)]
+    fade_threshold: f32,
+
+    /// Minimum fade length in frames
+    #[arg(long = "min-fade-len", default_value_t = 8)]
+    min_fade_len: u32,
+
+    /// Merge fades separated by this many frames or less
+    #[arg(long = "merge-gap-between-fades", default_value_t = 4)]
+    merge_gap_between_fades: u32,
 
     /// Skip GPU acceleration
     #[arg(long, action = ArgAction::SetTrue, default_value_t = true)]
@@ -132,7 +144,7 @@ fn main() -> eyre::Result<()> {
     fs::create_dir_all(&temp_folder)?;
 
     let scene_list = run_transnetv2(&input_path, args.model.as_deref(),
-     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold)?;
+     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold, args.fade_threshold, args.min_fade_len, args.merge_gap_between_fades)?;
     write_scene_list_to_file(scene_list, &scenes)?;
 
 
