@@ -1,5 +1,9 @@
 # transnetv2-rs
 
+Orginal repository: <https://github.com/soCzech/TransNetV2/tree/master>
+
+ONNX Model: <https://huggingface.co/elya5/transnetv2>
+
 ```sh
 transnetv2-rs --help
 Scene detection using TransnetV2
