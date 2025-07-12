@@ -3,7 +3,7 @@ use encoding_utils_lib::{scenes::write_scene_list_to_file, transnetv2::transnet:
 use eyre::OptionExt;
 use std::{fs, path::{absolute, PathBuf}};
 
-/// Video processing tool with scene detection
+/// Scene detection using TransnetV2
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
