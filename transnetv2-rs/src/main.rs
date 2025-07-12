@@ -41,16 +41,24 @@ struct Args {
     #[arg(long = "threshold", default_value_t = 0.4)]
     threshold: f32,
 
+    /// Combine hardcut scenes and fade scenes
+    #[arg(
+        long = "enable-fade",
+        action = ArgAction::SetTrue,
+        default_value_t = true,
+    )]
+    enable_fade_detection: bool,
+
     /// Threshold to fade detection
     #[arg(long = "fade-threshold", default_value_t = 0.05)]
     fade_threshold: f32,
 
     /// Minimum fade length in frames
-    #[arg(long = "min-fade-len", default_value_t = 8)]
+    #[arg(long = "min-fade-len", default_value_t = 8,  value_parser = clap::value_parser!(u32).range(0..))]
     min_fade_len: u32,
 
     /// Merge fades separated by this many frames or less
-    #[arg(long = "merge-gap-between-fades", default_value_t = 4)]
+    #[arg(long = "merge-gap-between-fades", default_value_t = 4, value_parser = clap::value_parser!(u32).range(0..))]
     merge_gap_between_fades: u32,
 
     /// Skip GPU acceleration
@@ -143,8 +151,25 @@ fn main() -> eyre::Result<()> {
     };
     fs::create_dir_all(&temp_folder)?;
 
-    let scene_list = run_transnetv2(&input_path, args.model.as_deref(),
-     args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold, args.fade_threshold, args.min_fade_len.into(), args.merge_gap_between_fades.into())?;
+    let scene_list = run_transnetv2(
+        &input_path,
+        args.model.as_deref(),
+        args.cpu,
+        args.source_plugin,
+        &temp_folder, args.verbose,
+        &args.color_metadata,
+        args.crop.as_deref(),
+        args.downscale, args.detelecine,
+        args.extra_split_sec.into(),
+        args.extra_split.map(|x| x.into()),
+        args.min_scene_len_sec.into(),
+        args.min_scene_len.map(|x| x.into()),
+        args.threshold,
+        args.fade_threshold,
+        args.min_fade_len.into(),
+        args.merge_gap_between_fades.into(),
+        args.enable_fade_detection)?;
+
     write_scene_list_to_file(scene_list, &scenes)?;
 
 

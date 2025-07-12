@@ -148,7 +148,7 @@ impl SceneDetector {
         self.fade_predictions =
             fade_predictions[..total_frames.min(fade_predictions.len())].to_vec();
 
-        self.save_predictions_to_file("predictions.txt")?;
+        // self.save_predictions_to_file("predictions.txt")?;
 
         Ok(())
     }
@@ -187,6 +187,7 @@ impl SceneDetector {
             scene_cut_frames.push(self.hardcut_predictions.len());
         }
 
+        // println!("{scene_cut_frames:?}");
         scene_cut_frames
     }
 
@@ -252,6 +253,7 @@ impl SceneDetector {
         }
         merged.push((prev_start, prev_end));
 
+        // println!("{merged:?}");
         merged
     }
 
@@ -357,23 +359,23 @@ impl SceneDetector {
         let mut current_end = scenes[0].1;
 
         for &(start, end) in &scenes[1..] {
-            // Calculate scene lengths accounting for exclusive end
-            let current_length = current_end - current_start; // frames [current_start..current_end)
-            let combined_length = end - current_start; // frames [current_start..end)
+            let current_length = current_end - current_start;
 
-            // Merge if current scene is too short or merging would still be too short
-            if current_length < self.min_scene_len || combined_length <= self.min_scene_len {
+            if current_length < self.min_scene_len {
+                // Always merge short segments forward
                 current_end = end;
             } else {
+                // Finalize current segment
                 combined.push((current_start, current_end));
                 current_start = start;
                 current_end = end;
             }
         }
 
-        // Handle the last accumulated scene
-        if current_end - current_start < self.min_scene_len && !combined.is_empty() {
-            // Merge with previous if last scene is too short
+        // Handle last accumulated segment
+        let last_length = current_end - current_start;
+        if last_length < self.min_scene_len && !combined.is_empty() {
+            // Merge trailing shorts with previous segment
             let (prev_start, _) = combined.pop().unwrap();
             combined.push((prev_start, current_end));
         } else {
@@ -413,10 +415,15 @@ impl SceneDetector {
         result
     }
 
-    pub fn predictions_to_scene_list(&self, total_frames: usize) -> SceneList {
-        let (_, combined_scenes) = self.predictions_with_fades_to_scenes();
-        let combined = self.combine_short_scenes(combined_scenes);
-        let scenes = self.split_large_scenes(combined);
+    pub fn predictions_to_scene_list(&self, total_frames: usize, fade_scenes: bool) -> SceneList {
+        let (filtered_scenes, combined_scenes) = self.predictions_with_fades_to_scenes();
+        let scenes = if fade_scenes {
+            combined_scenes
+        } else {
+            filtered_scenes
+        };
+        let scenes = self.split_large_scenes(scenes);
+        let scenes = self.combine_short_scenes(scenes);
 
         let scenes: Vec<Scene> = scenes
             .into_iter()

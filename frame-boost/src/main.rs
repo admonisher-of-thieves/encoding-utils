@@ -165,6 +165,14 @@ struct Args {
     #[arg(long = "threshold", default_value_t = 0.5)]
     threshold: f32,
 
+    /// Combine hardcut scenes and fade scenes
+    #[arg(
+        long = "enable-fade",
+        action = ArgAction::SetTrue,
+        default_value_t = true,
+    )]
+    enable_fade_detection: bool,
+
     /// Threshold to fade detection
     #[arg(long = "fade-threshold", default_value_t = 0.05)]
     fade_threshold: f32,
@@ -257,7 +265,8 @@ fn main() -> Result<()> {
         args.threshold,
           args.fade_threshold,
         args.min_fade_len.into(),
-        args.merge_gap_between_fades.into()
+        args.merge_gap_between_fades.into(),
+        args.enable_fade_detection,
     )?;
 
     Ok(())
