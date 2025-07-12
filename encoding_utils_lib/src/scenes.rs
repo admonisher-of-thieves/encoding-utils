@@ -799,3 +799,9 @@ pub struct CrfPercentage {
     pub crf: u8,
     pub percentage: f64,
 }
+
+#[derive(ValueEnum, Clone, Debug, Copy)]
+pub enum SceneDetectionMethod {
+    Av1an,
+    TransnetV2,
+}

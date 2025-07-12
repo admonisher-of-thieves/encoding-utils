@@ -351,10 +351,15 @@ dependencies = [
  "clap",
  "eyre",
  "indicatif",
+ "iter-chunks",
+ "itertools",
+ "ndarray",
+ "ort",
  "quill",
  "rayon",
  "serde",
  "serde_json",
+ "tempfile",
  "vapoursynth4-rs",
 ]
 
@@ -1189,7 +1194,6 @@ dependencies = [
  "iter-chunks",
  "itertools",
  "ndarray",
- "ort",
  "rayon",
  "tempfile",
  "vapoursynth4-rs",

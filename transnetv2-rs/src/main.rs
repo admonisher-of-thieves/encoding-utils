@@ -1,7 +1,6 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::vapoursynth::SourcePlugin;
+use encoding_utils_lib::{scenes::write_scene_list_to_file, transnetv2::transnet::run_transnetv2, vapoursynth::SourcePlugin};
 use eyre::OptionExt;
-use transnetv2_rs::transnet::run_transnetv2;
 use std::{fs, path::{absolute, PathBuf}};
 
 /// Video processing tool with scene detection
@@ -24,7 +23,6 @@ struct Args {
     /// If both `--extra-split` (frames) and `--extra-split-sec` are provided, frames take priority.
     #[arg(long = "extra-split-sec", default_value_t = 5, value_parser = clap::value_parser!(u32).range(0..))]
     extra_split_sec: u32,
-
 
     /// Maximum scene length. 
     /// When a scenecut is found whose distance to the previous scenecut is greater than the value specified by this option, one or more extra splits (scenecuts) are added. Set this option to 0 to disable adding extra splits.
@@ -133,8 +131,10 @@ fn main() -> eyre::Result<()> {
     };
     fs::create_dir_all(&temp_folder)?;
 
-    run_transnetv2(&input_path, &scenes, args.model.as_deref(),
+    let scene_list = run_transnetv2(&input_path, args.model.as_deref(),
      args.cpu, args.source_plugin, &temp_folder, args.verbose, &args.color_metadata, args.crop.as_deref(), args.downscale, args.detelecine, args.extra_split_sec.into(), args.extra_split.map(|x| x.into()),  args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold)?;
+    write_scene_list_to_file(scene_list, &scenes)?;
+
 
      if !args.keep_files && fs::exists(&temp_folder)? {
      fs::remove_dir_all(&temp_folder)?;

@@ -3,9 +3,11 @@ use std::path::Path;
 
 use crate::encode::encode_frames;
 use crate::scenes::{
-    FramesDistribution, get_scene_file, parse_scene_file, write_scene_list_to_file,
+    FramesDistribution, SceneDetectionMethod, get_scene_file, parse_scene_file,
+    write_scene_list_to_file,
 };
 use crate::ssimulacra2::ssimu2_frames_selected;
+use crate::transnetv2::transnet::run_transnetv2;
 use crate::vapoursynth::SourcePlugin;
 use crate::vpy_files::create_vpy_file;
 use eyre::Result;
@@ -21,6 +23,7 @@ pub fn run_loop<'a>(
     velocity_preset: i32,
     n_frames: u32,
     frames_distribution: FramesDistribution,
+    scene_detection_method: SceneDetectionMethod,
     filter_frames: bool,
     workers: u32,
     importer_metrics: &SourcePlugin,
@@ -33,28 +36,73 @@ pub fn run_loop<'a>(
     clean: bool,
     verbose: bool,
     temp_folder: &'a Path,
+    extra_split_seconds: i64,
+    extra_split_frames: Option<i64>,
+    min_scene_len_sec: i64,
+    min_scene_len: Option<i64>,
+    threshold: f32,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
-    // Generating original scenes
-    let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
-    let vpy_scene_path = temp_folder.join("scene.vpy");
+    let mut scene_list = match scene_detection_method {
+        SceneDetectionMethod::Av1an => {
+            // Generating original scenes
+            let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
+            let scene_av1an_params =
+                update_extra_split_sec(&scene_av1an_params, extra_split_seconds);
+            let scene_av1an_params = if let Some(extra_split_frames) = extra_split_frames {
+                update_extra_split(&scene_av1an_params, extra_split_frames)
+            } else {
+                scene_av1an_params
+            };
+            let scene_av1an_params = if let Some(min_scene_len) = min_scene_len {
+                update_min_scene_len(&scene_av1an_params, min_scene_len)
+            } else {
+                scene_av1an_params
+            };
 
-    let vpy_scene_file = create_vpy_file(
-        input,
-        &vpy_scene_path,
-        None,
-        importer_scene,
-        crop,
-        downscale,
-        detelecine,
-        encoder_params,
-        temp_folder,
-        clean,
-    )?;
-    let original_scenes_file =
-        get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
-    let mut scene_list = parse_scene_file(&original_scenes_file)?;
+            let vpy_scene_path = temp_folder.join("scene.vpy");
+
+            let vpy_scene_file = create_vpy_file(
+                input,
+                &vpy_scene_path,
+                None,
+                importer_scene,
+                crop,
+                downscale,
+                detelecine,
+                encoder_params,
+                temp_folder,
+                clean,
+            )?;
+            let original_scenes_file =
+                get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
+            parse_scene_file(&original_scenes_file)?
+        }
+        SceneDetectionMethod::TransnetV2 => {
+            println!("Obtaining scene using transnetv2-rs\n");
+            let scene_list = run_transnetv2(
+                input,
+                None,
+                false,
+                *importer_scene,
+                temp_folder,
+                verbose,
+                encoder_params,
+                crop,
+                downscale,
+                detelecine,
+                extra_split_seconds,
+                extra_split_frames,
+                min_scene_len_sec,
+                min_scene_len,
+                threshold,
+            )?;
+            println!();
+            write_scene_list_to_file(scene_list.clone(), &temp_folder.join("scenes.json"))?;
+            scene_list
+        }
+    };
 
     let first_crf = crf.first().unwrap();
     scene_list.assign_indexes();
@@ -408,6 +456,46 @@ pub fn update_chunk_method(params: &str, new_chunk_method: &SourcePlugin) -> Str
     if !found_chunk_method {
         updated_tokens.push("--chunk-method".to_string());
         updated_tokens.push(new_chunk_method.as_str().to_string());
+    }
+
+    updated_tokens.join(" ")
+}
+
+/// Updates or adds the `--extra-split` flag
+pub fn update_extra_split(params: &str, new_value: i64) -> String {
+    update_flag_with_value(params, "--extra-split", new_value)
+}
+
+/// Updates or adds the `--extra-split-sec` flag
+pub fn update_extra_split_sec(params: &str, new_value: i64) -> String {
+    update_flag_with_value(params, "--extra-split-sec", new_value)
+}
+
+/// Updates or adds the `--min-scene-len` flag
+pub fn update_min_scene_len(params: &str, new_value: i64) -> String {
+    update_flag_with_value(params, "--min-scene-len", new_value)
+}
+
+/// Helper function to update or insert a flag and its value
+fn update_flag_with_value(params: &str, flag: &str, new_value: i64) -> String {
+    let mut tokens = params.split_whitespace().peekable();
+    let mut updated_tokens: Vec<String> = Vec::new();
+    let mut found_flag = false;
+
+    while let Some(token) = tokens.next() {
+        if token == flag {
+            tokens.next(); // Skip old value
+            updated_tokens.push(flag.to_string());
+            updated_tokens.push(new_value.to_string());
+            found_flag = true;
+        } else {
+            updated_tokens.push(token.to_string());
+        }
+    }
+
+    if !found_flag {
+        updated_tokens.push(flag.to_string());
+        updated_tokens.push(new_value.to_string());
     }
 
     updated_tokens.join(" ")

@@ -1,9 +1,10 @@
-use encoding_utils_lib::scenes::{Scene, SceneList};
+use crate::{
+    scenes::{Scene, SceneList},
+    transnetv2::extract_frames::VideoConfig,
+};
 use eyre::Result;
 use ndarray::{Array3, Axis, s};
 use ort::{session::Session, value::Tensor};
-
-use crate::extract_frames::VideoConfig;
 
 #[derive(Debug)]
 pub struct SceneDetector {
@@ -96,6 +97,7 @@ impl SceneDetector {
         }
 
         pb.finish_with_message("Inference complete");
+        println!();
 
         // Truncate predictions to total_frames (as in np.concatenate(...)[...])
         let truncated_preds = &predictions[..predictions.len().min(total_frames)];

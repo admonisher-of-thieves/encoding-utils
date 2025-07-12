@@ -55,7 +55,7 @@ impl TransNetSession {
         execution_providers: &[ExecutionProviderDispatch],
     ) -> Result<Session> {
         // Embedded model bytes (compile-time included)
-        const MODEL_BYTES: &[u8] = include_bytes!("../models/transnetv2.onnx");
+        const MODEL_BYTES: &[u8] = include_bytes!("../../../transnetv2-rs/models/transnetv2.onnx");
 
         // Create a temporary file to hold the model bytes
         let temp_dir = tempfile::tempdir()?;

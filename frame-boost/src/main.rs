@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{Context, OptionExt, Result, eyre};
-use encoding_utils_lib::{main_loop::run_loop, scenes::FramesDistribution, vapoursynth::SourcePlugin};
+use encoding_utils_lib::{main_loop::run_loop, scenes::{FramesDistribution, SceneDetectionMethod}, vapoursynth::SourcePlugin};
 
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -24,14 +24,14 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --extra-split-sec 5 --min-scene-len 0 --no-defaults"
+        default_value = "--verbose --workers 2 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --split-method av-scenechange --sc-method standard --no-defaults"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --spy-rd 2 --psy-rd 1 --complex-hvs 1 --kf-tf-strength 0 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --psy-rd 1 --spy-rd 2 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
@@ -52,7 +52,7 @@ struct Args {
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 15, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
 
     /// Workers to use when encoding
@@ -60,12 +60,16 @@ struct Args {
     workers: u32,
 
     /// How the frames are distributed when encoding
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::StartMiddleEnd)]
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
+
+    /// Which method to use to calculate scenes
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = SceneDetectionMethod::TransnetV2)]
+    scene_detection_method: SceneDetectionMethod,
 
     /// Keep temporary files (disables automatic cleanup)
     #[arg(
@@ -134,6 +138,32 @@ struct Args {
         default_value_t = true,
     )]
     filter_frames: bool,
+
+    /// Path to custom ONNX model (default: uses embedded TransNetV2 model)
+    #[arg(long, value_parser = clap::value_parser!(PathBuf))]
+    model: Option<PathBuf>,
+
+    // Maximum scene length in seconds. 
+    /// If both `--extra-split` (frames) and `--extra-split-sec` are provided, frames take priority.
+    #[arg(long = "extra-split-sec", default_value_t = 5, value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split_sec: u32,
+
+    /// Maximum scene length. 
+    /// When a scenecut is found whose distance to the previous scenecut is greater than the value specified by this option, one or more extra splits (scenecuts) are added. Set this option to 0 to disable adding extra splits.
+    #[arg(long = "extra-split", value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split: Option<u32>,
+
+    /// Minimum number of frames for a scenecut. Only supported with transnetv2 scene method.
+    #[arg(long = "min-scene-len-sec", default_value_t = 1, value_parser = clap::value_parser!(u32).range(0..))]
+    min_scene_len_sec: u32,
+
+    /// Minimum number of frames for a scenecut. 
+    #[arg(long = "min-scene-len", value_parser = clap::value_parser!(u32).range(0..))]
+    min_scene_len: Option<u32>,
+
+    /// Threshold to detect scene cut
+    #[arg(long = "threshold", default_value_t = 0.5)]
+    threshold: f32,
 }
 
 fn main() -> Result<()> {
@@ -195,6 +225,7 @@ fn main() -> Result<()> {
         args.velocity_preset,
         args.n_frames,
         args.frames_distribution,
+        args.scene_detection_method,
         args.filter_frames,
         args.workers,
         &args.source_metric_plugin,
@@ -207,6 +238,9 @@ fn main() -> Result<()> {
         !args.keep_files,
         args.verbose,
         &temp_folder,
+        args.extra_split_sec.into(),
+        args.extra_split.map(|x| x.into()),
+        args.min_scene_len_sec.into(), args.min_scene_len.map(|x| x.into()), args.threshold
     )?;
 
     Ok(())

@@ -72,6 +72,7 @@ impl VideoConfig {
             .collect::<Result<Vec<_>>>()?;
 
         pb.finish_with_message("Frame extraction complete");
+        println!("\n");
 
         // Sort by original index to maintain frame order
         frames.sort_by_key(|(i, _)| *i);

@@ -1,18 +1,16 @@
 use std::path::Path;
 
-use encoding_utils_lib::{
-    scenes::write_scene_list_to_file,
+use crate::{
+    scenes::SceneList,
+    transnetv2::{extract_frames::VideoConfig, inference::SceneDetector, onnx::TransNetSession},
     vapoursynth::{SourcePlugin, prepare_clip, resize_format},
 };
 use eyre::Result;
 use vapoursynth4_rs::{core::Core, node::VideoNode};
 
-use crate::{extract_frames::VideoConfig, interferance::SceneDetector, onnx::TransNetSession};
-
 #[allow(clippy::too_many_arguments)]
 pub fn run_transnetv2(
     video_path: &Path,
-    scene_path: &Path,
     model_path: Option<&Path>,
     use_cpu: bool,
     importer_plugin: SourcePlugin,
@@ -27,7 +25,7 @@ pub fn run_transnetv2(
     min_scene_len_sec: i64,
     min_scene_len: Option<i64>,
     threshold: f32,
-) -> Result<()> {
+) -> Result<SceneList> {
     let core = Core::builder().build();
 
     let src = prepare_clip(
@@ -72,9 +70,8 @@ pub fn run_transnetv2(
     );
     scene_detection.predictions(transnet_session.session, &video_config)?;
     let scene_list = scene_detection.predictions_to_scene_list(total_frames);
-    write_scene_list_to_file(scene_list, scene_path)?;
 
     // println!("{scenes:#?}");
 
-    Ok(())
+    Ok(scene_list)
 }
