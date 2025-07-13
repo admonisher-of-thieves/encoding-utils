@@ -60,7 +60,7 @@ struct Args {
     workers: u32,
 
     /// How the frames are distributed when encoding
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::StartMiddleEnd)]
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Evenly)]
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)

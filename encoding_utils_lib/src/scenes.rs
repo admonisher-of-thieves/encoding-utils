@@ -397,21 +397,27 @@ impl SceneList {
 
         for scene in &self.scenes {
             let start = scene.start_frame;
-            let end = scene.end_frame.saturating_sub(1);
+            let end = scene.end_frame.saturating_sub(1); // inclusive
             let total = end.saturating_sub(start);
 
             let frame_values: Vec<u32> = if n == 0 || total == 0 {
                 vec![]
+            } else if n == 1 {
+                vec![(start + end) / 2]
             } else {
-                let step = total as f32 / (n - 1).max(1) as f32;
+                // Integer-based even spacing that includes both start and end
                 (0..n)
-                    .map(|i| start + (step * i as f32).round() as u32)
+                    .map(|i| {
+                        start
+                            + ((total as u64 * i as u64 + (n - 1) as u64 / 2) / (n - 1) as u64)
+                                as u32
+                    })
                     .collect()
             };
 
             scenes.push(Scene {
-                start_frame: scene.start_frame, // Keep original
-                end_frame: scene.end_frame,     // Keep original
+                start_frame: scene.start_frame,
+                end_frame: scene.end_frame,
                 zone_overrides: scene.zone_overrides.clone(),
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
@@ -421,7 +427,7 @@ impl SceneList {
 
         SceneList {
             scenes,
-            frames: self.frames, // Preserve original count
+            frames: self.frames, // Preserve original total frame count
         }
     }
 
