@@ -50,7 +50,7 @@ struct Args {
     enable_fade_detection: bool,
 
     /// Threshold to fade detection
-    #[arg(long = "fade-threshold", default_value_t = 0.05)]
+    #[arg(long = "fade-threshold", default_value_t = 0.04)]
     fade_threshold: f32,
 
     /// Minimum fade length in frames

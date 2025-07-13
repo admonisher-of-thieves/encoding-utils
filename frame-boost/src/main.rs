@@ -162,7 +162,7 @@ struct Args {
     min_scene_len: Option<u32>,
 
     /// Threshold to detect scene cut
-    #[arg(long = "threshold", default_value_t = 0.5)]
+    #[arg(long = "threshold", default_value_t = 0.4)]
     threshold: f32,
 
     /// Combine hardcut scenes and fade scenes
@@ -174,7 +174,7 @@ struct Args {
     enable_fade_detection: bool,
 
     /// Threshold to fade detection
-    #[arg(long = "fade-threshold", default_value_t = 0.05)]
+    #[arg(long = "fade-threshold", default_value_t = 0.04)]
     fade_threshold: f32,
 
     /// Minimum fade length in frames
