@@ -50,7 +50,7 @@ struct Args {
     enable_fade_detection: bool,
 
     /// Threshold to fade detection
-    #[arg(long = "fade-threshold", default_value_t = 0.04)]
+    #[arg(long = "fade-threshold", default_value_t = 0.05)]
     fade_threshold: f32,
 
     /// Minimum fade length in frames
@@ -114,6 +114,14 @@ struct Args {
         default_value_t = false,
     )]
     keep_files: bool,
+
+    /// Get predictions.txt file
+    #[arg(
+        long = "scene-predictions",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    scene_predictions: bool,
 }
 
 fn main() -> eyre::Result<()> {
@@ -168,7 +176,9 @@ fn main() -> eyre::Result<()> {
         args.fade_threshold,
         args.min_fade_len.into(),
         args.merge_gap_between_fades.into(),
-        args.enable_fade_detection)?;
+        args.enable_fade_detection,
+        args.scene_predictions,
+)?;
 
     write_scene_list_to_file(scene_list, &scenes)?;
 

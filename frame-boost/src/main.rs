@@ -174,7 +174,7 @@ struct Args {
     enable_fade_detection: bool,
 
     /// Threshold to fade detection
-    #[arg(long = "fade-threshold", default_value_t = 0.04)]
+    #[arg(long = "fade-threshold", default_value_t = 0.05)]
     fade_threshold: f32,
 
     /// Minimum fade length in frames
@@ -184,6 +184,14 @@ struct Args {
     /// Merge fades separated by this many frames or less
     #[arg(long = "merge-gap-between-fades", default_value_t = 4)]
     merge_gap_between_fades: u32,
+
+    /// Get predictions.txt file
+    #[arg(
+        long = "scene-predictions",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    scene_predictions: bool,
 }
 
 fn main() -> Result<()> {
@@ -267,6 +275,7 @@ fn main() -> Result<()> {
         args.min_fade_len.into(),
         args.merge_gap_between_fades.into(),
         args.enable_fade_detection,
+        args.scene_predictions,
     )?;
 
     Ok(())

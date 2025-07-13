@@ -86,7 +86,12 @@ impl SceneDetector {
         }
     }
 
-    pub fn predictions(&mut self, mut session: Session, video_config: &VideoConfig) -> Result<()> {
+    pub fn predictions(
+        &mut self,
+        mut session: Session,
+        video_config: &VideoConfig,
+        save_predictions: bool,
+    ) -> Result<()> {
         let input_name = session.inputs[0].name.clone();
         // Get both output names - assuming index 0 is single_frame_pred and 1 is all_frames_pred
         let output_names = (
@@ -148,7 +153,9 @@ impl SceneDetector {
         self.fade_predictions =
             fade_predictions[..total_frames.min(fade_predictions.len())].to_vec();
 
-        // self.save_predictions_to_file("predictions.txt")?;
+        if save_predictions {
+            self.save_predictions_to_file("predictions.txt")?;
+        }
 
         Ok(())
     }

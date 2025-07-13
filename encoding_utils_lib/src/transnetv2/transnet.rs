@@ -29,6 +29,7 @@ pub fn run_transnetv2(
     min_fade_len: i64,
     merge_gap: i64,
     enable_fade_detection: bool,
+    scene_predictions: bool,
 ) -> Result<SceneList> {
     let core = Core::builder().build();
 
@@ -75,7 +76,7 @@ pub fn run_transnetv2(
         min_fade_len as usize,
         merge_gap as usize,
     );
-    scene_detection.predictions(transnet_session.session, &video_config)?;
+    scene_detection.predictions(transnet_session.session, &video_config, scene_predictions)?;
     let scene_list = scene_detection.predictions_to_scene_list(total_frames, enable_fade_detection);
 
     // println!("{scenes:#?}");
