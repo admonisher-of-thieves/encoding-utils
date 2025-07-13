@@ -326,9 +326,9 @@ pub fn create_plot(
     let red = Color::hex("#f38ba8");
     let text_color = Color::hex("#cdd6f4");
     let background_color = Color::hex("#1e1e2e");
-    // let light_gray = Color::hex("#bac2de");
+    let light_gray = Color::hex("#bac2de");
     let middle_gray = Color::hex("#7f849c");
-    let dark_gray = Color::hex("#6c7086");
+    let _dark_gray = Color::hex("#6c7086");
     let surface = Color::hex("#45475a");
 
     let scores_title = format!("SSIMU2 Scores (Steps: {steps})");
@@ -431,7 +431,7 @@ pub fn create_plot(
             ..Default::default()
         })
         .grid_config(GridConfig {
-            color: dark_gray.clone(),
+            color: light_gray.clone(),
             ..Default::default()
         })
         .x_label("Frames")
