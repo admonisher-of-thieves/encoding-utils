@@ -52,7 +52,7 @@ struct Args {
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'n', long = "n-frames", default_value_t = 24, value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: u32,
 
     /// Workers to use when encoding
@@ -60,7 +60,7 @@ struct Args {
     workers: u32,
 
     /// How the frames are distributed when encoding
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
+    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::StartMiddleEnd)]
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
