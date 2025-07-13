@@ -408,8 +408,8 @@ pub fn create_plot(
                     .color(middle_gray.clone())
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
-                    .line(Line::Solid)
-                    .line_width(1.0)
+                    .line(Line::Dotted)
+                    .line_width(0.5)
                     .show_legend(false)
                     .build(),
             );
