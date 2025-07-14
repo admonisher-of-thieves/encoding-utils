@@ -31,13 +31,17 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --kf-tf-strength 0 --psy-rd 1 --spy-rd 2 --complex-hvs 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --psy-rd 1 --spy-rd 2 --complex-hvs 1 --kf-tf-strength 0 --qp-scale-compress-strength 3 --noise-norm-strength 3 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 81.0)]
+    #[arg(short = 'q', long, default_value_t = 80.0)]
     target_quality: f64,
+
+    /// Percentile (0-100). 20 means that 80 percent of all the values in a scene needs to be above targe_quality to choose a crf value.
+    #[arg(short = 'p', long, default_value_t = 20)]
+    target_percentile: u8,
 
     /// Target CRF value(s) (70-1). Can be:
     /// - Single value (35)
@@ -64,7 +68,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'p', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
@@ -276,6 +280,7 @@ fn main() -> Result<()> {
         args.merge_gap_between_fades.into(),
         args.enable_fade_detection,
         args.scene_predictions,
+        args.target_percentile,
     )?;
 
     Ok(())

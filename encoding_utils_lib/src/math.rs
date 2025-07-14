@@ -49,6 +49,29 @@ pub fn mean(scores: &[FrameScore]) -> f64 {
         scores.iter().map(|score| score.value).sum::<f64>() / scores.len() as f64
     }
 }
+/// Returns the value at the given percentile (e.g., 50 for median).
+pub fn percentile(scores: &[FrameScore], percentile: u8) -> f64 {
+    if scores.is_empty() {
+        return 0.0;
+    }
+
+    // Convert percentile to f64 and clamp between 0 and 100 just to be extra safe
+    let pct = percentile.min(100) as f64;
+
+    let mut values: Vec<f64> = scores.iter().map(|s| s.value).collect();
+    values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+    let rank = (pct / 100.0) * (values.len() - 1) as f64;
+    let lower = rank.floor() as usize;
+    let upper = rank.ceil() as usize;
+
+    if lower == upper {
+        values[lower]
+    } else {
+        let weight = rank - lower as f64;
+        values[lower] * (1.0 - weight) + values[upper] * weight
+    }
+}
 
 pub fn variance(scores: &[FrameScore]) -> f64 {
     let mean_value = mean(scores);

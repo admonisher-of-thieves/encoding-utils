@@ -570,10 +570,10 @@ impl SceneList {
             scene.update_crf(new_crf);
         }
     }
-    pub fn filter_by_frame_score(&mut self, ssimu2_score: f64, new_crf: u8) {
+    pub fn filter_by_frame_score(&mut self, ssimu2_score: f64, new_crf: u8, percentile: u8) {
         self.scenes.retain_mut(|scene| {
-            let avg = math::mean(&scene.frame_scores);
-            if avg < ssimu2_score {
+            let percentile = math::percentile(&scene.frame_scores, percentile);
+            if percentile < ssimu2_score {
                 scene.update_crf(new_crf);
                 true
             } else {
@@ -627,6 +627,7 @@ impl SceneList {
         &self,
         crf_data_file: Option<&Path>,
         input: &std::path::Path,
+        percentile: u8,
     ) -> Result<()> {
         if let Some(crf_data_file) = crf_data_file {
             // Build the entire output string first
@@ -657,20 +658,21 @@ impl SceneList {
             output.push_str("[DATA]\n");
             // Add chunk details
             for (i, scene) in self.scenes.iter().enumerate() {
-                let mean_score = math::mean(&scene.frame_scores);
+                let percentile_score = math::percentile(&scene.frame_scores, percentile);
                 // let score_min = score_min.scores.first().unwrap();
                 // let score_max = math::max(&score_list)?;
                 // let score_max = score_max.scores.first().unwrap();
 
                 output.push_str(&format!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, mean-score: {:6.2}\n",
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}\n",
                     i,
                     scene.crf,
                     scene.start_frame,
                     scene.end_frame,
                     // score_max.frame,
                     // score_max.value,
-                    mean_score,
+                    percentile,
+                    percentile_score,
                 ));
             }
 
@@ -762,12 +764,12 @@ impl SceneList {
     }
 
     /// Prints a summary of all scenes including index, CRF, frame range, and mean score
-    pub fn print_updated_data(&self) {
+    pub fn print_updated_data(&self, percentile: u8) {
         for (i, scene) in self.scenes.iter().enumerate() {
-            let mean_score = math::mean(&scene.frame_scores);
+            let percentile_score = math::percentile(&scene.frame_scores, percentile);
             println!(
-                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, mean-score: {:6.2}",
-                i, scene.crf, scene.start_frame, scene.end_frame, mean_score,
+                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}",
+                i, scene.crf, scene.start_frame, scene.end_frame, percentile, percentile_score,
             );
         }
     }

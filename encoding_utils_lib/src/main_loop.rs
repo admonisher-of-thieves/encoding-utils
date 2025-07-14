@@ -46,6 +46,7 @@ pub fn run_loop<'a>(
     merge_gap: i64,
     enable_fade_detection: bool,
     scene_predictions: bool,
+    percentile: u8,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
@@ -200,7 +201,7 @@ pub fn run_loop<'a>(
         scene_list.sync_scores_by_index(&scene_list_frames);
 
         if filter_frames {
-            scene_list_frames.filter_by_frame_score(ssimu2_score, crfs[i + 1]);
+            scene_list_frames.filter_by_frame_score(ssimu2_score, crfs[i + 1], percentile);
         } else {
             scene_list_frames.update_crf(crfs[i + 1]);
         }
@@ -208,7 +209,7 @@ pub fn run_loop<'a>(
         scene_list.sync_crf_by_index(&scene_list_frames);
 
         println!("\nUpdated data:");
-        scene_list.print_updated_data();
+        scene_list.print_updated_data(percentile);
 
         if verbose {
             scene_list.print_stats()?;
@@ -227,7 +228,7 @@ pub fn run_loop<'a>(
         }
     }
 
-    scene_list.write_crf_data(crf_data_file, input)?;
+    scene_list.write_crf_data(crf_data_file, input, percentile)?;
     write_scene_list_to_file(scene_list, scene_boosted)?;
 
     if clean && temp_folder.exists() {
