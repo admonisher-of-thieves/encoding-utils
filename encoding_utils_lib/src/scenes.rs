@@ -335,8 +335,9 @@ impl ZoneOverrides {
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct SceneList {
-    pub scenes: Vec<Scene>,
     pub frames: u32,
+    pub scenes: Vec<Scene>,
+    pub split_scenes: Vec<Scene>,
 }
 
 impl SceneList {
@@ -361,8 +362,9 @@ impl SceneList {
         }
 
         SceneList {
-            scenes,
-            frames: self.frames, // Preserve original frame count
+            frames: self.frames,
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 
@@ -383,8 +385,9 @@ impl SceneList {
         }
 
         SceneList {
-            scenes,
             frames: global_counter,
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 
@@ -426,8 +429,9 @@ impl SceneList {
         }
 
         SceneList {
-            scenes,
             frames: self.frames, // Preserve original total frame count
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 
@@ -472,8 +476,9 @@ impl SceneList {
         }
 
         SceneList {
-            scenes,
             frames: self.frames, // Preserve original count
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 
@@ -532,8 +537,9 @@ impl SceneList {
         }
 
         SceneList {
-            scenes,
             frames: self.frames,
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 

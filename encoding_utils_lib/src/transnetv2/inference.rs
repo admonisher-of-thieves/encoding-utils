@@ -446,8 +446,9 @@ impl SceneDetector {
             .collect();
 
         SceneList {
-            scenes,
             frames: total_frames as u32,
+            scenes: scenes.clone(),
+            split_scenes: scenes,
         }
     }
 }
