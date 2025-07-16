@@ -595,17 +595,22 @@ impl SceneList {
     }
 
     pub fn calculate_crf_percentages(&self) -> Vec<(u8, f64)> {
-        let crf_values: Vec<u8> = self.scenes.iter().map(|scene| scene.crf).collect();
-        let total = crf_values.len() as f64;
+        let total_frames = self
+            .scenes
+            .iter()
+            .map(|scene| scene.end_frame - scene.start_frame)
+            .sum::<u32>() as f64;
 
-        let mut counts = crf_values.iter().fold(HashMap::new(), |mut acc, &val| {
-            *acc.entry(val).or_insert(0) += 1;
-            acc
-        });
+        let mut frame_counts = HashMap::new();
 
-        let mut percentages: Vec<(u8, f64)> = counts
-            .drain()
-            .map(|(val, count)| (val, (count as f64 / total) * 100.0))
+        for scene in &self.scenes {
+            let scene_frames = (scene.end_frame - scene.start_frame) as f64;
+            *frame_counts.entry(scene.crf).or_insert(0.0) += scene_frames;
+        }
+
+        let mut percentages: Vec<(u8, f64)> = frame_counts
+            .into_iter()
+            .map(|(val, frames)| (val, (frames / total_frames) * 100.0))
             .collect();
 
         // Sort in descending order (high to low)
