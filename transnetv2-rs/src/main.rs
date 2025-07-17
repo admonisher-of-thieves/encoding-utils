@@ -54,7 +54,7 @@ struct Args {
     fade_threshold: f32,
 
     /// Minimum fade length in frames
-    #[arg(long = "min-fade-len", default_value_t = 8,  value_parser = clap::value_parser!(u32).range(0..))]
+    #[arg(long = "min-fade-len", default_value_t = 5,  value_parser = clap::value_parser!(u32).range(0..))]
     min_fade_len: u32,
 
     /// Merge fades separated by this many frames or less
