@@ -179,22 +179,30 @@ impl SceneDetector {
 
     pub fn get_hardcut_frames(&self, threshold: f32) -> Vec<usize> {
         let mut scene_cut_frames = Vec::new();
+
+        // Always start with frame 0 as the first boundary
+        scene_cut_frames.push(0);
         let mut prev_end = 0;
 
         for (i, &pred) in self.hardcut_predictions.iter().enumerate() {
             if pred > threshold {
-                // Found a hard cut - record the end of previous scene
-                scene_cut_frames.push(i + 1); // +1 to match Python behavior
-                prev_end = i + 1;
+                // Record the frame AFTER the detected cut
+                let cut_frame = i + 1; // +1 because cut happens BETWEEN frames
+
+                // Only add if it's a new distinct cut point
+                if cut_frame > prev_end {
+                    scene_cut_frames.push(cut_frame);
+                    prev_end = cut_frame;
+                }
             }
         }
 
-        // Don't forget the last scene if needed
-        if prev_end < self.hardcut_predictions.len() {
-            scene_cut_frames.push(self.hardcut_predictions.len());
+        // Add final boundary if needed (end of video)
+        let video_end = self.hardcut_predictions.len();
+        if prev_end < video_end {
+            scene_cut_frames.push(video_end);
         }
 
-        // println!("{scene_cut_frames:?}");
         scene_cut_frames
     }
 
@@ -260,11 +268,9 @@ impl SceneDetector {
         }
         merged.push((prev_start, prev_end));
 
-        // println!("{merged:?}");
         merged
     }
 
-    /// Removes scene cuts that fall within fade segments
     pub fn remove_scene_cuts_in_fades(
         scene_cuts: &[usize],
         fade_segments: &[(usize, usize)],
@@ -272,9 +278,11 @@ impl SceneDetector {
         scene_cuts
             .iter()
             .filter(|&&cut| {
-                !fade_segments
-                    .iter()
-                    .any(|&(start, end)| start <= cut && cut <= end)
+                !fade_segments.iter().any(|&(start, end)| {
+                    // Convert scene cut position to match fade detection
+                    let scene_cut_frame = cut.saturating_sub(1);
+                    start <= scene_cut_frame && scene_cut_frame <= end
+                })
             })
             .copied()
             .collect()
@@ -301,29 +309,82 @@ impl SceneDetector {
         combined
     }
 
+    pub fn add_fades_for_long_scenes(
+        &self,
+        filtered_cuts: &[usize], // From get_hardcut_frames() (includes 0 and end)
+        fade_segments: &[(usize, usize)],
+    ) -> Vec<usize> {
+        let video_length = self.hardcut_predictions.len();
+
+        // Extract fade boundaries (with safety check)
+        let mut fade_boundaries: Vec<usize> = fade_segments
+            .iter()
+            .flat_map(|&(s, e)| {
+                let end = (e + 1).min(video_length);
+                vec![s, end]
+            })
+            .collect();
+        fade_boundaries.sort_unstable();
+        fade_boundaries.dedup();
+
+        // Start with the original cuts (including 0 and end)
+        let mut final_cuts = filtered_cuts.to_vec();
+        final_cuts.sort_unstable();
+
+        // Process each segment
+        let mut i = 0;
+        while i < final_cuts.len() - 1 {
+            let start = final_cuts[i];
+            let end = final_cuts[i + 1];
+
+            if end - start > self.extra_split {
+                if let Some(&best_boundary) = fade_boundaries
+                    .iter()
+                    .filter(|&&b| b > start && b < end)
+                    .min_by_key(|&&b| b.abs_diff(start + (end - start) / 2))
+                {
+                    final_cuts.insert(i + 1, best_boundary);
+                    continue; // Re-process the new segment
+                }
+            }
+            i += 1;
+        }
+        final_cuts
+    }
+
     /// Full pipeline for computing scene changes using configured parameters
     pub fn compute_scene_changes(&self) -> (Vec<usize>, Vec<usize>) {
         // Get hard cut frames using the threshold from the struct
-        let scene_cuts = self.get_hardcut_frames(self.threshold);
+        let hardcuts = self.get_hardcut_frames(self.threshold);
 
         // Detect fade segments using configured parameters
         let fade_segments = self.detect_fade_segments();
 
         // Filter and combine
-        let filtered_cuts = Self::remove_scene_cuts_in_fades(&scene_cuts, &fade_segments);
-        let mut combined = Self::combine_scene_cuts_and_fades(&filtered_cuts, &fade_segments);
+        let filtered_cuts = Self::remove_scene_cuts_in_fades(&hardcuts, &fade_segments);
 
-        // Ensure we start at frame 0
-        if combined.is_empty() || combined[0] != 0 {
-            combined.insert(0, 0);
-        }
+        // Add back fades that would help split long scenes
+        let final_cuts = self.add_fades_for_long_scenes(&filtered_cuts, &fade_segments);
 
-        (filtered_cuts, combined)
+        // let combined = Self::combine_scene_cuts_and_fades(&filtered_cuts, &fade_segments);
+
+        let mut hardcuts = File::create("hardcuts.txt").unwrap();
+        let mut hardcuts_with_fades = File::create("hardcuts_with_fades.txt").unwrap();
+
+        // for num in &filtered_cuts {
+        //     writeln!(hardcuts, "{num}").unwrap();
+        // }
+
+        // for num in &final_cuts {
+        //     writeln!(hardcuts_with_fades, "{num}").unwrap();
+        // }
+
+        (filtered_cuts, final_cuts)
     }
 
     #[allow(clippy::type_complexity)]
     pub fn predictions_with_fades_to_scenes(&self) -> (Vec<(usize, usize)>, Vec<(usize, usize)>) {
-        let (filtered_cuts, combined_cuts) = self.compute_scene_changes();
+        let (filtered_cuts, final_cuts) = self.compute_scene_changes();
 
         // Helper function to convert cuts to scenes
         let cuts_to_scenes = |cuts: &[usize], total: usize| -> Vec<(usize, usize)> {
@@ -352,7 +413,7 @@ impl SceneDetector {
         let total_frames = self.hardcut_predictions.len();
         (
             cuts_to_scenes(&filtered_cuts, total_frames),
-            cuts_to_scenes(&combined_cuts, total_frames),
+            cuts_to_scenes(&final_cuts, total_frames),
         )
     }
 
@@ -423,9 +484,9 @@ impl SceneDetector {
     }
 
     pub fn predictions_to_scene_list(&self, total_frames: usize, fade_scenes: bool) -> SceneList {
-        let (filtered_scenes, combined_scenes) = self.predictions_with_fades_to_scenes();
+        let (filtered_scenes, final_scenes) = self.predictions_with_fades_to_scenes();
         let scenes = if fade_scenes {
-            combined_scenes
+            final_scenes
         } else {
             filtered_scenes
         };
