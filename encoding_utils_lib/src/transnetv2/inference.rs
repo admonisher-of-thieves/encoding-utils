@@ -368,8 +368,8 @@ impl SceneDetector {
 
         // let combined = Self::combine_scene_cuts_and_fades(&filtered_cuts, &fade_segments);
 
-        let mut hardcuts = File::create("hardcuts.txt").unwrap();
-        let mut hardcuts_with_fades = File::create("hardcuts_with_fades.txt").unwrap();
+        // let mut hardcuts = File::create("hardcuts.txt").unwrap();
+        // let mut hardcuts_with_fades = File::create("hardcuts_with_fades.txt").unwrap();
 
         // for num in &filtered_cuts {
         //     writeln!(hardcuts, "{num}").unwrap();
