@@ -405,11 +405,11 @@ pub fn create_plot(
             plot_data.push(
                 Series::builder()
                     // .name(&format!("{} Start", scene_name))
-                    .color(middle_gray.clone())
+                    .color(light_gray.clone())
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
                     .line(Line::Dotted)
-                    .line_width(0.5)
+                    .line_width(1.0)
                     .show_legend(false)
                     .build(),
             );
@@ -419,11 +419,12 @@ pub fn create_plot(
     let title = format!("SSIMU2 - {distorted_name}");
 
     let plot = Plot::builder()
-        .dimensions((2000, 1000))
+        .dimensions((2100, 900))
         .title(&title)
         .title_config(TitleConfig {
+            font_size: 22.0,
             color: text_color.clone(),
-            ..Default::default()
+            // ..Default::default()
         })
         .background_color(background_color.clone())
         .axis_config(AxisConfig {
@@ -431,26 +432,33 @@ pub fn create_plot(
             ..Default::default()
         })
         .grid_config(GridConfig {
-            color: light_gray.clone(),
+            x_color: middle_gray.clone(),
+            y_color: middle_gray.clone(),
+            minor_x_color: middle_gray.clone(),
+            minor_y_color: middle_gray.clone(),
+            show_x_grid: false,
             ..Default::default()
         })
         .x_label("Frames")
         .x_label_config(LabelConfig {
+            font_size: 16.0,
             color: text_color.clone(),
-            ..Default::default()
+            // ..Default::default()
         })
         .y_label("Scores")
         .y_label_config(LabelConfig {
+            font_size: 16.0,
             color: text_color.clone(),
-            ..Default::default()
+            // ..Default::default()
         })
         .x_range(Range::Auto)
         .y_range(Range::Manual {
-            min: (min_value - 15.0),
+            min: (min_value - 14.0),
             max: 100.0,
         })
         .legend(Legend::BottomLeftInside)
         .legend_config(LegendConfig {
+            font_size: 14.0,
             text_color: text_color.clone(),
             border_color: text_color.clone(),
             background_color: surface.clone(),
@@ -458,11 +466,18 @@ pub fn create_plot(
         })
         .grid(Grid::Dotted)
         .tick_config(TickConfig {
+            font_size: 14.0,
             line_color: text_color.clone(),
             label_color: text_color.clone(),
             minor_tick_color: text_color.clone(),
             show_x_decimals: false,
             ..Default::default()
+        })
+        .margin(Margin {
+            top: 60.0,
+            bottom: 75.0,
+            left: 90.0,
+            right: 30.0,
         })
         .font("Fredoka")
         .data(plot_data)
