@@ -43,7 +43,7 @@ impl Default for SceneDetector {
             extra_split: 240,  // ~10 seconds at 24fps
             // fade_threshold_high: 1.0,
             fade_threshold_low: 0.05,
-            min_fade_len: 8,
+            min_fade_len: 5,
             merge_gap: 4,
             window_size: 100,
             stride: 50,
