@@ -409,7 +409,7 @@ pub fn create_plot(
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
                     .line(Line::Dotted)
-                    .line_width(1.0)
+                    .line_width(0.5)
                     .show_legend(false)
                     .build(),
             );
@@ -436,7 +436,6 @@ pub fn create_plot(
             y_color: middle_gray.clone(),
             minor_x_color: middle_gray.clone(),
             minor_y_color: middle_gray.clone(),
-            show_x_grid: false,
             ..Default::default()
         })
         .x_label("Frames")
