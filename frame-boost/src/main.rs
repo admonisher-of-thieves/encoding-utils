@@ -189,7 +189,7 @@ struct Args {
     #[arg(long = "merge-gap-between-fades", default_value_t = 4)]
     merge_gap_between_fades: u32,
 
-    /// Get predictions.txt file
+    /// Get [PREDICTIONS]_{input}.csv file
     #[arg(
         long = "scene-predictions",
         action = ArgAction::SetTrue,
