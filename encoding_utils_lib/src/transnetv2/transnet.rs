@@ -87,7 +87,7 @@ pub fn run_transnetv2(
                 .ok_or_eyre("Invalid UTF-8 in input path")?
         );
         let path = video_path.with_file_name(output_name);
-        Some(add_extension(".csv", path))
+        Some(add_extension("csv", path))
     } else {
         None
     };

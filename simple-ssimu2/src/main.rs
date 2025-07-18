@@ -161,7 +161,7 @@ fn main() -> Result<()> {
                     .ok_or_eyre("Invalid UTF-8 in input path")?
             );
             let path = args.distorted.with_file_name(output_name);
-            add_extension(".csv", path)
+            add_extension("csv", path)
         };
         score_list.write_to_csv(&csv_path)?;
     }
