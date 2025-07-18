@@ -196,6 +196,14 @@ struct Args {
         default_value_t = false,
     )]
     scene_predictions: bool,
+
+    /// Get [HARDCUTS-SCENE]_{input}.json file
+    #[arg(
+        long = "hardcut-scenes",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    hardcut_scenes: bool,
 }
 
 fn main() -> Result<()> {
@@ -281,6 +289,7 @@ fn main() -> Result<()> {
         args.enable_fade_detection,
         args.scene_predictions,
         args.target_percentile,
+        args.hardcut_scenes,
     )?;
 
     Ok(())

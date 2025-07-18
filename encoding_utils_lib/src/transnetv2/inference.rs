@@ -1,7 +1,4 @@
-use std::{
-    fs::File,
-    path::Path,
-};
+use std::{fs::File, path::Path};
 
 use crate::{
     scenes::{Scene, SceneList},
@@ -489,7 +486,7 @@ impl SceneDetector {
         result
     }
 
-    pub fn predictions_to_scene_list(&self, total_frames: usize, fade_scenes: bool) -> SceneList {
+    pub fn predictions_to_scene_list(&self, fade_scenes: bool) -> SceneList {
         let (filtered_scenes, final_scenes) = self.predictions_with_fades_to_scenes();
         let scenes = if fade_scenes {
             final_scenes
@@ -513,7 +510,32 @@ impl SceneDetector {
             .collect();
 
         SceneList {
-            frames: total_frames as u32,
+            frames: self.hardcut_predictions.len() as u32,
+            scenes: scenes.clone(),
+            split_scenes: scenes,
+        }
+    }
+
+    pub fn hardcuts_to_scene_list(&self) -> SceneList {
+        let (scenes, _) = self.predictions_with_fades_to_scenes();
+        // let scenes = self.split_large_scenes(scenes);
+        // let scenes = self.combine_short_scenes(scenes);
+
+        let scenes: Vec<Scene> = scenes
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (start, end))| Scene {
+                index: idx as u32,
+                crf: 0, // or any default value
+                start_frame: start as u32,
+                end_frame: end as u32,
+                zone_overrides: None,
+                frame_scores: Vec::new(),
+            })
+            .collect();
+
+        SceneList {
+            frames: self.hardcut_predictions.len() as u32,
             scenes: scenes.clone(),
             split_scenes: scenes,
         }

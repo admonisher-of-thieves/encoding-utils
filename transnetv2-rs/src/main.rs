@@ -122,6 +122,14 @@ struct Args {
         default_value_t = false,
     )]
     scene_predictions: bool,
+
+    /// Get [HARDCUTS-SCENE]_{input}.json file
+    #[arg(
+        long = "hardcut-scenes",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    hardcut_scenes: bool,
 }
 
 fn main() -> eyre::Result<()> {
@@ -159,7 +167,7 @@ fn main() -> eyre::Result<()> {
     };
     fs::create_dir_all(&temp_folder)?;
 
-    let scene_list = run_transnetv2(
+    let (scene_list, hardcut_list) = run_transnetv2(
         &input_path,
         args.model.as_deref(),
         args.cpu,
@@ -177,10 +185,23 @@ fn main() -> eyre::Result<()> {
         args.min_fade_len.into(),
         args.merge_gap_between_fades.into(),
         args.enable_fade_detection,
-        args.scene_predictions,
-)?;
+        args.scene_predictions
+    )?;
 
     write_scene_list_to_file(scene_list, &scenes)?;
+
+    if args.hardcut_scenes {
+        let output_name = format!(
+            "[HARDCUT-SCENES]_{}.json",
+            args.input
+                .file_stem()
+                .ok_or_eyre("No file name")?
+                .to_str()
+                .ok_or_eyre("Invalid UTF-8 in input path")?
+        );
+        let hardcut_path = input_path.with_file_name(output_name);
+        write_scene_list_to_file(hardcut_list, &hardcut_path)?;
+    }
 
 
      if !args.keep_files && fs::exists(&temp_folder)? {

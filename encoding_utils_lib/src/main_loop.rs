@@ -10,7 +10,7 @@ use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::transnetv2::transnet::run_transnetv2;
 use crate::vapoursynth::SourcePlugin;
 use crate::vpy_files::create_vpy_file;
-use eyre::Result;
+use eyre::{OptionExt, Result};
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_loop<'a>(
@@ -47,6 +47,7 @@ pub fn run_loop<'a>(
     enable_fade_detection: bool,
     scene_predictions: bool,
     percentile: u8,
+    hardcut_scenes: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
 
@@ -87,7 +88,7 @@ pub fn run_loop<'a>(
         }
         SceneDetectionMethod::TransnetV2 => {
             println!("Obtaining scene using transnetv2-rs\n");
-            let scene_list = run_transnetv2(
+            let (scene_list, hardcut_list) = run_transnetv2(
                 input,
                 None,
                 false,
@@ -110,6 +111,18 @@ pub fn run_loop<'a>(
                 scene_predictions,
             )?;
             println!();
+            if hardcut_scenes {
+                let output_name = format!(
+                    "[HARDCUT-SCENES]_{}.json",
+                    input
+                        .file_stem()
+                        .ok_or_eyre("No file name")?
+                        .to_str()
+                        .ok_or_eyre("Invalid UTF-8 in input path")?
+                );
+                let hardcut_path = input.with_file_name(output_name);
+                write_scene_list_to_file(hardcut_list, &hardcut_path)?;
+            }
             write_scene_list_to_file(scene_list.clone(), &temp_folder.join("scenes.json"))?;
             scene_list
         }

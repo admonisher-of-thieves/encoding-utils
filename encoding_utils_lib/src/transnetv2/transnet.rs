@@ -30,7 +30,7 @@ pub fn run_transnetv2(
     merge_gap: i64,
     enable_fade_detection: bool,
     save_predictions: bool,
-) -> Result<SceneList> {
+) -> Result<(SceneList, SceneList)> {
     let core = Core::builder().build();
 
     let src = prepare_clip(
@@ -97,9 +97,10 @@ pub fn run_transnetv2(
         &video_config,
         path_predictions.as_deref(),
     )?;
-    let scene_list = scene_detection.predictions_to_scene_list(total_frames, enable_fade_detection);
+    let scene_list = scene_detection.predictions_to_scene_list(enable_fade_detection);
+    let hardcut_scene_list = scene_detection.hardcuts_to_scene_list();
 
     // println!("{scenes:#?}");
 
-    Ok(scene_list)
+    Ok((scene_list, hardcut_scene_list))
 }
