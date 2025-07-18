@@ -784,6 +784,10 @@ impl SceneList {
             );
         }
     }
+
+    pub fn update_split_scenes(&mut self) {
+        self.split_scenes = self.scenes.clone();
+    }
 }
 
 pub fn parse_scene_file(json_path: &Path) -> Result<SceneList> {
