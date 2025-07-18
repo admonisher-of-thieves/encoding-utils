@@ -3,9 +3,9 @@ use std::path::Path;
 use crate::{
     scenes::SceneList,
     transnetv2::{extract_frames::VideoConfig, inference::SceneDetector, onnx::TransNetSession},
-    vapoursynth::{SourcePlugin, prepare_clip, resize_format},
+    vapoursynth::{SourcePlugin, add_extension, prepare_clip, resize_format},
 };
-use eyre::Result;
+use eyre::{OptionExt, Result};
 use vapoursynth4_rs::{core::Core, node::VideoNode};
 
 #[allow(clippy::too_many_arguments)]
@@ -29,7 +29,7 @@ pub fn run_transnetv2(
     min_fade_len: i64,
     merge_gap: i64,
     enable_fade_detection: bool,
-    scene_predictions: bool,
+    save_predictions: bool,
 ) -> Result<SceneList> {
     let core = Core::builder().build();
 
@@ -76,7 +76,27 @@ pub fn run_transnetv2(
         min_fade_len as usize,
         merge_gap as usize,
     );
-    scene_detection.predictions(transnet_session.session, &video_config, scene_predictions)?;
+
+    let path_predictions = if save_predictions {
+        let output_name = format!(
+            "[PREDICTIONS]_{}",
+            video_path
+                .file_stem()
+                .ok_or_eyre("No file name")?
+                .to_str()
+                .ok_or_eyre("Invalid UTF-8 in input path")?
+        );
+        let path = video_path.with_file_name(output_name);
+        Some(add_extension(".csv", path))
+    } else {
+        None
+    };
+
+    scene_detection.predictions(
+        transnet_session.session,
+        &video_config,
+        path_predictions.as_deref(),
+    )?;
     let scene_list = scene_detection.predictions_to_scene_list(total_frames, enable_fade_detection);
 
     // println!("{scenes:#?}");

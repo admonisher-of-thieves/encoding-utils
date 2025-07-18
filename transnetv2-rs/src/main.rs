@@ -115,7 +115,7 @@ struct Args {
     )]
     keep_files: bool,
 
-    /// Get predictions.txt file
+    /// Get [PREDICTIONS]_{input}.csv file
     #[arg(
         long = "scene-predictions",
         action = ArgAction::SetTrue,

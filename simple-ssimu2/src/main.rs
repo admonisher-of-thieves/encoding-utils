@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{SourcePlugin, Trim}
+use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, Trim}
 };
 use eyre::{OptionExt, Result};
 use std::{fs::{self, create_dir_all}, path::PathBuf};
@@ -94,6 +94,15 @@ struct Args {
     /// Temp folder (default: "[TEMP]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     temp: Option<PathBuf>,
+
+    /// Save csv of the frame-scores. Path: "[FRAME-SCORES]_<input>.csv"
+    #[arg(
+        long, 
+        default_value_t = false,
+        action = ArgAction::SetTrue,
+        value_parser = clap::value_parser!(bool)
+    )]
+    save_csv: bool,
 }
 
 fn main() -> Result<()> {
@@ -113,6 +122,7 @@ fn main() -> Result<()> {
             args.reference.with_file_name(output_name)
         }
     };
+
 
     create_dir_all(&temp_dir)?;
 
@@ -138,6 +148,22 @@ fn main() -> Result<()> {
         std::fs::write(output_path, stats_with_filename)?;
     } else {
         println!("\n{stats_with_filename}");
+    }
+
+    if args.save_csv {
+        let csv_path = { 
+            let output_name = format!(
+                "[FRAME-SCORES]_{}",
+                args.distorted
+                    .file_stem()
+                    .ok_or_eyre("No file name")?
+                    .to_str()
+                    .ok_or_eyre("Invalid UTF-8 in input path")?
+            );
+            let path = args.distorted.with_file_name(output_name);
+            add_extension(".csv", path)
+        };
+        score_list.write_to_csv(&csv_path)?;
     }
 
     if let Some(plot_file) = args.plot_file {

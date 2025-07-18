@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::Write, path::Path};
 
 use eyre::{Ok, OptionExt, Result};
 
@@ -215,10 +215,10 @@ pub fn mode(score_list: &ScoreList) -> Result<Mode> {
     })
 }
 
-use std::fmt::Write; // for write! macro
-
 impl ScoreList {
     pub fn get_stats(&self) -> Result<String> {
+        use std::fmt::Write;
+
         let mean = mean(&self.scores);
         let deviation = standard_deviation(&self.scores);
         // let median = median(self)?;
@@ -274,5 +274,30 @@ impl ScoreList {
         }
 
         Ok(output)
+    }
+
+    pub fn write_to_csv(&self, output_path: &Path) -> eyre::Result<()> {
+        let mut file = File::create(output_path)?;
+
+        // Write CSV header
+        writeln!(file, "frame,score")?;
+
+        // Write each frame score
+        for frame_score in &self.scores {
+            writeln!(file, "{},{:.4}", frame_score.frame, frame_score.value)?;
+        }
+
+        Ok(())
+    }
+
+    /// Alternative version that returns the CSV as a String
+    pub fn to_csv_string(&self) -> String {
+        let mut csv = String::from("frame,score\n");
+
+        for frame_score in &self.scores {
+            csv.push_str(&format!("{},{}\n", frame_score.frame, frame_score.value));
+        }
+
+        csv
     }
 }

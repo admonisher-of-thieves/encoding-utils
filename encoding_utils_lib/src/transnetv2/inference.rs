@@ -1,4 +1,7 @@
-use std::fs::File;
+use std::{
+    fs::File,
+    path::Path,
+};
 
 use crate::{
     scenes::{Scene, SceneList},
@@ -90,7 +93,7 @@ impl SceneDetector {
         &mut self,
         mut session: Session,
         video_config: &VideoConfig,
-        save_predictions: bool,
+        path_predictions: Option<&Path>,
     ) -> Result<()> {
         let input_name = session.inputs[0].name.clone();
         // Get both output names - assuming index 0 is single_frame_pred and 1 is all_frames_pred
@@ -153,24 +156,27 @@ impl SceneDetector {
         self.fade_predictions =
             fade_predictions[..total_frames.min(fade_predictions.len())].to_vec();
 
-        if save_predictions {
-            self.save_predictions_to_file("predictions.txt")?;
+        if let Some(path) = path_predictions {
+            self.save_predictions_to_file(path)?;
         }
 
         Ok(())
     }
 
-    pub fn save_predictions_to_file(&self, filename: &str) -> Result<()> {
+    pub fn save_predictions_to_file(&self, filename: &Path) -> Result<()> {
         let mut file = File::create(filename)?;
 
         // Ensure both predictions have the same length
         let len = std::cmp::min(self.hardcut_predictions.len(), self.fade_predictions.len());
 
+        // Write CSV header
+        writeln!(file, "frame,hardcut,fade")?;
+
         for i in 0..len {
             writeln!(
                 file,
-                "{:.6} {:.6}",
-                self.hardcut_predictions[i], self.fade_predictions[i]
+                "{}, {:.6},{:.6}",
+                i, self.hardcut_predictions[i], self.fade_predictions[i]
             )?;
         }
 
