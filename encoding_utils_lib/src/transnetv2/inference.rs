@@ -518,7 +518,7 @@ impl SceneDetector {
 
     pub fn hardcuts_to_scene_list(&self) -> SceneList {
         let (scenes, _) = self.predictions_with_fades_to_scenes();
-        let scenes = self.split_large_scenes(scenes);
+        // let scenes = self.split_large_scenes(scenes);
         let scenes = self.combine_short_scenes(scenes);
 
         let scenes: Vec<Scene> = scenes
