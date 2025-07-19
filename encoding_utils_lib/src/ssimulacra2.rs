@@ -422,7 +422,7 @@ pub fn create_plot(
         .dimensions((2100, 900))
         .title(&title)
         .title_config(TitleConfig {
-            font_size: 22.0,
+            font_size: 20.0,
             color: text_color.clone(),
             // ..Default::default()
         })
@@ -432,6 +432,7 @@ pub fn create_plot(
             ..Default::default()
         })
         .grid_config(GridConfig {
+            show_x_grid: false,
             x_color: middle_gray.clone(),
             y_color: middle_gray.clone(),
             minor_x_color: middle_gray.clone(),
