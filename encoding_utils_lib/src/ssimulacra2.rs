@@ -327,7 +327,7 @@ pub fn create_plot(
     let text_color = Color::hex("#cdd6f4");
     let background_color = Color::hex("#1e1e2e");
     let light_gray = Color::hex("#bac2de");
-    let middle_gray = Color::hex("#7f849c");
+    // let middle_gray = Color::hex("#7f849c");
     let _dark_gray = Color::hex("#6c7086");
     let surface = Color::hex("#45475a");
 
@@ -408,7 +408,7 @@ pub fn create_plot(
                     .color(light_gray.clone())
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
-                    .line(Line::Dotted)
+                    .line(Line::Dashed)
                     .line_width(1.0)
                     .show_legend(false)
                     .build(),
@@ -428,15 +428,17 @@ pub fn create_plot(
         })
         .background_color(background_color.clone())
         .axis_config(AxisConfig {
-            color: text_color.clone(),
+            color: light_gray.clone(),
             ..Default::default()
         })
         .grid_config(GridConfig {
+            line_width: 1.0,
+            minor_line_width: 0.6,
             show_x_grid: false,
-            x_color: middle_gray.clone(),
-            y_color: middle_gray.clone(),
-            minor_x_color: middle_gray.clone(),
-            minor_y_color: middle_gray.clone(),
+            x_color: light_gray.clone(),
+            y_color: light_gray.clone(),
+            minor_x_color: light_gray.clone(),
+            minor_y_color: light_gray.clone(),
             ..Default::default()
         })
         .x_label("Frames")
