@@ -340,7 +340,7 @@ pub fn create_plot(
             .marker(Marker::None)
             .line(Line::Solid)
             .interpolation(Interpolation::Linear)
-            .line_width(1.0)
+            .line_width(2.0)
             .build(),
         Series::builder()
             .name(&mean_text)
@@ -348,7 +348,7 @@ pub fn create_plot(
             .data(mean_frames)
             .marker(Marker::None)
             .line(Line::Dotted)
-            .line_width(2.0)
+            .line_width(4.0)
             .build(),
         Series::builder()
             .name(&deviation_plus_text)
@@ -356,7 +356,7 @@ pub fn create_plot(
             .data(deviation_plus_frames)
             .marker(Marker::None)
             .line(Line::Dotted)
-            .line_width(2.0)
+            .line_width(4.0)
             .build(),
         Series::builder()
             .name(&deviation_minus_text)
@@ -364,7 +364,7 @@ pub fn create_plot(
             .data(deviation_minus_frames)
             .marker(Marker::None)
             .line(Line::Dotted)
-            .line_width(2.0)
+            .line_width(4.0)
             .build(),
         Series::builder()
             .name(&five_percentile_text)
@@ -372,14 +372,14 @@ pub fn create_plot(
             .data(five_percentile_frames)
             .marker(Marker::None)
             .line(Line::Dotted)
-            .line_width(2.0)
+            .line_width(4.0)
             .build(),
         Series::builder()
             .name(&min_text)
             .color(yellow.clone())
             .data(min_frames)
             .marker(Marker::Cross)
-            .marker_size(7.5)
+            .marker_size(20.0)
             .line(Line::None)
             .build(),
         Series::builder()
@@ -409,7 +409,7 @@ pub fn create_plot(
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
                     .line(Line::Dotted)
-                    .line_width(0.5)
+                    .line_width(2.0)
                     .show_legend(false)
                     .build(),
             );
@@ -419,10 +419,10 @@ pub fn create_plot(
     let title = format!("SSIMU2 - {distorted_name}");
 
     let plot = Plot::builder()
-        .dimensions((2100, 900))
+        .dimensions((4200, 1800))
         .title(&title)
         .title_config(TitleConfig {
-            font_size: 20.0,
+            font_size: 40.0,
             color: text_color.clone(),
             // ..Default::default()
         })
@@ -441,32 +441,40 @@ pub fn create_plot(
         })
         .x_label("Frames")
         .x_label_config(LabelConfig {
-            font_size: 16.0,
+            font_size: 32.0,
             color: text_color.clone(),
             // ..Default::default()
         })
         .y_label("Scores")
         .y_label_config(LabelConfig {
-            font_size: 16.0,
+            font_size: 32.0,
             color: text_color.clone(),
             // ..Default::default()
         })
         .x_range(Range::Auto)
         .y_range(Range::Manual {
-            min: (min_value - 14.0),
+            min: (min_value - 15.0),
             max: 100.0,
         })
         .legend(Legend::BottomLeftInside)
         .legend_config(LegendConfig {
-            font_size: 14.0,
+            font_size: 32.0,
+            padding: 20.0,
+            item_height: 40.0,
+            color_swatch_width: 32.0,
+            text_offset: 10.0,
             text_color: text_color.clone(),
             border_color: text_color.clone(),
             background_color: surface.clone(),
-            ..Default::default()
         })
         .grid(Grid::Dotted)
         .tick_config(TickConfig {
-            font_size: 14.0,
+            density_x: 100.0,
+            density_y: 100.0,
+            length: 10.0,
+            minor_tick_length: 6.0,
+            font_size: 25.0,
+            text_padding: 6.0,
             line_color: text_color.clone(),
             label_color: text_color.clone(),
             minor_tick_color: text_color.clone(),
@@ -474,10 +482,10 @@ pub fn create_plot(
             ..Default::default()
         })
         .margin(Margin {
-            top: 60.0,
-            bottom: 75.0,
-            left: 90.0,
-            right: 30.0,
+            top: 120.0,
+            bottom: 150.0,
+            left: 180.0,
+            right: 60.0,
         })
         .font("Fredoka")
         .data(plot_data)
