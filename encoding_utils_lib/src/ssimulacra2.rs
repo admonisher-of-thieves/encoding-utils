@@ -409,7 +409,7 @@ pub fn create_plot(
                     .data(vec![(scene.start_frame, 0.0), (scene.start_frame, 100.0)])
                     .marker(Marker::None)
                     .line(Line::Dotted)
-                    .line_width(2.0)
+                    .line_width(1.0)
                     .show_legend(false)
                     .build(),
             );
