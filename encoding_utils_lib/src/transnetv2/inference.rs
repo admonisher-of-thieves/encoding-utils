@@ -319,13 +319,10 @@ impl SceneDetector {
     ) -> Vec<usize> {
         let video_length = self.hardcut_predictions.len();
 
-        // Extract fade boundaries (with safety check)
+        // Extract only the start of each fade segment (with safety check)
         let mut fade_boundaries: Vec<usize> = fade_segments
             .iter()
-            .flat_map(|&(s, e)| {
-                let end = (e + 1).min(video_length);
-                vec![s, end]
-            })
+            .map(|&(s, _)| s.min(video_length))
             .collect();
         fade_boundaries.sort_unstable();
         fade_boundaries.dedup();
