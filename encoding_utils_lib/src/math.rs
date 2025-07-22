@@ -124,6 +124,15 @@ pub fn min(scores: &[FrameScore]) -> Result<ScoreList> {
     Ok(ScoreList { scores })
 }
 
+pub fn min_score(scores: &[FrameScore]) -> f64 {
+    scores
+        .iter()
+        .map(|score| score.value)
+        .filter(|v| !v.is_nan())
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .expect("All values were NaN or input was empty")
+}
+
 pub fn percentiles(scores: &[FrameScore]) -> Result<PercentileList> {
     if scores.is_empty() {
         return Err(eyre::eyre!("Data is empty"));

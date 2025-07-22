@@ -576,10 +576,17 @@ impl SceneList {
             scene.update_crf(new_crf);
         }
     }
-    pub fn filter_by_frame_score(&mut self, ssimu2_score: f64, new_crf: u8, percentile: u8) {
+    pub fn filter_by_frame_score(
+        &mut self,
+        target_quality: f64,
+        min_target_quality: f64,
+        new_crf: u8,
+        percentile: u8,
+    ) {
         self.scenes.retain_mut(|scene| {
             let percentile = math::percentile(&scene.frame_scores, percentile);
-            if percentile < ssimu2_score {
+            let min_score = math::min_score(&scene.frame_scores);
+            if (percentile < target_quality) && (min_score < min_target_quality) {
                 scene.update_crf(new_crf);
                 true
             } else {

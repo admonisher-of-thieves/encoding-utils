@@ -39,7 +39,11 @@ struct Args {
     #[arg(short = 'q', long, default_value_t = 80.0)]
     target_quality: f64,
 
-    /// Percentile (0-100). 20 means that 80 percent of all the values in a scene needs to be above targe_quality to choose a crf value.
+    /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
+    #[arg(long = "min-q", default_value_t = 70.0)]
+    min_target_quality: f64,
+
+    /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
     #[arg(short = 'p', long, default_value_t = 20)]
     target_percentile: u8,
 
@@ -262,6 +266,7 @@ fn main() -> Result<()> {
         &args.encoder_params,
         &crf_values,
         args.target_quality,
+        args.min_target_quality,
         args.velocity_preset,
         args.n_frames,
         args.frames_distribution,

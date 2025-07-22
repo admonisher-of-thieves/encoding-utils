@@ -19,7 +19,8 @@ pub fn run_loop<'a>(
     av1an_params: &'a str,
     encoder_params: &'a str,
     crf: &[u8],
-    ssimu2_score: f64,
+    target_quality: f64,
+    min_target_quality: f64,
     velocity_preset: i32,
     n_frames: u32,
     frames_distribution: FramesDistribution,
@@ -214,7 +215,12 @@ pub fn run_loop<'a>(
         scene_list.sync_scores_by_index(&scene_list_frames);
 
         if filter_frames {
-            scene_list_frames.filter_by_frame_score(ssimu2_score, crfs[i + 1], percentile);
+            scene_list_frames.filter_by_frame_score(
+                target_quality,
+                min_target_quality,
+                crfs[i + 1],
+                percentile,
+            );
         } else {
             scene_list_frames.update_crf(crfs[i + 1]);
         }
