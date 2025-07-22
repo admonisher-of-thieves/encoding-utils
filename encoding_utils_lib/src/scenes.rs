@@ -586,7 +586,7 @@ impl SceneList {
         self.scenes.retain_mut(|scene| {
             let percentile = math::percentile(&scene.frame_scores, percentile);
             let min_score = math::min_score(&scene.frame_scores);
-            if (percentile < target_quality) && (min_score < min_target_quality) {
+            if (percentile < target_quality) || (min_score < min_target_quality) {
                 scene.update_crf(new_crf);
                 true
             } else {
