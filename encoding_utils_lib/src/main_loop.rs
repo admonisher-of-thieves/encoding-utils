@@ -229,10 +229,7 @@ pub fn run_loop<'a>(
 
         println!("\nUpdated data:");
         scene_list.print_updated_data(percentile);
-
-        if verbose {
-            scene_list.print_stats()?;
-        }
+        scene_list.print_stats()?;
 
         scene_list.print_crf_percentages();
 
