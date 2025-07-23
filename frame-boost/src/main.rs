@@ -44,7 +44,7 @@ struct Args {
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
-    #[arg(short = 'p', long, default_value_t = 20)]
+    #[arg(short = 'p', long, default_value_t = 5)]
     target_percentile: u8,
 
     /// Target CRF value(s) (70-1). Can be:
