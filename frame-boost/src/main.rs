@@ -31,7 +31,7 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20  --psy-rd 1 --spy-rd 2 --complex-hvs 1 --kf-tf-strength 0 --qp-scale-compress-strength 3 --noise-norm-strength 3 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20 --psy-rd 1 --spy-rd 2 --complex-hvs 1 --qp-scale-compress-strength 3 --noise-norm-strength 3 --enable-tf 1 --kf-tf-strength 0 --tf-strength 1 --enable-dlf 2 --enable-cdef 1 --enable-restoration 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
