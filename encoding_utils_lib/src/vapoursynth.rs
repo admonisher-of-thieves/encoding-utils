@@ -724,3 +724,18 @@ pub fn resize_format(
 
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
+
+pub fn seconds_to_frames(
+    seconds: u32,
+    input_path: &Path,
+    importer_plugin: &SourcePlugin,
+    temp_dir: &Path,
+) -> Result<u32> {
+    let core = Core::builder().build();
+    let src = match importer_plugin {
+        SourcePlugin::Lsmash => lsmash_invoke(&core, input_path, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(&core, input_path, temp_dir)?,
+    };
+    let video_info = src.info();
+    Ok(((seconds as f64 * video_info.fps_num as f64) / video_info.fps_den as f64).ceil() as u32)
+}

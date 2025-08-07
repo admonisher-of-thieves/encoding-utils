@@ -8,7 +8,7 @@ use crate::scenes::{
 };
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::transnetv2::transnet::run_transnetv2;
-use crate::vapoursynth::SourcePlugin;
+use crate::vapoursynth::{SourcePlugin, seconds_to_frames};
 use crate::vpy_files::create_vpy_file;
 use eyre::{OptionExt, Result};
 
@@ -22,7 +22,8 @@ pub fn run_loop<'a>(
     target_quality: f64,
     min_target_quality: f64,
     velocity_preset: i32,
-    n_frames: u32,
+    n_frames: Option<u32>,
+    s_frames: u32,
     frames_distribution: FramesDistribution,
     scene_detection_method: SceneDetectionMethod,
     filter_frames: bool,
@@ -154,6 +155,11 @@ pub fn run_loop<'a>(
 
     let mut scene_list_frames = scene_list.clone();
     scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
+
+    let n_frames = match n_frames {
+        Some(n_frames) => n_frames,
+        None => seconds_to_frames(s_frames, input, importer_scene, temp_folder)?,
+    };
 
     scene_list_frames = match frames_distribution {
         FramesDistribution::Center => scene_list_frames.with_center_expanding_frames(n_frames),
