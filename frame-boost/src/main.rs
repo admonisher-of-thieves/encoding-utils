@@ -31,7 +31,7 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 2 --keyint -1 --film-grain 0 --scm 0 --hbd-mds 1 --tile-columns 1 --enable-qm 1 --qm-min 8 --luminance-qp-bias 20 --psy-rd 1 --spy-rd 2 --complex-hvs 1 --qp-scale-compress-strength 3 --noise-norm-strength 3 --enable-tf 1 --kf-tf-strength 0 --tf-strength 1 --enable-dlf 2 --enable-cdef 1 --enable-restoration 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.5 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 10 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 3 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
@@ -44,7 +44,7 @@ struct Args {
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
-    #[arg(short = 'p', long, default_value_t = 5)]
+    #[arg(short = 'p', long, default_value_t = 20)]
     target_percentile: u8,
 
     /// Target CRF value(s) (70-1). Can be:
@@ -55,13 +55,17 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "35,30,27,24,21",
+        default_value = "35,30,27,24,21,18",
     )]
     crf: String,
 
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 'n', long = "n-frames", default_value_t = 24, value_parser = clap::value_parser!(u32).range(1..))]
-    n_frames: u32,
+    #[arg(short = 'n', long = "n-frames", value_parser = clap::value_parser!(u32).range(1..))]
+    n_frames: Option<u32>,
+
+    /// Number of seconds to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
+    #[arg(short = 's', long = "n-frames", default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
+    s_frames: u32,
 
     /// Workers to use when encoding
     #[arg(short = 'w', long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..))]
@@ -72,7 +76,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 4, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 6, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
@@ -269,6 +273,7 @@ fn main() -> Result<()> {
         args.min_target_quality,
         args.velocity_preset,
         args.n_frames,
+        args.s_frames,
         args.frames_distribution,
         args.scene_detection_method,
         args.filter_frames,
