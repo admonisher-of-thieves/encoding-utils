@@ -64,7 +64,7 @@ struct Args {
     n_frames: Option<u32>,
 
     /// Number of seconds to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 's', long = "n-frames", default_value_t = 1.0)]
+    #[arg(short = 's', long = "s-frames", default_value_t = 1.0)]
     s_frames: f64,
 
     /// Workers to use when encoding
