@@ -23,7 +23,7 @@ pub fn run_loop<'a>(
     min_target_quality: f64,
     velocity_preset: i32,
     n_frames: Option<u32>,
-    s_frames: u32,
+    s_frames: f64,
     frames_distribution: FramesDistribution,
     scene_detection_method: SceneDetectionMethod,
     filter_frames: bool,

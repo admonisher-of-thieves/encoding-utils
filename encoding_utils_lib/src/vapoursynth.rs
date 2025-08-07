@@ -726,7 +726,7 @@ pub fn resize_format(
 }
 
 pub fn seconds_to_frames(
-    seconds: u32,
+    seconds: f64,
     input_path: &Path,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
@@ -737,5 +737,5 @@ pub fn seconds_to_frames(
         SourcePlugin::Bestsource => bestsource_invoke(&core, input_path, temp_dir)?,
     };
     let video_info = src.info();
-    Ok(((seconds as f64 * video_info.fps_num as f64) / video_info.fps_den as f64).ceil() as u32)
+    Ok(((seconds * video_info.fps_num as f64) / video_info.fps_den as f64).ceil() as u32)
 }
