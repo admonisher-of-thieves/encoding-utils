@@ -68,7 +68,7 @@ struct Args {
     s_frames: f64,
 
     /// Workers to use when encoding
-    #[arg(short = 'w', long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'w', long, default_value_t = 4, value_parser = clap::value_parser!(u32).range(1..))]
     workers: u32,
 
     /// How the frames are distributed when encoding
