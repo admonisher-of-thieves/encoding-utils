@@ -11,7 +11,9 @@ use crate::{
 use eyre::{Ok, OptionExt, Result, eyre};
 use indicatif::{ProgressBar, ProgressStyle};
 use quill::*;
-use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
+use rayon::iter::{
+    ParallelBridge, ParallelIterator,
+};
 use std::path::Path;
 use vapoursynth4_rs::{
     core::Core,
@@ -127,45 +129,51 @@ pub fn ssimu2_frames_selected(
     );
     pb.set_prefix("SSIMU2");
 
-    for (scene_index, scene) in scene_list.scenes.iter_mut().enumerate() {
-        let updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
-            .into_par_iter()
-            .map(|frame_index| {
-                // Get the FrameScore for this position
-                let frame_score = scene
-                    .frame_scores
-                    .get((frame_index - scene.start_frame) as usize)
-                    .ok_or_eyre(format!(
-                        "Frame index {frame_index} out of bounds in scene {scene_index}"
-                    ))?;
+    scene_list
+        .scenes
+        .iter_mut()
+        .enumerate()
+        .try_for_each(|(scene_index, scene)| {
+            let updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
+                .par_bridge()
+                .map(|frame_index| {
+                    // Get the FrameScore for this position
+                    let frame_score = scene
+                        .frame_scores
+                        .get((frame_index - scene.start_frame) as usize)
+                        .ok_or_eyre(format!(
+                            "Frame index {frame_index} out of bounds in scene {scene_index}"
+                        ))?;
 
-                // Get metrics using the frame index (not the frame number)
-                let frame = ssimu2
-                    .get_frame(frame_index as i32)
-                    .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
+                    // Get metrics using the frame index (not the frame number)
+                    let frame = ssimu2
+                        .get_frame(frame_index as i32)
+                        .map_err(|e| eyre!(e.to_string_lossy().to_string()))?;
 
-                let props = frame
-                    .properties()
-                    .ok_or_eyre("Frame properties not found")?;
-                let value = props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
+                    let props = frame
+                        .properties()
+                        .ok_or_eyre("Frame properties not found")?;
+                    let value =
+                        props.get_float(KeyStr::from_cstr(&"SSIMULACRA2".to_cstring()), 0)?;
 
-                if verbose {
-                    println!(
-                        "Scene: {:3}, Frame: {:6}, Score: {:6.2}",
-                        scene_index, frame_score.frame, value
-                    );
-                }
+                    if verbose {
+                        println!(
+                            "Scene: {:3}, Frame: {:6}, Score: {:6.2}",
+                            scene_index, frame_score.frame, value
+                        );
+                    }
 
-                pb.inc(1); // increment progress bar safely from multiple threads
+                    pb.inc(1); // increment progress bar safely from multiple threads
 
-                Ok(FrameScore {
-                    frame: frame_score.frame, // Keep original frame number
-                    value,
+                    Ok(FrameScore {
+                        frame: frame_score.frame, // Keep original frame number
+                        value,
+                    })
                 })
-            })
-            .collect::<Result<_>>()?;
-        scene.frame_scores = updated_scores;
-    }
+                .collect::<Result<_>>()?;
+            scene.frame_scores = updated_scores;
+            Ok(())
+        })?;
 
     pb.finish_with_message("DONE");
     println!();
