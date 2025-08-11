@@ -57,12 +57,10 @@ pub fn run_loop<'a>(
         SceneDetectionMethod::Av1an => {
             // Generating original scenes
             let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
-            let scene_av1an_params =
-                update_extra_split_sec(&scene_av1an_params, extra_split_seconds);
             let scene_av1an_params = if let Some(extra_split_frames) = extra_split_frames {
                 update_extra_split(&scene_av1an_params, extra_split_frames)
             } else {
-                scene_av1an_params
+                update_extra_split_sec(&scene_av1an_params, extra_split_seconds)
             };
             let scene_av1an_params = if let Some(min_scene_len) = min_scene_len {
                 update_min_scene_len(&scene_av1an_params, min_scene_len)
