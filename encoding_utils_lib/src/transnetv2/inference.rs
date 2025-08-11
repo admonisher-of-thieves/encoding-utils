@@ -337,8 +337,8 @@ impl SceneDetector {
             let start = final_cuts[i];
             let end = final_cuts[i + 1];
 
-            if end - start > self.extra_split {
-                if let Some(&best_boundary) = fade_boundaries
+            if end - start > self.extra_split
+                && let Some(&best_boundary) = fade_boundaries
                     .iter()
                     .filter(|&&b| b > start && b < end)
                     .min_by_key(|&&b| b.abs_diff(start + (end - start) / 2))
@@ -346,7 +346,6 @@ impl SceneDetector {
                     final_cuts.insert(i + 1, best_boundary);
                     continue; // Re-process the new segment
                 }
-            }
             i += 1;
         }
         final_cuts

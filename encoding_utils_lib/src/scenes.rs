@@ -545,8 +545,8 @@ impl SceneList {
 
     pub fn update_preset(&mut self, new_preset: i32) {
         for scene in &mut self.scenes {
-            if let Some(ref mut overrides) = scene.zone_overrides {
-                if let Some(ref mut params) = overrides.video_params {
+            if let Some(ref mut overrides) = scene.zone_overrides
+                && let Some(ref mut params) = overrides.video_params {
                     let mut found = false;
                     for i in 0..params.len() {
                         if params[i] == "--preset" && i + 1 < params.len() {
@@ -559,7 +559,6 @@ impl SceneList {
                         params.push(new_preset.to_string());
                     }
                 }
-            }
         }
     }
 

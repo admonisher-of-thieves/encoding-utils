@@ -300,11 +300,10 @@ pub fn update_preset(velocity_preset: i32, encoder_params: &str) -> String {
         .map(String::from)
         .collect();
 
-    if let Some(index) = args.iter().position(|arg| arg == "--preset") {
-        if index + 1 < args.len() {
+    if let Some(index) = args.iter().position(|arg| arg == "--preset")
+        && index + 1 < args.len() {
             args[index + 1] = velocity_preset.to_string();
         }
-    }
 
     args.join(" ")
 }
@@ -347,26 +346,23 @@ pub fn update_extra_split_and_min_scene_len(
         }
     }
 
-    if !found_extra_split {
-        if let Some(extra_split) = new_extra_split {
+    if !found_extra_split
+        && let Some(extra_split) = new_extra_split {
             updated_tokens.push("--extra-split".to_string());
             updated_tokens.push(extra_split.to_string());
         }
-    }
 
-    if !found_extra_split_sec {
-        if let Some(extra_split_sec) = new_extra_split_sec {
+    if !found_extra_split_sec
+        && let Some(extra_split_sec) = new_extra_split_sec {
             updated_tokens.push("--extra-split-sec".to_string());
             updated_tokens.push(extra_split_sec.to_string());
         }
-    }
 
-    if !found_min_scene_len {
-        if let Some(min_scene_len) = new_min_scene_len {
+    if !found_min_scene_len
+        && let Some(min_scene_len) = new_min_scene_len {
             updated_tokens.push("--min-scene-len".to_string());
             updated_tokens.push(min_scene_len.to_string());
         }
-    }
 
     updated_tokens.join(" ")
 }
@@ -447,11 +443,10 @@ pub fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
     let mut tokens = params.split_whitespace().peekable();
 
     while let Some(token) = tokens.next() {
-        if token == arg_name {
-            if let Some(value) = tokens.next() {
+        if token == arg_name
+            && let Some(value) = tokens.next() {
                 return Some(value.to_string());
             }
-        }
     }
     None
 }

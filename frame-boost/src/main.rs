@@ -338,8 +338,8 @@ fn parse_raw_crf_values(s: &str) -> Result<Vec<u8>> {
     };
 
     // Handle stepped ranges (36..21:3)
-    if let Some((range_part, step)) = s.split_once(':') {
-        if let Some((start, end)) = range_part.split_once("..") {
+    if let Some((range_part, step)) = s.split_once(':')
+        && let Some((start, end)) = range_part.split_once("..") {
             let (start, end, step) = (
                 start.parse().wrap_err_with(|| format!("Invalid range start: '{start}'"))?,
                 end.parse().wrap_err_with(|| format!("Invalid range end: '{end}'"))?,
@@ -363,7 +363,6 @@ fn parse_raw_crf_values(s: &str) -> Result<Vec<u8>> {
             }
             return Ok(values);
         }
-    }
 
     // Handle simple ranges (36..21)
     if let Some((start, end)) = s.split_once("..") {
