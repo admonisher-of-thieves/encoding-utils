@@ -249,7 +249,7 @@ pub fn run_loop<'a>(
     }
 
     scene_list.write_crf_data(crf_data_file, input, percentile)?;
-    scene_list.update_split_scenes();
+    scene_list.update_scenes();
     write_scene_list_to_file(scene_list, scene_boosted)?;
 
     if clean && temp_folder.exists() {

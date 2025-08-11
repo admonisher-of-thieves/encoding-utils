@@ -342,9 +342,9 @@ pub struct SceneList {
 
 impl SceneList {
     pub fn with_middle_frames(&self) -> SceneList {
-        let mut scenes = Vec::with_capacity(self.scenes.len());
+        let mut scenes = Vec::with_capacity(self.split_scenes.len());
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let middle_frame = if !scene.frame_scores.is_empty() {
                 scene.frame_scores[scene.frame_scores.len() / 2].frame
             } else {
@@ -369,10 +369,10 @@ impl SceneList {
     }
 
     pub fn with_contiguous_frames(&self) -> SceneList {
-        let mut scenes = Vec::with_capacity(self.scenes.len());
+        let mut scenes = Vec::with_capacity(self.split_scenes.len());
         let mut global_counter = 0;
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let frame_count = scene.frame_scores.len() as u32;
 
             scenes.push(Scene {
@@ -396,9 +396,9 @@ impl SceneList {
             return self.with_middle_frames();
         }
 
-        let mut scenes = Vec::with_capacity(self.scenes.len());
+        let mut scenes = Vec::with_capacity(self.split_scenes.len());
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let start = scene.start_frame;
             let end = scene.end_frame.saturating_sub(1); // inclusive
             let total = end.saturating_sub(start);
@@ -440,9 +440,9 @@ impl SceneList {
             return self.with_middle_frames();
         }
 
-        let mut scenes = Vec::with_capacity(self.scenes.len());
+        let mut scenes = Vec::with_capacity(self.split_scenes.len());
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let start = scene.start_frame;
             let end = scene.end_frame.saturating_sub(1);
             let total = end.saturating_sub(start);
@@ -487,9 +487,9 @@ impl SceneList {
             return self.with_middle_frames();
         }
 
-        let mut scenes = Vec::with_capacity(self.scenes.len());
+        let mut scenes = Vec::with_capacity(self.split_scenes.len());
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let start = scene.start_frame;
             let end = scene.end_frame.saturating_sub(1); // end is inclusive
             let total_frames = end - start + 1;
@@ -544,26 +544,27 @@ impl SceneList {
     }
 
     pub fn update_preset(&mut self, new_preset: i32) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.split_scenes {
             if let Some(ref mut overrides) = scene.zone_overrides
-                && let Some(ref mut params) = overrides.video_params {
-                    let mut found = false;
-                    for i in 0..params.len() {
-                        if params[i] == "--preset" && i + 1 < params.len() {
-                            params[i + 1] = new_preset.to_string();
-                            found = true;
-                        }
-                    }
-                    if !found {
-                        params.push("--preset".to_string());
-                        params.push(new_preset.to_string());
+                && let Some(ref mut params) = overrides.video_params
+            {
+                let mut found = false;
+                for i in 0..params.len() {
+                    if params[i] == "--preset" && i + 1 < params.len() {
+                        params[i + 1] = new_preset.to_string();
+                        found = true;
                     }
                 }
+                if !found {
+                    params.push("--preset".to_string());
+                    params.push(new_preset.to_string());
+                }
+            }
         }
     }
 
     pub fn with_zone_overrides(&mut self, av1an_params: &str, encoder_params: &str) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.split_scenes {
             let zone_overrides =
                 ZoneOverrides::from_params(av1an_params, encoder_params, scene.crf);
             scene.zone_overrides = Some(zone_overrides);
@@ -571,7 +572,7 @@ impl SceneList {
     }
 
     pub fn update_crf(&mut self, new_crf: u8) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.split_scenes {
             scene.update_crf(new_crf);
         }
     }
@@ -582,7 +583,7 @@ impl SceneList {
         new_crf: u8,
         percentile: u8,
     ) {
-        self.scenes.retain_mut(|scene| {
+        self.split_scenes.retain_mut(|scene| {
             let percentile = math::percentile(&scene.frame_scores, percentile);
             let min_score = math::min_score(&scene.frame_scores);
             if (percentile < target_quality) || (min_score < min_target_quality) {
@@ -609,7 +610,7 @@ impl SceneList {
 
         let mut frame_counts = HashMap::new();
 
-        for scene in &self.scenes {
+        for scene in &self.split_scenes {
             let scene_frames = (scene.end_frame - scene.start_frame) as f64;
             *frame_counts.entry(scene.crf).or_insert(0.0) += scene_frames;
         }
@@ -674,7 +675,7 @@ impl SceneList {
 
             output.push_str("[DATA]\n");
             // Add chunk details
-            for (i, scene) in self.scenes.iter().enumerate() {
+            for (i, scene) in self.split_scenes.iter().enumerate() {
                 let percentile_score = math::percentile(&scene.frame_scores, percentile);
                 // let score_min = score_min.scores.first().unwrap();
                 // let score_max = math::max(&score_list)?;
@@ -741,7 +742,7 @@ impl SceneList {
     }
 
     pub fn assign_indexes(&mut self) {
-        for (i, scene) in self.scenes.iter_mut().enumerate() {
+        for (i, scene) in self.split_scenes.iter_mut().enumerate() {
             scene.index = i as u32;
         }
     }
@@ -756,7 +757,7 @@ impl SceneList {
             .map(|scene| (scene.index, scene.crf))
             .collect();
 
-        for scene in &mut self.scenes {
+        for scene in &mut self.split_scenes {
             if let Some(new_crf) = crf_map.get(&scene.index) {
                 scene.update_crf(*new_crf);
             }
@@ -773,7 +774,7 @@ impl SceneList {
             .map(|scene| (scene.index, scene.frame_scores.clone()))
             .collect();
 
-        for scene in &mut self.scenes {
+        for scene in &mut self.split_scenes {
             if let Some(new_scores) = scores_map.get(&scene.index) {
                 scene.frame_scores = new_scores.clone();
             }
@@ -782,7 +783,7 @@ impl SceneList {
 
     /// Prints a summary of all scenes including index, CRF, frame range, and mean score
     pub fn print_updated_data(&self, percentile: u8) {
-        for (i, scene) in self.scenes.iter().enumerate() {
+        for (i, scene) in self.split_scenes.iter().enumerate() {
             let percentile_score = math::percentile(&scene.frame_scores, percentile);
             println!(
                 "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}",
@@ -791,8 +792,8 @@ impl SceneList {
         }
     }
 
-    pub fn update_split_scenes(&mut self) {
-        self.split_scenes = self.scenes.clone();
+    pub fn update_scenes(&mut self) {
+        self.scenes = self.split_scenes.clone();
     }
 }
 
