@@ -130,7 +130,7 @@ pub fn ssimu2_frames_selected(
     pb.set_prefix("SSIMU2");
 
     scene_list
-        .scenes
+        .split_scenes
         .iter_mut()
         .enumerate()
         .try_for_each(|(scene_index, scene)| {
@@ -406,7 +406,7 @@ pub fn create_plot(
 
     if let Some(scene_path) = scenes {
         let scenes = parse_scene_file(scene_path)?;
-        for scene in scenes.scenes.iter() {
+        for scene in scenes.split_scenes.iter() {
             // let scene_name = format!("Scene {}", i + 1);
 
             // Start frame line

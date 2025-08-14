@@ -243,7 +243,7 @@ pub fn run_loop<'a>(
             fs::remove_file(&encode_path)?;
         }
 
-        if scene_list_frames.scenes.is_empty() {
+        if scene_list_frames.split_scenes.is_empty() {
             break;
         }
     }

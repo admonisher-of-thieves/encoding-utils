@@ -595,7 +595,7 @@ impl SceneList {
         });
 
         self.frames = self
-            .scenes
+            .split_scenes
             .iter()
             .map(|scene| scene.frame_scores.len() as u32)
             .sum();
@@ -603,7 +603,7 @@ impl SceneList {
 
     pub fn calculate_crf_percentages(&self) -> Vec<(u8, f64)> {
         let total_frames = self
-            .scenes
+            .split_scenes
             .iter()
             .map(|scene| scene.end_frame - scene.start_frame)
             .sum::<u32>() as f64;
@@ -677,12 +677,13 @@ impl SceneList {
             // Add chunk details
             for (i, scene) in self.split_scenes.iter().enumerate() {
                 let percentile_score = math::percentile(&scene.frame_scores, percentile);
+                let min = math::min_score(&scene.frame_scores);
                 // let score_min = score_min.scores.first().unwrap();
                 // let score_max = math::max(&score_list)?;
                 // let score_max = score_max.scores.first().unwrap();
 
                 output.push_str(&format!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}\n",
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}\n",
                     i,
                     scene.crf,
                     scene.start_frame,
@@ -691,6 +692,7 @@ impl SceneList {
                     // score_max.value,
                     percentile,
                     percentile_score,
+                    min,
                 ));
             }
 
@@ -711,7 +713,7 @@ impl SceneList {
 
     pub fn all_frames(&self) -> Vec<u32> {
         let mut frames: Vec<u32> = self
-            .scenes
+            .split_scenes
             .iter()
             .flat_map(|scene| scene.frame_scores.iter().map(|score| score.frame))
             .collect();
@@ -733,7 +735,7 @@ impl SceneList {
 
     pub fn to_score_list(&self) -> ScoreList {
         let scores = self
-            .scenes
+            .split_scenes
             .iter()
             .flat_map(|scene| scene.frame_scores.clone())
             .collect();
@@ -752,7 +754,7 @@ impl SceneList {
         use std::collections::HashMap;
 
         let crf_map: HashMap<u32, u8> = reference
-            .scenes
+            .split_scenes
             .iter()
             .map(|scene| (scene.index, scene.crf))
             .collect();
@@ -769,7 +771,7 @@ impl SceneList {
         use std::collections::HashMap;
 
         let scores_map: HashMap<u32, Vec<FrameScore>> = reference
-            .scenes
+            .split_scenes
             .iter()
             .map(|scene| (scene.index, scene.frame_scores.clone()))
             .collect();
@@ -785,9 +787,10 @@ impl SceneList {
     pub fn print_updated_data(&self, percentile: u8) {
         for (i, scene) in self.split_scenes.iter().enumerate() {
             let percentile_score = math::percentile(&scene.frame_scores, percentile);
+            let min = math::min_score(&scene.frame_scores);
             println!(
-                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}",
-                i, scene.crf, scene.start_frame, scene.end_frame, percentile, percentile_score,
+                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}",
+                i, scene.crf, scene.start_frame, scene.end_frame, percentile, percentile_score, min
             );
         }
     }

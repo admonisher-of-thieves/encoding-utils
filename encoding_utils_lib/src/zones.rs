@@ -18,7 +18,7 @@ pub fn create_zone_file<'a>(
 
     // Convert scores to strings and join with newlines
     let content = scene_list
-        .scenes
+        .split_scenes
         .iter()
         .map(|scene| {
             format!(
@@ -47,7 +47,7 @@ pub fn create_temp_zone_file<'a>(
 
     println!("Creating zone file:\n");
 
-    let scene_len = scene_list.scenes.len();
+    let scene_len = scene_list.split_scenes.len();
 
     // Convert scores to strings and join with newlines
     let content = (0..scene_len)
