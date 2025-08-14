@@ -10,13 +10,13 @@ resolver = "3"
 
 [workspace.dependencies]
 eyre = "0.6.12"
-rayon = "1.10.0"
+rayon = "1.11.0"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde_json = "1.0.142"
 vapoursynth4-rs = { features = [
     "link-library",
 ], git = "https://github.com/inflation/vapoursynth4-rs", rev = "e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7" }
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.45", features = ["derive"] }
 indicatif = { version = "0.18.0" }
 quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "0b7d5d9c1731dcb6a96aeae53940f64a779a989b" }
 ndarray = "0.16.1"
