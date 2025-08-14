@@ -626,7 +626,7 @@ impl SceneList {
     }
 
     pub fn print_crf_percentages(&self) {
-        println!("\nCRF Distribution:");
+        println!("CRF Distribution:");
         let percentages = self.calculate_crf_percentages();
 
         for (crf, pct) in percentages {
