@@ -1,6 +1,7 @@
-pub mod chunk;
+pub mod crf;
+pub mod dampen;
 pub mod encode;
-pub mod main_loop;
+pub mod frame_loop;
 pub mod math;
 pub mod scenes;
 pub mod ssimulacra2;

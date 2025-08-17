@@ -2,10 +2,7 @@ use std::fs::{self};
 use std::path::Path;
 
 use crate::encode::encode_frames;
-use crate::scenes::{
-    FramesDistribution, SceneDetectionMethod, get_scene_file, parse_scene_file,
-    write_scene_list_to_file,
-};
+use crate::scenes::{FramesDistribution, SceneDetectionMethod, SceneList, get_scene_file};
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::transnetv2::transnet::run_transnetv2;
 use crate::vapoursynth::{SourcePlugin, seconds_to_frames};
@@ -84,7 +81,7 @@ pub fn run_loop<'a>(
             )?;
             let original_scenes_file =
                 get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
-            parse_scene_file(&original_scenes_file)?
+            SceneList::parse_scene_file(&original_scenes_file)?
         }
         SceneDetectionMethod::TransnetV2 => {
             println!("Obtaining scene using transnetv2-rs\n");
@@ -121,9 +118,9 @@ pub fn run_loop<'a>(
                         .ok_or_eyre("Invalid UTF-8 in input path")?
                 );
                 let hardcut_path = input.with_file_name(output_name);
-                write_scene_list_to_file(hardcut_list, &hardcut_path)?;
+                hardcut_list.write_scene_list_to_file(&hardcut_path)?;
             }
-            write_scene_list_to_file(scene_list.clone(), &temp_folder.join("scenes.json"))?;
+            scene_list.write_scene_list_to_file(&temp_folder.join("scenes.json"))?;
             scene_list
         }
     };
@@ -172,7 +169,7 @@ pub fn run_loop<'a>(
         let encode_path = temp_folder.join(format!("encode_{crf}.mkv"));
 
         scene_list_frames = scene_list_frames.with_contiguous_frames();
-        let filter_scene_file = write_scene_list_to_file(scene_list_frames.clone(), &scenes_path)?;
+        let filter_scene_file = scene_list_frames.write_scene_list_to_file(&scenes_path)?;
 
         // Temp encode
         let vpy_file = create_vpy_file(
@@ -248,9 +245,9 @@ pub fn run_loop<'a>(
         }
     }
 
-    scene_list.write_crf_data(crf_data_file, input, percentile)?;
     scene_list.update_scenes();
-    write_scene_list_to_file(scene_list, scene_boosted)?;
+    scene_list.write_crf_data(crf_data_file, input, Some(percentile), true)?;
+    scene_list.write_scene_list_to_file(scene_boosted)?;
 
     if clean && temp_folder.exists() {
         fs::remove_dir_all(temp_folder)?;
@@ -299,9 +296,10 @@ pub fn update_preset(velocity_preset: i32, encoder_params: &str) -> String {
         .collect();
 
     if let Some(index) = args.iter().position(|arg| arg == "--preset")
-        && index + 1 < args.len() {
-            args[index + 1] = velocity_preset.to_string();
-        }
+        && index + 1 < args.len()
+    {
+        args[index + 1] = velocity_preset.to_string();
+    }
 
     args.join(" ")
 }
@@ -344,23 +342,20 @@ pub fn update_extra_split_and_min_scene_len(
         }
     }
 
-    if !found_extra_split
-        && let Some(extra_split) = new_extra_split {
-            updated_tokens.push("--extra-split".to_string());
-            updated_tokens.push(extra_split.to_string());
-        }
+    if !found_extra_split && let Some(extra_split) = new_extra_split {
+        updated_tokens.push("--extra-split".to_string());
+        updated_tokens.push(extra_split.to_string());
+    }
 
-    if !found_extra_split_sec
-        && let Some(extra_split_sec) = new_extra_split_sec {
-            updated_tokens.push("--extra-split-sec".to_string());
-            updated_tokens.push(extra_split_sec.to_string());
-        }
+    if !found_extra_split_sec && let Some(extra_split_sec) = new_extra_split_sec {
+        updated_tokens.push("--extra-split-sec".to_string());
+        updated_tokens.push(extra_split_sec.to_string());
+    }
 
-    if !found_min_scene_len
-        && let Some(min_scene_len) = new_min_scene_len {
-            updated_tokens.push("--min-scene-len".to_string());
-            updated_tokens.push(min_scene_len.to_string());
-        }
+    if !found_min_scene_len && let Some(min_scene_len) = new_min_scene_len {
+        updated_tokens.push("--min-scene-len".to_string());
+        updated_tokens.push(min_scene_len.to_string());
+    }
 
     updated_tokens.join(" ")
 }
@@ -442,9 +437,10 @@ pub fn get_arg_value(params: &str, arg_name: &str) -> Option<String> {
 
     while let Some(token) = tokens.next() {
         if token == arg_name
-            && let Some(value) = tokens.next() {
-                return Some(value.to_string());
-            }
+            && let Some(value) = tokens.next()
+        {
+            return Some(value.to_string());
+        }
     }
     None
 }

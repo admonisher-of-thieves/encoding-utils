@@ -1,6 +1,6 @@
 use crate::{
     math::{self, FrameScore, ScoreList},
-    scenes::{SceneList, parse_scene_file},
+    scenes::SceneList,
     vapoursynth::{
         SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, inverse_telecine,
         lsmash_invoke, select_frames, set_color_metadata, synchronize_clips, to_crop,
@@ -11,9 +11,7 @@ use crate::{
 use eyre::{Ok, OptionExt, Result, eyre};
 use indicatif::{ProgressBar, ProgressStyle};
 use quill::*;
-use rayon::iter::{
-    ParallelBridge, ParallelIterator,
-};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::path::Path;
 use vapoursynth4_rs::{
     core::Core,
@@ -405,7 +403,7 @@ pub fn create_plot(
     ];
 
     if let Some(scene_path) = scenes {
-        let scenes = parse_scene_file(scene_path)?;
+        let scenes = SceneList::parse_scene_file(scene_path)?;
         for scene in scenes.split_scenes.iter() {
             // let scene_name = format!("Scene {}", i + 1);
 

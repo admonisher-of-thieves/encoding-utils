@@ -135,6 +135,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
+name = "bytesize"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3c8f83209414aacf0eeae3cf730b18d6981697fba62f200fcfb92b9f082acba"
+
+[[package]]
 name = "cc"
 version = "1.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -348,8 +354,10 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 name = "encoding_utils_lib"
 version = "0.1.0"
 dependencies = [
+ "bytesize",
  "clap",
  "eyre",
+ "fs_extra",
  "indicatif",
  "iter-chunks",
  "itertools",
@@ -446,6 +454,12 @@ dependencies = [
  "encoding_utils_lib",
  "eyre",
 ]
+
+[[package]]
+name = "fs_extra"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
 name = "generic-array"
@@ -1037,6 +1051,18 @@ dependencies = [
  "clap",
  "encoding_utils_lib",
  "eyre",
+]
+
+[[package]]
+name = "size-dampener"
+version = "0.1.0"
+dependencies = [
+ "bytesize",
+ "clap",
+ "encoding_utils_lib",
+ "eyre",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

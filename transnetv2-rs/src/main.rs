@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{scenes::write_scene_list_to_file, transnetv2::transnet::run_transnetv2, vapoursynth::SourcePlugin};
+use encoding_utils_lib::{transnetv2::transnet::run_transnetv2, vapoursynth::SourcePlugin};
 use eyre::OptionExt;
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -188,7 +188,7 @@ fn main() -> eyre::Result<()> {
         args.scene_predictions
     )?;
 
-    write_scene_list_to_file(scene_list, &scenes)?;
+    scene_list.write_scene_list_to_file( &scenes)?;
 
     if args.hardcut_scenes {
         let output_name = format!(
@@ -200,7 +200,7 @@ fn main() -> eyre::Result<()> {
                 .ok_or_eyre("Invalid UTF-8 in input path")?
         );
         let hardcut_path = input_path.with_file_name(output_name);
-        write_scene_list_to_file(hardcut_list, &hardcut_path)?;
+        hardcut_list.write_scene_list_to_file(&hardcut_path)?;
     }
 
 

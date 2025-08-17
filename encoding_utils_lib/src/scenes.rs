@@ -122,7 +122,10 @@ pub fn get_scene_file_with_zones<'a>(
 
 use serde::{Deserialize, Serialize};
 
-use crate::math::{self, FrameScore, ScoreList};
+use crate::{
+    dampen::dampen_loop::SceneSizeList,
+    math::{self, FrameScore, ScoreList},
+};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Scene {
@@ -645,7 +648,8 @@ impl SceneList {
         &self,
         crf_data_file: Option<&Path>,
         input: &std::path::Path,
-        percentile: u8,
+        percentile: Option<u8>,
+        with_metrics: bool,
     ) -> Result<()> {
         if let Some(crf_data_file) = crf_data_file {
             // Build the entire output string first
@@ -676,36 +680,38 @@ impl SceneList {
             output.push_str("[DATA]\n");
             // Add chunk details
             for (i, scene) in self.split_scenes.iter().enumerate() {
-                let percentile_score = math::percentile(&scene.frame_scores, percentile);
-                let min = math::min_score(&scene.frame_scores);
-                // let score_min = score_min.scores.first().unwrap();
-                // let score_max = math::max(&score_list)?;
-                // let score_max = score_max.scores.first().unwrap();
-
-                output.push_str(&format!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}\n",
-                    i,
-                    scene.crf,
-                    scene.start_frame,
-                    scene.end_frame,
-                    // score_max.frame,
-                    // score_max.value,
-                    percentile,
-                    percentile_score,
-                    min,
-                ));
+                if with_metrics {
+                    let percentile_score =
+                        math::percentile(&scene.frame_scores, percentile.unwrap());
+                    let min = math::min_score(&scene.frame_scores);
+                    output.push_str(&format!(
+                        "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}\n",
+                        i,
+                        scene.crf,
+                        scene.start_frame,
+                        scene.end_frame,
+                        percentile.unwrap(),
+                        percentile_score,
+                        min,
+                    ));
+                } else {
+                    output.push_str(&format!(
+                        "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}\n",
+                        i, scene.crf, scene.start_frame, scene.end_frame,
+                    ));
+                }
             }
 
             // Write everything at once
             std::fs::write(crf_data_file, &output)?;
 
-            println!(
-                "CRF data successfully written to {}",
-                crf_data_file
-                    .as_os_str()
-                    .to_str()
-                    .ok_or_eyre("Invalid UTF-8")?
-            );
+            // println!(
+            //     "CRF data successfully written to {}",
+            //     crf_data_file
+            //         .as_os_str()
+            //         .to_str()
+            //         .ok_or_eyre("Invalid UTF-8")?
+            // );
         }
 
         Ok(())
@@ -798,18 +804,57 @@ impl SceneList {
     pub fn update_scenes(&mut self) {
         self.scenes = self.split_scenes.clone();
     }
-}
 
-pub fn parse_scene_file(json_path: &Path) -> Result<SceneList> {
-    let json_data = fs::read_to_string(json_path)?;
-    let scene_list: SceneList = serde_json::from_str(&json_data)?;
-    Ok(scene_list)
-}
+    pub fn sync_crf_from_zone_overrides(&mut self) -> Result<(), eyre::Report> {
+        for (idx, scene) in self.split_scenes.iter_mut().enumerate() {
+            let overrides = scene
+                .zone_overrides
+                .as_ref()
+                .ok_or_else(|| eyre::eyre!("Missing zone_overrides in scene {}", idx))?;
 
-pub fn write_scene_list_to_file(scene_list: SceneList, path: &Path) -> Result<&Path> {
-    let json = serde_json::to_string_pretty(&scene_list)?; // pretty format for readability
-    fs::write(path, json)?;
-    Ok(path)
+            let params = overrides.video_params.as_ref().ok_or_else(|| {
+                eyre::eyre!("Missing video_params in zone_overrides for scene {}", idx)
+            })?;
+
+            let crf_str = find_crf_value_in_params(params)
+                .ok_or_else(|| eyre::eyre!("Missing --crf in video_params for scene {}", idx))?;
+
+            let crf = crf_str.parse::<u8>().map_err(|_| {
+                eyre::eyre!(
+                    "Failed to parse '{}' as u8 for CRF in scene {}",
+                    crf_str,
+                    idx
+                )
+            })?;
+
+            scene.crf = crf;
+        }
+        Ok(())
+    }
+
+    /// Updates CRF values in scenes based on SceneSizeList
+    /// Only updates scenes that aren't marked as ready in SceneSizeList
+    pub fn update_crfs_from_sizes(&mut self, scene_sizes: &SceneSizeList) -> eyre::Result<()> {
+        for scene in &mut self.split_scenes {
+            // Find matching scene in SceneSizeList that isn't ready
+            if let Some(size_info) = scene_sizes.scenes.iter().find(|s| s.index == scene.index) {
+                scene.update_crf(size_info.new_crf);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn parse_scene_file(json_path: &Path) -> Result<SceneList> {
+        let json_data = fs::read_to_string(json_path)?;
+        let scene_list: SceneList = serde_json::from_str(&json_data)?;
+        Ok(scene_list)
+    }
+
+    pub fn write_scene_list_to_file<'a>(&self, path: &'a Path) -> Result<&'a Path> {
+        let json = serde_json::to_string_pretty(&self)?; // pretty format for readability
+        fs::write(path, json)?;
+        Ok(path)
+    }
 }
 
 #[derive(ValueEnum, Clone, Debug, Copy)]
@@ -837,4 +882,15 @@ pub struct CrfPercentage {
 pub enum SceneDetectionMethod {
     Av1an,
     TransnetV2,
+}
+
+/// Helper function to extract the CRF value following `--crf` in a parameter list.
+pub fn find_crf_value_in_params(params: &[String]) -> Option<&str> {
+    let mut iter = params.iter();
+    while let Some(arg) = iter.next() {
+        if arg == "--crf" {
+            return iter.next().map(|s| s.as_str());
+        }
+    }
+    None
 }
