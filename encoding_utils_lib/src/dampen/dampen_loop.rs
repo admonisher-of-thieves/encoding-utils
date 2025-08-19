@@ -397,7 +397,7 @@ impl SceneSizeList {
             if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
                 if !scene.ready {
                     println!(
-                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2} ...updating",
+                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2} ...updated",
                         scene.index,
                         scene.original_crf,
                         scene.new_crf,
