@@ -348,6 +348,10 @@ impl SceneSizeList {
                 // Size is under threshold, mark as ready
                 scene.ready = true;
             }
+
+            if scene.new_crf >= self.max_crf {
+                scene.ready = true;
+            }
         }
     }
 
@@ -387,18 +391,29 @@ impl SceneSizeList {
 
         // Create a sorted vector of scenes
         let mut sorted_scenes = self.scenes.clone();
-        sorted_scenes.sort_by(|a, b| b.original_size.cmp(&a.original_size));
+        sorted_scenes.sort_by(|a, b| b.new_size.cmp(&a.new_size));
 
         for scene in sorted_scenes {
             if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
-                println!(
-                    "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
-                    scene.index,
-                    scene.original_crf,
-                    scene.new_crf,
-                    scene.original_size.display(),
-                    scene.new_size.display()
-                );
+                if !scene.ready {
+                    println!(
+                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2} ...updating",
+                        scene.index,
+                        scene.original_crf,
+                        scene.new_crf,
+                        scene.original_size.display(),
+                        scene.new_size.display()
+                    );
+                } else {
+                    println!(
+                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
+                        scene.index,
+                        scene.original_crf,
+                        scene.new_crf,
+                        scene.original_size.display(),
+                        scene.new_size.display()
+                    );
+                }
             }
         }
 
@@ -412,7 +427,7 @@ impl SceneSizeList {
 
         // Create a vector of scenes and sort by original_size (largest to smallest)
         let mut sorted_scenes = self.scenes.clone();
-        sorted_scenes.sort_by(|a, b| b.new_size.cmp(&a.original_size));
+        sorted_scenes.sort_by(|a, b| b.new_size.cmp(&a.new_size));
 
         for scene in &sorted_scenes {
             // Only show scenes where either:
