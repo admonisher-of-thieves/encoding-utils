@@ -81,6 +81,38 @@ pub struct Chunk {
     pub ignore_frame_mismatch: bool,
 }
 
+impl Chunk {
+    /// Returns the preset value from video_params if present, or None if not found
+    pub fn get_preset(&self) -> Option<i32> {
+        // Find the position of "--preset" parameter
+        if let Some(preset_pos) = self.video_params.iter().position(|p| p == "--preset") {
+            // Check if there's a value after "--preset"
+            if preset_pos + 1 < self.video_params.len() {
+                // Try to parse the value as i32
+                if let Ok(preset_value) = self.video_params[preset_pos + 1].parse::<i32>() {
+                    return Some(preset_value);
+                }
+            }
+        }
+        None
+    }
+
+    /// Returns the CRF value from video_params if present, or None if not found
+    pub fn get_crf(&self) -> Option<u8> {
+        // Find the position of "--crf" parameter
+        if let Some(crf_pos) = self.video_params.iter().position(|p| p == "--crf") {
+            // Check if there's a value after "--crf"
+            if crf_pos + 1 < self.video_params.len() {
+                // Try to parse the value as i32
+                if let Ok(crf_value) = self.video_params[crf_pos + 1].parse::<u8>() {
+                    return Some(crf_value);
+                }
+            }
+        }
+        None
+    }
+}
+
 #[derive(Debug)]
 pub struct ChunkList {
     pub chunks: Vec<Chunk>,
@@ -110,6 +142,71 @@ impl ChunkList {
                     // "--crf" not found, add it with the new value
                     chunk.video_params.push("--crf".to_string());
                     chunk.video_params.push(scene.new_crf.to_string());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Updates the preset values in video_params based on the SceneSizeList
+    /// Only updates scenes that aren't marked as ready
+    pub fn update_preset_from_scene_sizes(
+        &mut self,
+        scene_sizes: &SceneSizeList,
+        preset: i32,
+    ) -> eyre::Result<()> {
+        for chunk in &mut self.chunks {
+            // Find matching scene in SceneSizeList that isn't ready
+            if scene_sizes
+                .scenes
+                .iter()
+                .any(|s| s.index == chunk.index && !s.ready)
+            {
+                // Find position of "--preset" parameter
+                if let Some(preset_pos) = chunk.video_params.iter().position(|p| p == "--preset") {
+                    // Update the value after "--preset"
+                    if preset_pos + 1 < chunk.video_params.len() {
+                        chunk.video_params[preset_pos + 1] = preset.to_string();
+                    } else {
+                        // "--preset" was last parameter, add value
+                        chunk.video_params.push(preset.to_string());
+                    }
+                } else {
+                    // "--preset" not found, add it with the new value
+                    chunk.video_params.push("--preset".to_string());
+                    chunk.video_params.push(preset.to_string());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Restores the original preset values in video_params based on the SceneSizeList
+    /// Only updates scenes where both size and CRF were modified
+    pub fn restore_original_preset_from_scene_sizes(
+        &mut self,
+        scene_sizes: &SceneSizeList,
+    ) -> eyre::Result<()> {
+        for chunk in &mut self.chunks {
+            // Find matching scene in SceneSizeList where both size AND CRF were modified
+            if let Some(scene) = scene_sizes.scenes.iter().find(|s| {
+                s.index == chunk.index
+                    && s.new_size != s.original_size
+                    && s.new_crf != s.original_crf
+            }) {
+                // Find position of "--preset" parameter
+                if let Some(preset_pos) = chunk.video_params.iter().position(|p| p == "--preset") {
+                    // Update the value after "--preset" with the original preset
+                    if preset_pos + 1 < chunk.video_params.len() {
+                        chunk.video_params[preset_pos + 1] = scene.original_preset.to_string();
+                    } else {
+                        // "--preset" was last parameter, add original value
+                        chunk.video_params.push(scene.original_preset.to_string());
+                    }
+                } else {
+                    // "--preset" not found, add it with the original value
+                    chunk.video_params.push("--preset".to_string());
+                    chunk.video_params.push(scene.original_preset.to_string());
                 }
             }
         }

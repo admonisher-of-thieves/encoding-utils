@@ -20,8 +20,10 @@ pub fn dampen_loop<'a>(
     av1an_params: &'a str,
     crfs: &[u8],
     size_threshold: ByteSize,
+    velocity_preset: i32,
     crf_data_file: Option<&'a Path>,
     temp_folder: &'a Path,
+    backup: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning size-dampener\n");
     println!("Size Threshold: {}", size_threshold);
@@ -36,43 +38,45 @@ pub fn dampen_loop<'a>(
     let chunks_path = temp_folder.join("chunks.json");
     let encode_scenes_path = temp_folder.join("encode");
 
-    // BackUp paths
-    let done_backup = temp_folder.join("done_backup.json");
-    let chunks_backup = temp_folder.join("chunks_backup.json");
-    let encode_backup = temp_folder.join("encode_backup");
+    if backup {
+        // BackUp paths
+        let done_backup = temp_folder.join("done_backup.json");
+        let chunks_backup = temp_folder.join("chunks_backup.json");
+        let encode_backup = temp_folder.join("encode_backup");
 
-    // 1. Backup JSON files
-    if done_path.exists() {
-        copy_file(
-            &done_path,
-            &done_backup,
-            &FileCopyOptions::new().overwrite(true),
-        )
-        .wrap_err("Failed to backup done.json")?;
-    }
+        // 1. Backup JSON files
+        if done_path.exists() {
+            copy_file(
+                &done_path,
+                &done_backup,
+                &FileCopyOptions::new().overwrite(true),
+            )
+            .wrap_err("Failed to backup done.json")?;
+        }
 
-    if chunks_path.exists() {
-        copy_file(
-            &chunks_path,
-            &chunks_backup,
-            &FileCopyOptions::new().overwrite(true),
-        )
-        .wrap_err("Failed to backup chunks.json")?;
-    }
+        if chunks_path.exists() {
+            copy_file(
+                &chunks_path,
+                &chunks_backup,
+                &FileCopyOptions::new().overwrite(true),
+            )
+            .wrap_err("Failed to backup chunks.json")?;
+        }
 
-    // 2. Backup encode directory (with all contents)
-    if encode_scenes_path.exists() {
-        // Create the backup directory first
-        std::fs::create_dir_all(&encode_backup)
-            .wrap_err("Failed to create encode_backup directory")?;
+        // 2. Backup encode directory (with all contents)
+        if encode_scenes_path.exists() {
+            // Create the backup directory first
+            std::fs::create_dir_all(&encode_backup)
+                .wrap_err("Failed to create encode_backup directory")?;
 
-        let options = CopyOptions::new()
-            .overwrite(true) // Overwrite existing files
-            .content_only(true) // Copy the directory itself
-            .copy_inside(true); // Don't copy inside existing directory
+            let options = CopyOptions::new()
+                .overwrite(true) // Overwrite existing files
+                .content_only(true) // Copy the directory itself
+                .copy_inside(true); // Don't copy inside existing directory
 
-        copy(&encode_scenes_path, &encode_backup, &options)
-            .wrap_err("Failed to backup encode directory")?;
+            copy(&encode_scenes_path, &encode_backup, &options)
+                .wrap_err("Failed to backup encode directory")?;
+        }
     }
 
     // Load state files
@@ -84,31 +88,34 @@ pub fn dampen_loop<'a>(
     let crfs = crfs.iter().sorted().copied().collect::<Vec<u8>>();
 
     // Initialize scene size tracking
-    let mut scene_size_list = SceneSizeList::new(
+    let mut scene_sizes = SceneSizeList::new(
         encode_scenes_path,
-        &scene_list,
+        &chunk_list,
         size_threshold,
         max_crf,
         crfs,
     )?;
 
     // Early exit if all scenes meet threshold
-    if !scene_size_list.is_not_ready() {
+    if !scene_sizes.is_not_ready() {
         println!("ALL SCENES BELOW THE SIZE THRESHOLD");
         return Ok(scene_dampened);
     }
 
+    // Change preset
+    chunk_list.update_preset_from_scene_sizes(&scene_sizes, velocity_preset)?;
+
     // Main processing loop
     let mut iteration = 0;
-    while scene_size_list.is_not_ready() {
+    while scene_sizes.is_not_ready() {
         println!("\n\n=== Iteration {} ===", iteration);
         // println!("{scene_size_list:#?}");
-        scene_size_list.print_not_ready();
+        scene_sizes.print_not_ready();
 
         // Update state files
-        done.update_from_scene_sizes(&scene_size_list)?;
+        done.update_from_ready_scene_sizes(&scene_sizes)?;
         // println!("{done:#?}");
-        chunk_list.update_crf_from_scene_sizes(&scene_size_list)?;
+        chunk_list.update_crf_from_scene_sizes(&scene_sizes)?;
 
         done.write_done_to_file(&done_path)?;
         chunk_list.write_chunks_to_file(&chunks_path)?;
@@ -131,15 +138,21 @@ pub fn dampen_loop<'a>(
 
         // Cleanup and update for next iteration
         fs::remove_file(&encode_path)?;
-        scene_size_list.update_sizes()?;
+        scene_sizes.update_sizes()?;
 
         match iteration {
-            0 => scene_size_list.initial_update_crfs(),
-            _ => scene_size_list.update_crfs(),
+            0 => scene_sizes.initial_update_crfs(),
+            _ => scene_sizes.update_crfs(),
         }
 
         iteration += 1;
     }
+
+    // Restore original preset
+    done.update_from_modified_scene_sizes(&scene_sizes)?;
+    chunk_list.restore_original_preset_from_scene_sizes(&scene_sizes)?;
+    done.write_done_to_file(&done_path)?;
+    chunk_list.write_chunks_to_file(&chunks_path)?;
 
     // Final encode
     resume_encode(
@@ -153,12 +166,12 @@ pub fn dampen_loop<'a>(
     )?;
 
     // Final status report
-    scene_size_list.update_sizes()?;
-    scene_size_list.update_crfs();
-    scene_size_list.print_updated_scenes();
+    scene_sizes.update_sizes()?;
+    scene_sizes.update_crfs();
+    scene_sizes.print_updated_scenes();
 
     // Output new scene.json file
-    scene_list.update_crfs_from_sizes(&scene_size_list)?;
+    scene_list.update_crfs_from_sizes(&scene_sizes)?;
     scene_list.update_scenes();
     scene_list.write_scene_list_to_file(scene_dampened)?;
     scene_list.write_crf_data(crf_data_file, input, None, false)?;
@@ -173,6 +186,7 @@ pub struct SceneSize {
     pub new_size: ByteSize,
     pub original_crf: u8,
     pub new_crf: u8,
+    pub original_preset: i32,
     pub ready: bool,
 }
 
@@ -188,7 +202,7 @@ pub struct SceneSizeList {
 impl SceneSizeList {
     pub fn new(
         scenes_path: PathBuf,
-        scene_list: &SceneList,
+        chunk_list: &ChunkList,
         size_threshold: ByteSize,
         max_crf: u8,
         crfs: Vec<u8>,
@@ -219,12 +233,20 @@ impl SceneSizeList {
                 .ok_or_eyre("Error converting file name to str")?
                 .to_string();
             let index: u32 = file_name.parse()?;
-            let original_crf = scene_list
-                .split_scenes
+            let original_crf = chunk_list
+                .chunks
                 .iter()
                 .find(|scene| scene.index == index)
                 .ok_or_eyre("Scene not found")?
-                .crf;
+                .get_crf()
+                .ok_or_eyre("CRF not found")?;
+            let original_preset = chunk_list
+                .chunks
+                .iter()
+                .find(|scene| scene.index == index)
+                .ok_or_eyre("Scene not found")?
+                .get_preset()
+                .ok_or_eyre("Preset not found")?;
             // println!("Size: {size}");
             // println!("Size Threshold: {size_threshold}");
 
@@ -245,6 +267,7 @@ impl SceneSizeList {
                 original_crf,
                 new_crf,
                 ready,
+                original_preset,
             };
             result.push(scene_size);
         }
@@ -358,17 +381,17 @@ impl SceneSizeList {
 
         // Create a sorted vector of scenes
         let mut sorted_scenes = self.scenes.clone();
-        sorted_scenes.sort_by_key(|s| s.index);
+        sorted_scenes.sort_by(|a, b| b.original_size.cmp(&a.original_size));
 
         for scene in sorted_scenes {
             if !scene.ready {
                 println!(
-                    "scene: {:4}, original_crf: {}, new_crf: {}, original_size: {}, new_size: {}",
+                    "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
                     scene.index,
                     scene.original_crf,
                     scene.new_crf,
-                    scene.original_size,
-                    scene.new_size
+                    scene.original_size.display(),
+                    scene.new_size.display()
                 );
             }
         }
@@ -381,9 +404,9 @@ impl SceneSizeList {
         println!("\n\nFinal - Updated Scenes:");
         println!("-----------------");
 
-        // Create a sorted vector of scenes
+        // Create a vector of scenes and sort by original_size (largest to smallest)
         let mut sorted_scenes = self.scenes.clone();
-        sorted_scenes.sort_by_key(|s| s.index);
+        sorted_scenes.sort_by(|a, b| b.original_size.cmp(&a.original_size));
 
         for scene in &sorted_scenes {
             // Only show scenes where either:
@@ -391,12 +414,12 @@ impl SceneSizeList {
             // 2. The CRF changed (new_crf != original_crf)
             if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
                 println!(
-                    "scene: {}, original_crf: {} → new_crf: {}, original_size: {} → new_size: {}",
+                    "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
                     scene.index,
                     scene.original_crf,
                     scene.new_crf,
-                    scene.original_size,
-                    scene.new_size,
+                    scene.original_size.display(),
+                    scene.new_size.display(),
                 );
             }
         }

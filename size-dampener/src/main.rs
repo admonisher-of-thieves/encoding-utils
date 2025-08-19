@@ -37,12 +37,12 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long = "av1an-params",
-        default_value = "--verbose --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0 "
+        default_value = "--verbose --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
     )]
     av1an_params: String,
 
     /// Target size in MiB.
-    #[arg(short = 's', long, default_value = "2.5 MiB")]
+    #[arg(short = 's', long, default_value = "3.75 MiB")]
     size_threshold: String,
 
     /// Target CRF value(s) (70-1). Can be:
@@ -53,6 +53,10 @@ struct Args {
     #[arg(short = 'c', long, default_value = "35,30,27,24,21,18")]
     crf: String,
 
+    /// Velocity tuning preset (-1~13)
+    #[arg(short = 'v', long, default_value_t = 7, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    velocity_preset: i32,
+
     // Enable verbose output
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
@@ -60,6 +64,10 @@ struct Args {
     /// Path to save the updated crf data
     #[arg(long = "crf-data-file")]
     crf_data_file: Option<PathBuf>,
+
+    // Save a copy of the original data. "encode_backup" folder, "chunk_backup.json" and "done_backup.json"
+    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = true)]
+    backup: bool,
 }
 
 fn main() -> Result<()> {
@@ -119,8 +127,10 @@ fn main() -> Result<()> {
         &args.av1an_params,
         &crf_values,
         size_threshold,
+        args.velocity_preset,
         args.crf_data_file.as_deref(),
         &temp_folder,
+        args.backup,
     )?;
 
     Ok(())

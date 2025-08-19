@@ -19,7 +19,10 @@ pub struct Done {
 
 impl Done {
     /// Updates the Done struct based on the SceneSizeList, removing entries for scenes that aren't ready
-    pub fn update_from_scene_sizes(&mut self, scene_sizes: &SceneSizeList) -> eyre::Result<()> {
+    pub fn update_from_ready_scene_sizes(
+        &mut self,
+        scene_sizes: &SceneSizeList,
+    ) -> eyre::Result<()> {
         // First collect all ready scene indices as strings with leading zeros
         let ready_scenes: std::collections::HashSet<String> = scene_sizes
             .scenes
@@ -31,6 +34,23 @@ impl Done {
         // Retain only the done entries that have corresponding ready scenes
         self.done
             .retain(|scene_name, _| ready_scenes.contains(scene_name));
+
+        Ok(())
+    }
+
+    /// Updates the Done struct based on the SceneSizeList, removing entries for scenes that were modified
+    pub fn update_from_modified_scene_sizes(&mut self, scene_sizes: &SceneSizeList) -> eyre::Result<()> {
+        // First collect all unmodified scene indices as strings with leading zeros
+        let unmodified_scenes: std::collections::HashSet<String> = scene_sizes
+            .scenes
+            .iter()
+            .filter(|s| s.new_size == s.original_size && s.new_crf == s.original_crf)
+            .map(|s| format!("{:05}", s.index)) // Format with leading zeros to match JSON keys
+            .collect();
+
+        // Retain only the done entries that have corresponding unmodified scenes
+        self.done
+            .retain(|scene_name, _| unmodified_scenes.contains(scene_name));
 
         Ok(())
     }
