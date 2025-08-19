@@ -3,11 +3,7 @@ use clap::{ArgAction, Parser};
 use encoding_utils_lib::{crf::crf_parser, dampen::dampen_loop::dampen_loop};
 use eyre::{OptionExt, Result};
 
-use std::{
-    fs,
-    path::{PathBuf, absolute},
-    str::FromStr,
-};
+use std::{fs, path::PathBuf, str::FromStr};
 
 /// Scene Dampener that dynamically adjusts CRF.
 /// Re-encode av1an scenes until they are below a size threshold
