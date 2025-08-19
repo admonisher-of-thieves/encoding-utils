@@ -53,12 +53,16 @@ struct Args {
     #[arg(short = 'c', long, default_value = "35,30,27,24,21,18")]
     crf: String,
 
+    /// Input video file used to encode during size-dampener, you can also pass a .vpy script
+    #[arg(long = "velocity-input", value_parser = clap::value_parser!(PathBuf))]
+    velocity_input: Option<PathBuf>,
+
     /// Velocity tuning preset (-1~13)
     #[arg(short = 'v', long, default_value_t = 7, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     // Enable verbose output
-    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
 
     /// Path to save the updated crf data
@@ -73,7 +77,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     let crf_values = crf_parser(&args.crf)?;
-    let input_path = absolute(&args.input)?;
+    let input_path = &args.input;
     let scene_boosted = match args.scene_file_input {
         Some(output) => output,
         None => {
@@ -120,13 +124,14 @@ fn main() -> Result<()> {
 
     let size_threshold = ByteSize::from_str(&args.size_threshold).map_err(|e| eyre::eyre!(e))?;
     dampen_loop(
-        &input_path,
+        input_path,
         &args.output,
         &scene_boosted,
         &scene_dampened,
         &args.av1an_params,
         &crf_values,
         size_threshold,
+        args.velocity_input.as_deref(),
         args.velocity_preset,
         args.crf_data_file.as_deref(),
         &temp_folder,

@@ -20,13 +20,14 @@ pub fn dampen_loop<'a>(
     av1an_params: &'a str,
     crfs: &[u8],
     size_threshold: ByteSize,
+    velocity_input: Option<&'a Path>,
     velocity_preset: i32,
     crf_data_file: Option<&'a Path>,
     temp_folder: &'a Path,
     backup: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning size-dampener\n");
-    println!("Size Threshold: {}", size_threshold);
+    println!("Size Threshold: {:3.2}", size_threshold.display());
 
     // Initialize scene data
     let mut scene_list = SceneList::parse_scene_file(scene_boosted)?;
@@ -122,6 +123,11 @@ pub fn dampen_loop<'a>(
 
         // Run encode
         let encode_path = temp_folder.join(format!("encode_size_dampener_{}.mkv", iteration));
+        let input = if let Some(vel_input) = velocity_input {
+            vel_input
+        } else {
+            input
+        };
         resume_encode(
             input,
             scene_boosted,
@@ -384,7 +390,7 @@ impl SceneSizeList {
         sorted_scenes.sort_by(|a, b| b.original_size.cmp(&a.original_size));
 
         for scene in sorted_scenes {
-            if !scene.ready {
+            if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
                 println!(
                     "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
                     scene.index,
