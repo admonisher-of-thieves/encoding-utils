@@ -412,7 +412,7 @@ impl SceneSizeList {
 
         // Create a vector of scenes and sort by original_size (largest to smallest)
         let mut sorted_scenes = self.scenes.clone();
-        sorted_scenes.sort_by(|a, b| b.original_size.cmp(&a.original_size));
+        sorted_scenes.sort_by(|a, b| b.new_size.cmp(&a.original_size));
 
         for scene in &sorted_scenes {
             // Only show scenes where either:
