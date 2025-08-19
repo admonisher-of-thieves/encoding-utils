@@ -24,7 +24,7 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 1 --concat mkvmerge --chunk-method bestsource --encoder svt-av1 --no-defaults"
+        default_value = "--verbose --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
     )]
     av1an_params: String,
 
@@ -36,11 +36,11 @@ struct Args {
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 80.0)]
+    #[arg(short = 'q', long, default_value_t = 77.0)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
-    #[arg(long = "min-q", default_value_t = 75.0)]
+    #[arg(long = "min-q", default_value_t = 74.0)]
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
@@ -76,7 +76,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 6, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 7, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
