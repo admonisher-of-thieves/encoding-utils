@@ -110,8 +110,6 @@ pub fn dampen_loop<'a>(
     let mut iteration = 0;
     while scene_sizes.is_not_ready() {
         println!("\n\n=== Iteration {} ===", iteration);
-        // println!("{scene_size_list:#?}");
-        scene_sizes.print_not_ready();
 
         // Update state files
         done.update_from_ready_scene_sizes(&scene_sizes)?;
@@ -145,6 +143,8 @@ pub fn dampen_loop<'a>(
         // Cleanup and update for next iteration
         fs::remove_file(&encode_path)?;
         scene_sizes.update_sizes()?;
+
+        scene_sizes.print_not_ready();
 
         match iteration {
             0 => scene_sizes.initial_update_crfs(),
@@ -386,7 +386,7 @@ impl SceneSizeList {
 
     /// Prints information about scenes that aren't yet ready
     pub fn print_not_ready(&self) {
-        println!("\n\nUpdating Scenes:");
+        println!("\n\nUpdated Scenes:");
         println!("-----------------");
 
         // Create a sorted vector of scenes
