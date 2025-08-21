@@ -38,7 +38,7 @@ struct Args {
     av1an_params: String,
 
     /// Target size in MiB.
-    #[arg(short = 's', long, default_value = "3.75 MiB")]
+    #[arg(short = 's', long, default_value = "10.0 MiB")]
     size_threshold: String,
 
     /// Target CRF value(s) (70-1). Can be:
@@ -54,7 +54,7 @@ struct Args {
     velocity_input: Option<PathBuf>,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 7, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 2, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     // Enable verbose output
