@@ -167,7 +167,7 @@ struct Args {
 
     // Scene length cut in seconds for fades. Add a fade split (if the fade exists) when the scene is bigger than this value.
     /// If both `--extra-splits-fades` (frames) and `--extra-split-sec-fades` are provided, frames take priority.
-    #[arg(long = "extra-split-sec-fades", default_value_t = 5, value_parser = clap::value_parser!(u32).range(0..))]
+    #[arg(long = "extra-split-sec-fades", default_value_t = 10, value_parser = clap::value_parser!(u32).range(0..))]
     extra_split_sec_fades: u32,
 
     /// Scene length cut in seconds for fades. Add a fade split (if the fade exists) when the scene is bigger than this value.
