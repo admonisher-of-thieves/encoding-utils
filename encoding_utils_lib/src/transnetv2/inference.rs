@@ -19,6 +19,7 @@ pub struct SceneDetector {
     pub threshold: f32,
     pub min_scene_len: usize,
     pub extra_split: usize,
+    pub extra_split_fades: usize,
 
     // Fade detection parameters
     pub fade_threshold_low: f32,
@@ -38,9 +39,10 @@ impl Default for SceneDetector {
         Self {
             hardcut_predictions: Vec::new(),
             fade_predictions: Vec::new(),
-            threshold: 0.4,    // Default for hard cuts
-            min_scene_len: 24, // ~1 second at 24fps
-            extra_split: 240,  // ~10 seconds at 24fps
+            threshold: 0.4,         // Default for hard cuts
+            min_scene_len: 24,      // ~1 second at 24fps
+            extra_split: 240,       // ~10 seconds at 24fps
+            extra_split_fades: 120, // ~5 seconds at 24fps
             // fade_threshold_high: 1.0,
             fade_threshold_low: 0.05,
             min_fade_len: 5,
@@ -62,6 +64,7 @@ impl SceneDetector {
         threshold: f32,
         min_scene_len: usize,
         extra_split: usize,
+        extra_split_fades: usize,
         fade_threshold_low: f32,
         min_fade_len: usize,
         merge_gap: usize,
@@ -78,6 +81,7 @@ impl SceneDetector {
             threshold,
             min_scene_len,
             extra_split,
+            extra_split_fades,
             fade_threshold_low,
             min_fade_len,
             merge_gap,
@@ -322,7 +326,7 @@ impl SceneDetector {
         // Extract only the start of each fade segment (with safety check)
         let mut fade_boundaries: Vec<usize> = fade_segments
             .iter()
-            .map(|&(s, _)| s.min(video_length))
+            .map(|&(s, _)| (s + 1).min(video_length))
             .collect();
         fade_boundaries.sort_unstable();
         fade_boundaries.dedup();
@@ -337,7 +341,7 @@ impl SceneDetector {
             let start = final_cuts[i];
             let end = final_cuts[i + 1];
 
-            if end - start > self.extra_split
+            if end - start > self.extra_split_fades
                 && let Some(&best_boundary) = fade_boundaries
                     .iter()
                     .filter(|&&b| b > start && b < end)

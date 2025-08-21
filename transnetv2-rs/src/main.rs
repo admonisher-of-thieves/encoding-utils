@@ -29,6 +29,15 @@ struct Args {
     #[arg(long = "extra-split", value_parser = clap::value_parser!(u32).range(0..))]
     extra_split: Option<u32>,
 
+    // Scene length cut in seconds for fades. Add a fade split (if the fade exists) when the scene is bigger than this value.
+    /// If both `--extra-splits-fades` (frames) and `--extra-split-sec-fades` are provided, frames take priority.
+    #[arg(long = "extra-split-sec-fades", default_value_t = 10, value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split_sec_fades: u32,
+
+    /// Scene length cut in seconds for fades. Add a fade split (if the fade exists) when the scene is bigger than this value.
+    #[arg(long = "extra-split-fades", value_parser = clap::value_parser!(u32).range(0..))]
+    extra_split_fades: Option<u32>,
+
     /// Minimum number of frames for a scenecut.
     #[arg(long = "min-scene-len-sec", default_value_t = 1, value_parser = clap::value_parser!(u32).range(0..))]
     min_scene_len_sec: u32,
@@ -178,6 +187,8 @@ fn main() -> eyre::Result<()> {
         args.downscale, args.detelecine,
         args.extra_split_sec.into(),
         args.extra_split.map(|x| x.into()),
+        args.extra_split_sec_fades.into(),
+        args.extra_split_fades.map(|x| x.into()),
         args.min_scene_len_sec.into(),
         args.min_scene_len.map(|x| x.into()),
         args.threshold,

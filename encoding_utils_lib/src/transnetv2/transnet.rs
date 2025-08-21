@@ -22,6 +22,8 @@ pub fn run_transnetv2(
     detelecine: bool,
     extra_split_seconds: i64,
     extra_split_frames: Option<i64>,
+    extra_split_seconds_fades: i64,
+    extra_split_frames_fades: Option<i64>,
     min_scene_len_sec: i64,
     min_scene_len: Option<i64>,
     threshold: f32,
@@ -54,6 +56,11 @@ pub fn run_transnetv2(
             ((extra_split_seconds as f64 * info.fps_num as f64) / info.fps_den as f64).ceil() as i64
         }
     };
+    let extra_split_fades = match extra_split_frames_fades {
+        Some(frames) => frames,
+        None => ((extra_split_seconds_fades as f64 * info.fps_num as f64) / info.fps_den as f64)
+            .ceil() as i64,
+    };
     let min_scene_len = match min_scene_len {
         Some(frames) => frames,
         None => {
@@ -72,6 +79,7 @@ pub fn run_transnetv2(
         threshold,
         min_scene_len.try_into().unwrap(),
         extra_split as usize,
+        extra_split_fades as usize,
         fade_threshold_low,
         min_fade_len as usize,
         merge_gap as usize,
