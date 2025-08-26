@@ -10,12 +10,15 @@ pub struct Chapters {
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct EditionEntry {
+    #[serde(default)]
     #[serde(rename = "EditionFlagHidden")]
-    pub flag_hidden: u8,
+    pub flag_hidden: Option<u8>,
+    #[serde(default)]
     #[serde(rename = "EditionFlagDefault")]
-    pub flag_default: u8,
+    pub flag_default: Option<u8>,
+    #[serde(default)]
     #[serde(rename = "EditionFlagOrdered")]
-    pub flag_ordered: u8,
+    pub flag_ordered: Option<u8>,
     #[serde(rename = "EditionUID")]
     pub uid: String,
     #[serde(rename = "ChapterAtom")]
@@ -54,9 +57,9 @@ impl fmt::Display for Chapters {
         writeln!(
             f,
             "  Hidden: {}, Default: {}, Ordered: {}",
-            self.edition_entry.flag_hidden,
-            self.edition_entry.flag_default,
-            self.edition_entry.flag_ordered
+            self.edition_entry.flag_hidden.unwrap_or(0),
+            self.edition_entry.flag_default.unwrap_or(0),
+            self.edition_entry.flag_ordered.unwrap_or(0)
         )?;
         writeln!(f, "  Chapters:")?;
 
