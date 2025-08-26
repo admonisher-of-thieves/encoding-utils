@@ -139,7 +139,7 @@ impl ZoneChapters {
                 name: current_chapter.display.string.clone(),
                 start: start_frame,
                 end: end_frame,
-                crf: 0.0, // Default CRF value
+                crf: f64::NAN,
             });
         }
 

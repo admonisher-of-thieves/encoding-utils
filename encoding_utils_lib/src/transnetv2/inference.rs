@@ -506,7 +506,7 @@ impl SceneDetector {
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
-                ready: false,
+                zoned: false,
             })
             .collect();
 
@@ -520,7 +520,7 @@ impl SceneDetector {
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
-                ready: false,
+                zoned: false,
             })
             .collect();
 
@@ -546,7 +546,7 @@ impl SceneDetector {
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
-                ready: false,
+                zoned: false,
             })
             .collect();
 

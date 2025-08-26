@@ -140,7 +140,7 @@ pub struct Scene {
     #[serde(skip_serializing, skip_deserializing)]
     pub frame_scores: Vec<FrameScore>,
     #[serde(skip_serializing, skip_deserializing)]
-    pub ready: bool,
+    pub zoned: bool,
 }
 
 impl Scene {
@@ -364,7 +364,7 @@ impl SceneList {
                 frame_scores: vec![middle_frame.into()],
                 crf: scene.crf,
                 index: scene.index,
-                ready: scene.ready,
+                zoned: scene.zoned,
             });
         }
 
@@ -432,7 +432,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
-                ready: scene.ready,
+                zoned: scene.zoned,
             });
         }
 
@@ -480,7 +480,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
-                ready: scene.ready,
+                zoned: scene.zoned,
             });
         }
 
@@ -542,7 +542,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
-                ready: scene.ready,
+                zoned: scene.zoned,
             });
         }
 
@@ -611,8 +611,8 @@ impl SceneList {
             .sum();
     }
 
-    pub fn filter_by_ready(&mut self) {
-        self.split_scenes.retain_mut(|scene| !scene.ready);
+    pub fn filter_by_zoning(&mut self) {
+        self.split_scenes.retain_mut(|scene| !scene.zoned);
 
         self.frames = self
             .split_scenes
@@ -870,16 +870,19 @@ impl SceneList {
     pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters) {
         for scene in &mut self.split_scenes {
             // Reset ready flag and CRF value initially
-            scene.ready = false;
+            scene.zoned = false;
             scene.crf = 0.0;
 
             // Find matching chapter for this scene
             for zone_chapter in &zone_chapters.chapters {
                 // Check if the scene falls within the chapter range
-                if scene.start_frame >= zone_chapter.start && scene.end_frame <= zone_chapter.end {
+                if scene.start_frame >= zone_chapter.start
+                    && scene.end_frame <= zone_chapter.end
+                    && !zone_chapter.crf.is_nan()
+                {
                     scene.update_crf(zone_chapter.crf);
                     // Mark as ready if CRF is greater than 0.0
-                    scene.ready = zone_chapter.crf > 0.0;
+                    scene.zoned = true;
                     break; // Stop checking other chapters once we find a match
                 }
             }

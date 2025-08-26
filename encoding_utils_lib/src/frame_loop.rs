@@ -195,9 +195,9 @@ pub fn run_frame_loop<'a>(
         FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
     };
 
-    for (i, crf) in iter_crfs.iter().enumerate() {
-        scene_list_frames.filter_by_ready();
+    scene_list_frames.filter_by_zoning();
 
+    for (i, crf) in iter_crfs.iter().enumerate() {
         println!("\nCycle: {i}, CRF: {crf}\n");
         let scenes_path = temp_folder.join(format!("scenes_{crf}.json"));
         let vpy_path = temp_folder.join(format!("vpy_{crf}.vpy"));
