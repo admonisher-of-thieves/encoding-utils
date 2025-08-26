@@ -71,8 +71,8 @@ struct Args {
     chapters: Option<PathBuf>,
 
     /// Zoning by chapters. {Chapter}:{CRF} (e.g. Opening:21,Ending:35,Episode:24)
-    #[arg(short = 'z', long = "chapter-zoning", default_value = "")]
-   chapter_zoning: String,
+    #[arg(short = 'z', long = "chapters_zoning", default_value = "")]
+   chapters_zoning: String,
 
     /// Workers to use when encoding
     #[arg(short = 'w', long, default_value_t = 4, value_parser = clap::value_parser!(u32).range(1..))]
@@ -292,7 +292,7 @@ fn main() -> Result<()> {
         args.scene_detection_method,
         args.filter_frames,
         args.chapters.as_deref(),
-        args.chapter_zoning,
+        args.chapters_zoning,
         args.workers,
         &args.source_metric_plugin,
         &args.source_encoding_plugin,
