@@ -8,6 +8,7 @@ encoding_utils_lib = { path = "../encoding_utils_lib" }
 eyre.workspace = true
 clap.workspace = true
 vapoursynth4-rs.workspace = true
+# vapoursynth.workspace = true
 rayon.workspace = true
-toml = "0.8.23"
+toml = "0.9.5"
 serde = { workspace = true, features = ["derive"] }

@@ -10,6 +10,7 @@ use vapoursynth4_rs::{core::Core, node::VideoNode};
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_transnetv2(
+    core: &Core,
     video_path: &Path,
     model_path: Option<&Path>,
     use_cpu: bool,
@@ -33,10 +34,8 @@ pub fn run_transnetv2(
     enable_fade_detection: bool,
     save_predictions: bool,
 ) -> Result<(SceneList, SceneList)> {
-    let core = Core::builder().build();
-
     let src = prepare_clip(
-        &core,
+        core,
         video_path,
         &importer_plugin,
         temp_dir,
@@ -47,7 +46,7 @@ pub fn run_transnetv2(
         detelecine,
     )?;
 
-    let src: VideoNode = resize_format(&core, &src, 48, 27, "RGB24")?;
+    let src: VideoNode = resize_format(core, &src, 48, 27, "RGB24")?;
     let info = src.info();
     let total_frames = info.num_frames as usize;
     let extra_split = match extra_split_frames {

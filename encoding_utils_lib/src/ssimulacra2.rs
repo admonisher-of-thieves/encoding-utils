@@ -85,6 +85,7 @@ pub fn prepare_clips(
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssimu2_frames_selected(
+    core: &Core,
     reference: &Path,
     distorted: &Path,
     scene_list: &mut SceneList,
@@ -96,10 +97,8 @@ pub fn ssimu2_frames_selected(
     downscale: bool,
     detelecine: bool,
 ) -> Result<()> {
-    let core = Core::builder().build();
-
     let (reference, distorted) = prepare_clips(
-        &core,
+        core,
         reference,
         distorted,
         importer_plugin,
@@ -113,8 +112,8 @@ pub fn ssimu2_frames_selected(
     )?;
 
     let all_frames: Vec<u32> = scene_list.all_frames();
-    let reference = select_frames(&core, &reference, &all_frames)?;
-    let ssimu2 = vszip_metrics(&core, &reference, &distorted)?;
+    let reference = select_frames(core, &reference, &all_frames)?;
+    let ssimu2 = vszip_metrics(core, &reference, &distorted)?;
 
     // Calculate total frames to process for progress bar
     let total_frames = scene_list.all_frames().len();
@@ -180,6 +179,7 @@ pub fn ssimu2_frames_selected(
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssimu2(
+    core: &Core,
     reference: &Path,
     distorted: &Path,
     step: usize,
@@ -192,10 +192,8 @@ pub fn ssimu2(
     downscale: bool,
     detelecine: bool,
 ) -> Result<ScoreList> {
-    let core = Core::builder().build();
-
     let (reference_node, distorted_node) = prepare_clips(
-        &core,
+        core,
         reference,
         distorted,
         &importer_plugin,
@@ -208,7 +206,7 @@ pub fn ssimu2(
         trim,
     )?;
 
-    let ssimu2 = vszip_metrics(&core, &reference_node, &distorted_node)?;
+    let ssimu2 = vszip_metrics(core, &reference_node, &distorted_node)?;
     let num_frames = ssimu2.info().num_frames;
 
     let frames_to_process: Vec<u32> = (0..num_frames.try_into().unwrap())

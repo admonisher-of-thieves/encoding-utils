@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 vapoursynth4-rs = { workspace = true }
+# vapoursynth = { workspace = true }
 encoding_utils_lib = { path = "../encoding_utils_lib" }
 eyre.workspace = true
 clap.workspace = true

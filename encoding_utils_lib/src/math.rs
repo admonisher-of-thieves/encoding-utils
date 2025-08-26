@@ -130,7 +130,7 @@ pub fn min_score(scores: &[FrameScore]) -> f64 {
         .map(|score| score.value)
         .filter(|v| !v.is_nan())
         .min_by(|a, b| a.partial_cmp(b).unwrap())
-        .expect("All values were NaN or input was empty")
+        .unwrap_or(0.0)
 }
 
 pub fn percentiles(scores: &[FrameScore]) -> Result<PercentileList> {

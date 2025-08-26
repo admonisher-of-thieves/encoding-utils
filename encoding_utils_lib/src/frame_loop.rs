@@ -1,21 +1,23 @@
 use std::fs::{self};
 use std::path::Path;
 
+use crate::chapters::{Chapters, ZoneChapters};
 use crate::encode::encode_frames;
 use crate::scenes::{FramesDistribution, SceneDetectionMethod, SceneList, get_scene_file};
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::transnetv2::transnet::run_transnetv2;
-use crate::vapoursynth::{SourcePlugin, seconds_to_frames};
+use crate::vapoursynth::{SourcePlugin, prepare_clip, seconds_to_frames};
 use crate::vpy_files::create_vpy_file;
 use eyre::{OptionExt, Result};
+use vapoursynth4_rs::core::Core;
 
 #[allow(clippy::too_many_arguments)]
-pub fn run_loop<'a>(
+pub fn run_frame_loop<'a>(
     input: &'a Path,
     scene_boosted: &'a Path,
     av1an_params: &'a str,
     encoder_params: &'a str,
-    crf: &[u8],
+    crf: &[f64],
     target_quality: f64,
     min_target_quality: f64,
     velocity_preset: i32,
@@ -24,6 +26,8 @@ pub fn run_loop<'a>(
     frames_distribution: FramesDistribution,
     scene_detection_method: SceneDetectionMethod,
     filter_frames: bool,
+    chapters: Option<&'a Path>,
+    crf_chapters: String,
     workers: u32,
     importer_metrics: &SourcePlugin,
     importer_encoding: &SourcePlugin,
@@ -51,6 +55,7 @@ pub fn run_loop<'a>(
     hardcut_scenes: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost\n");
+    let core = Core::builder().build();
 
     let mut scene_list = match scene_detection_method {
         SceneDetectionMethod::Av1an => {
@@ -85,9 +90,11 @@ pub fn run_loop<'a>(
                 get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
             SceneList::parse_scene_file(&original_scenes_file)?
         }
+
         SceneDetectionMethod::TransnetV2 => {
             println!("Obtaining scene using transnetv2-rs\n");
             let (scene_list, hardcut_list) = run_transnetv2(
+                &core,
                 input,
                 None,
                 false,
@@ -145,7 +152,7 @@ pub fn run_loop<'a>(
 
     // crfs
     let crfs = crf.to_vec();
-    let iter_crfs: Vec<u8> = crfs[..crfs.len().saturating_sub(1)].to_vec();
+    let iter_crfs: Vec<f64> = crfs[..crfs.len().saturating_sub(1)].to_vec();
 
     if crfs.len() == 1 {
         scene_list.update_crf(crfs[0]);
@@ -155,9 +162,31 @@ pub fn run_loop<'a>(
     let mut scene_list_frames = scene_list.clone();
     scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
 
+    // Zoning Chapters
+    if !crf_chapters.is_empty()
+        && let Some(chapters) = chapters
+    {
+        let video = prepare_clip(
+            &core,
+            input,
+            importer_scene,
+            temp_folder,
+            verbose,
+            encoder_params,
+            crop,
+            downscale,
+            detelecine,
+        )?;
+
+        let chapters = Chapters::parse(chapters)?;
+        let mut zone_chapters = ZoneChapters::from_chapters(&video, chapters);
+        zone_chapters.with_crfs(crf_chapters);
+        scene_list_frames.apply_zone_chapters(&zone_chapters);
+    }
+
     let n_frames = match n_frames {
         Some(n_frames) => n_frames,
-        None => seconds_to_frames(s_frames, input, importer_scene, temp_folder)?,
+        None => seconds_to_frames(&core, s_frames, input, importer_scene, temp_folder)?,
     };
 
     scene_list_frames = match frames_distribution {
@@ -167,6 +196,8 @@ pub fn run_loop<'a>(
     };
 
     for (i, crf) in iter_crfs.iter().enumerate() {
+        scene_list_frames.filter_by_ready();
+
         println!("\nCycle: {i}, CRF: {crf}\n");
         let scenes_path = temp_folder.join(format!("scenes_{crf}.json"));
         let vpy_path = temp_folder.join(format!("vpy_{crf}.vpy"));
@@ -203,6 +234,7 @@ pub fn run_loop<'a>(
             println!("\nGet simulacra scores\n")
         }
         ssimu2_frames_selected(
+            &core,
             input,
             encode,
             &mut scene_list_frames,

@@ -123,6 +123,7 @@ pub fn get_scene_file_with_zones<'a>(
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    chapters::ZoneChapters,
     dampen::dampen_loop::SceneSizeList,
     math::{self, FrameScore, ScoreList},
 };
@@ -132,16 +133,18 @@ pub struct Scene {
     #[serde(skip_serializing, skip_deserializing)]
     pub index: u32,
     #[serde(skip_serializing, skip_deserializing)]
-    pub crf: u8,
+    pub crf: f64,
     pub start_frame: u32,
     pub end_frame: u32,
     pub zone_overrides: Option<ZoneOverrides>,
     #[serde(skip_serializing, skip_deserializing)]
     pub frame_scores: Vec<FrameScore>,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub ready: bool,
 }
 
 impl Scene {
-    pub fn update_crf(&mut self, new_crf: u8) {
+    pub fn update_crf(&mut self, new_crf: f64) {
         self.crf = new_crf;
         if let Some(ref mut overrides) = self.zone_overrides {
             overrides.update_crf(new_crf);
@@ -163,7 +166,7 @@ pub struct ZoneOverrides {
 }
 
 impl ZoneOverrides {
-    pub fn from_params(av1an_params: &str, encoder_params: &str, crf: u8) -> ZoneOverrides {
+    pub fn from_params(av1an_params: &str, encoder_params: &str, crf: f64) -> ZoneOverrides {
         let mut encoder = None;
         let mut passes = None;
         let mut photon_noise = None;
@@ -314,7 +317,7 @@ impl ZoneOverrides {
     }
 
     /// Update only the CRF value in `video_params`
-    pub fn update_crf(&mut self, crf: u8) {
+    pub fn update_crf(&mut self, crf: f64) {
         if let Some(ref mut params) = self.video_params {
             let mut found = false;
 
@@ -361,6 +364,7 @@ impl SceneList {
                 frame_scores: vec![middle_frame.into()],
                 crf: scene.crf,
                 index: scene.index,
+                ready: scene.ready,
             });
         }
 
@@ -428,6 +432,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
+                ready: scene.ready,
             });
         }
 
@@ -475,6 +480,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
+                ready: scene.ready,
             });
         }
 
@@ -536,6 +542,7 @@ impl SceneList {
                 frame_scores: frame_values.into_iter().map(FrameScore::from).collect(),
                 crf: scene.crf,
                 index: scene.index,
+                ready: scene.ready,
             });
         }
 
@@ -574,7 +581,7 @@ impl SceneList {
         }
     }
 
-    pub fn update_crf(&mut self, new_crf: u8) {
+    pub fn update_crf(&mut self, new_crf: f64) {
         for scene in &mut self.split_scenes {
             scene.update_crf(new_crf);
         }
@@ -583,7 +590,7 @@ impl SceneList {
         &mut self,
         target_quality: f64,
         min_target_quality: f64,
-        new_crf: u8,
+        new_crf: f64,
         percentile: u8,
     ) {
         self.split_scenes.retain_mut(|scene| {
@@ -604,7 +611,17 @@ impl SceneList {
             .sum();
     }
 
-    pub fn calculate_crf_percentages(&self) -> Vec<(u8, f64)> {
+    pub fn filter_by_ready(&mut self) {
+        self.split_scenes.retain_mut(|scene| !scene.ready);
+
+        self.frames = self
+            .split_scenes
+            .iter()
+            .map(|scene| scene.frame_scores.len() as u32)
+            .sum();
+    }
+
+    pub fn calculate_crf_percentages(&self) -> Vec<(f64, f64)> {
         let total_frames = self
             .split_scenes
             .iter()
@@ -615,16 +632,21 @@ impl SceneList {
 
         for scene in &self.split_scenes {
             let scene_frames = (scene.end_frame - scene.start_frame) as f64;
-            *frame_counts.entry(scene.crf).or_insert(0.0) += scene_frames;
+            // Use a string representation as the key to avoid floating-point precision issues
+            let crf_key = format!("{:.2}", scene.crf);
+            *frame_counts.entry(crf_key).or_insert(0.0) += scene_frames;
         }
 
-        let mut percentages: Vec<(u8, f64)> = frame_counts
+        let mut percentages: Vec<(f64, f64)> = frame_counts
             .into_iter()
-            .map(|(val, frames)| (val, (frames / total_frames) * 100.0))
+            .map(|(crf_str, frames)| {
+                let crf_value = crf_str.parse().unwrap_or(0.0); // Safe to unwrap since we formatted it
+                (crf_value, (frames / total_frames) * 100.0)
+            })
             .collect();
 
         // Sort in descending order (high to low)
-        percentages.sort_by(|a, b| b.0.cmp(&a.0));
+        percentages.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
         percentages
     }
 
@@ -759,7 +781,7 @@ impl SceneList {
     pub fn sync_crf_by_index(&mut self, reference: &SceneList) {
         use std::collections::HashMap;
 
-        let crf_map: HashMap<u32, u8> = reference
+        let crf_map: HashMap<u32, f64> = reference
             .split_scenes
             .iter()
             .map(|scene| (scene.index, scene.crf))
@@ -819,7 +841,7 @@ impl SceneList {
             let crf_str = find_crf_value_in_params(params)
                 .ok_or_else(|| eyre::eyre!("Missing --crf in video_params for scene {}", idx))?;
 
-            let crf = crf_str.parse::<u8>().map_err(|_| {
+            let crf = crf_str.parse::<f64>().map_err(|_| {
                 eyre::eyre!(
                     "Failed to parse '{}' as u8 for CRF in scene {}",
                     crf_str,
@@ -842,6 +864,26 @@ impl SceneList {
             }
         }
         Ok(())
+    }
+
+    /// Applies CRF values from ZoneChapters to scenes that fall within chapter ranges
+    pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters) {
+        for scene in &mut self.split_scenes {
+            // Reset ready flag and CRF value initially
+            scene.ready = false;
+            scene.crf = 0.0;
+
+            // Find matching chapter for this scene
+            for zone_chapter in &zone_chapters.chapters {
+                // Check if the scene falls within the chapter range
+                if scene.start_frame >= zone_chapter.start && scene.end_frame <= zone_chapter.end {
+                    scene.update_crf(zone_chapter.crf);
+                    // Mark as ready if CRF is greater than 0.0
+                    scene.ready = zone_chapter.crf > 0.0;
+                    break; // Stop checking other chapters once we find a match
+                }
+            }
+        }
     }
 
     pub fn parse_scene_file(json_path: &Path) -> Result<SceneList> {

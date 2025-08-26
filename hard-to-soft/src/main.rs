@@ -5,6 +5,7 @@ use encoding_utils_lib::
 use eyre::{OptionExt, Result};
 use hard_to_soft::{crop_extract::extract_frames, sections::SectionFile};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use vapoursynth4_rs::core::Core;
 use std::{fs::{self, create_dir_all}, path::PathBuf};
 
 /// Calculate SSIMULACRA2 metric - Using vszip
@@ -36,7 +37,6 @@ struct Args {
 
     )]
     keep_files: bool,
-
 
     /// Temp folder (default: "[TEMP]_<input>.json" if no temp folder given)
     #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
@@ -71,7 +71,9 @@ fn main() -> Result<()> {
 
     create_dir_all(&temp_folder)?;
 
-    let total_frames = get_number_of_frames(&args.input, &args.source_plugin, &temp_folder)?;
+    let core = Core::builder().build();
+
+    let total_frames = get_number_of_frames(&core,&args.input, &args.source_plugin, &temp_folder)?;
 
     section_file.section
     .par_iter()

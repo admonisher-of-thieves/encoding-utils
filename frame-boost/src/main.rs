@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
 use eyre::{OptionExt, Result};
-use encoding_utils_lib::{frame_loop::run_loop, scenes::{FramesDistribution, SceneDetectionMethod}, vapoursynth::SourcePlugin, crf::crf_parser};
+use encoding_utils_lib::{crf::crf_parser, frame_loop::run_frame_loop, scenes::{FramesDistribution, SceneDetectionMethod}, vapoursynth::SourcePlugin};
 
 use std::{fs, path::{absolute, PathBuf}};
 
@@ -47,18 +47,17 @@ struct Args {
     #[arg(short = 'p', long, default_value_t = 50)]
     target_percentile: u8,
 
-    /// Target CRF value(s) (70-1). Can be:
-    /// - Single value (35)
-    /// - Comma-separated list (35,27,21)
-    /// - Range (36..21)
-    /// - Stepped range (36..21:3)
+    /// Target CRF value(s) (1.0-70.0). Can be:
+    /// - Single value (35 or 35.5)
+    /// - Comma-separated list (35,27.2,21)
+    /// - Backward range (36..21 or 36.0..21.0)
+    /// - Stepped backward range (36..21:1.5 or 36.0..21.0:1.5)
     #[arg(
         short = 'c',
         long,
         default_value = "35,30,27,24,21,18",
     )]
     crf: String,
-
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
     #[arg(short = 'n', long = "n-frames", value_parser = clap::value_parser!(u32).range(1..))]
     n_frames: Option<u32>,
@@ -66,6 +65,14 @@ struct Args {
     /// Number of seconds to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
     #[arg(short = 's', long = "s-frames", default_value_t = 0.5)]
     s_frames: f64,
+
+    /// XML Chapters file. Used for zoning.
+    #[arg(long, value_parser = clap::value_parser!(PathBuf))]
+    chapters: Option<PathBuf>,
+
+    /// Zoning by chapters. {Chapter}:{CRF} (e.g. Opening:21,Ending:35,Episode:24)
+    #[arg(short = 'z', long = "chapter-zoning", default_value = "")]
+   chapter_zoning: String,
 
     /// Workers to use when encoding
     #[arg(short = 'w', long, default_value_t = 4, value_parser = clap::value_parser!(u32).range(1..))]
@@ -182,7 +189,6 @@ struct Args {
     #[arg(long = "min-scene-len", value_parser = clap::value_parser!(u32).range(0..))]
     min_scene_len: Option<u32>,
 
-
     /// Threshold to detect scene cut
     #[arg(long = "threshold", default_value_t = 0.4)]
     threshold: f32,
@@ -226,8 +232,13 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let crf_values = crf_parser(&args.crf)?;
 
+    // let chapters = Chapters::parse(&args.chapters.unwrap())?;
+    // println!("{chapters}");
+    // println!("{}", args.chapter_crfs);
+    // panic!("YEAH");
+
+    let crf_values = crf_parser(&args.crf)?;
     let input_path = absolute(&args.input)?;
     let scene_boosted = match args.output {
         Some(output) => output, 
@@ -271,7 +282,7 @@ fn main() -> Result<()> {
     };
     fs::create_dir_all(&temp_folder)?;
 
-    run_loop(
+    run_frame_loop(
         &input_path,
         &scene_boosted,
         &args.av1an_params,
@@ -285,6 +296,8 @@ fn main() -> Result<()> {
         args.frames_distribution,
         args.scene_detection_method,
         args.filter_frames,
+        args.chapters.as_deref(),
+        args.chapter_zoning,
         args.workers,
         &args.source_metric_plugin,
         &args.source_encoding_plugin,

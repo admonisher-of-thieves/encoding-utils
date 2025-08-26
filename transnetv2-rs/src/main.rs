@@ -1,6 +1,7 @@
 use clap::{ArgAction, Parser};
 use encoding_utils_lib::{transnetv2::transnet::run_transnetv2, vapoursynth::SourcePlugin};
 use eyre::OptionExt;
+use vapoursynth4_rs::core::Core;
 use std::{fs, path::{absolute, PathBuf}};
 
 /// Scene detection using TransnetV2
@@ -176,7 +177,10 @@ fn main() -> eyre::Result<()> {
     };
     fs::create_dir_all(&temp_folder)?;
 
+    let core = Core::builder().build();
+
     let (scene_list, hardcut_list) = run_transnetv2(
+        &core,
         &input_path,
         args.model.as_deref(),
         args.cpu,

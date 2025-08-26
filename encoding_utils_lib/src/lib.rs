@@ -9,3 +9,4 @@ pub mod transnetv2;
 pub mod vapoursynth;
 pub mod vpy_files;
 pub mod zones;
+pub mod chapters;

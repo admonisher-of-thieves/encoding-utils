@@ -2,6 +2,7 @@ use clap::{ArgAction, Parser};
 use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, Trim}
 };
 use eyre::{OptionExt, Result};
+use vapoursynth4_rs::core::Core;
 use std::{fs::{self, create_dir_all}, path::PathBuf};
 
 /// Calculate SSIMULACRA2 metric - Using vszip
@@ -126,8 +127,11 @@ fn main() -> Result<()> {
 
     create_dir_all(&temp_dir)?;
 
+    let core = Core::builder().build();
+
     // Process the videos
     let score_list = ssimu2(
+        &core,
             &args.reference,
             &args.distorted,
             args.steps as usize,

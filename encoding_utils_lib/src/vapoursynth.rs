@@ -539,16 +539,15 @@ pub fn synchronize_clips(
 }
 
 pub fn get_dimensions(
+    core: &Core,
     input: &Path,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
 ) -> Result<Dimensions> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
     // Load reference and distorted
     let reference = match importer_plugin {
-        SourcePlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
-        SourcePlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
+        SourcePlugin::Lsmash => lsmash_invoke(core, input, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(core, input, temp_dir)?,
     };
 
     let info = reference.info();
@@ -559,16 +558,15 @@ pub fn get_dimensions(
 }
 
 pub fn get_number_of_frames(
+    core: &Core,
     input: &Path,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
 ) -> Result<i32> {
-    let api = Api::default();
-    let core = Core::builder().api(api).build();
     // Load reference and distorted
     let reference = match importer_plugin {
-        SourcePlugin::Lsmash => lsmash_invoke(&core, input, temp_dir)?,
-        SourcePlugin::Bestsource => bestsource_invoke(&core, input, temp_dir)?,
+        SourcePlugin::Lsmash => lsmash_invoke(core, input, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(core, input, temp_dir)?,
     };
 
     let info = reference.info();
@@ -639,7 +637,7 @@ pub fn prepare_clip(
     core: &Core,
     input_path: &Path,
     importer_plugin: &SourcePlugin,
-    temp_dir: &Path,
+    temp_folder: &Path,
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
@@ -647,8 +645,8 @@ pub fn prepare_clip(
     detelecine: bool,
 ) -> Result<VideoNode> {
     let mut input = match importer_plugin {
-        SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_dir)?,
-        SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_dir)?,
+        SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_folder)?,
+        SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_folder)?,
     };
 
     if verbose {
@@ -726,15 +724,15 @@ pub fn resize_format(
 }
 
 pub fn seconds_to_frames(
+    core: &Core,
     seconds: f64,
     input_path: &Path,
     importer_plugin: &SourcePlugin,
     temp_dir: &Path,
 ) -> Result<u32> {
-    let core = Core::builder().build();
     let src = match importer_plugin {
-        SourcePlugin::Lsmash => lsmash_invoke(&core, input_path, temp_dir)?,
-        SourcePlugin::Bestsource => bestsource_invoke(&core, input_path, temp_dir)?,
+        SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_dir)?,
+        SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_dir)?,
     };
     let video_info = src.info();
     Ok(((seconds * video_info.fps_num as f64) / video_info.fps_den as f64).ceil() as u32)

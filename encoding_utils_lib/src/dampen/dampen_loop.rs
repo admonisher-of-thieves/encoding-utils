@@ -18,7 +18,7 @@ pub fn dampen_loop<'a>(
     scene_boosted: &'a Path,
     scene_dampened: &'a Path,
     av1an_params: &'a str,
-    crfs: &[u8],
+    crfs: &[f64],
     size_threshold: ByteSize,
     velocity_input: Option<&'a Path>,
     velocity_preset: i32,
@@ -85,8 +85,16 @@ pub fn dampen_loop<'a>(
     let mut chunk_list = ChunkList::parse_chunks_file(&chunks_path)?;
 
     // Process CRF values
-    let max_crf = *crfs.iter().max().ok_or_eyre("Empty CRF list provided")?;
-    let crfs = crfs.iter().sorted().copied().collect::<Vec<u8>>();
+    // Process CRF values
+    let max_crf = *crfs
+        .iter()
+        .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .ok_or_eyre("Empty CRF list provided")?;
+    let crfs = crfs
+        .iter()
+        .sorted_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .copied()
+        .collect::<Vec<f64>>();
 
     // Initialize scene size tracking
     let mut scene_sizes = SceneSizeList::new(
@@ -190,8 +198,8 @@ pub struct SceneSize {
     pub index: u32,
     pub original_size: ByteSize,
     pub new_size: ByteSize,
-    pub original_crf: u8,
-    pub new_crf: u8,
+    pub original_crf: f64,
+    pub new_crf: f64,
     pub original_preset: i32,
     pub ready: bool,
 }
@@ -201,8 +209,8 @@ pub struct SceneSizeList {
     pub scenes_path: PathBuf,
     pub scenes: Vec<SceneSize>,
     pub size_threshold: ByteSize,
-    pub max_crf: u8,
-    pub crfs: Vec<u8>,
+    pub max_crf: f64,
+    pub crfs: Vec<f64>,
 }
 
 impl SceneSizeList {
@@ -210,8 +218,8 @@ impl SceneSizeList {
         scenes_path: PathBuf,
         chunk_list: &ChunkList,
         size_threshold: ByteSize,
-        max_crf: u8,
-        crfs: Vec<u8>,
+        max_crf: f64,
+        crfs: Vec<f64>,
     ) -> eyre::Result<SceneSizeList> {
         let mut result = Vec::new();
 

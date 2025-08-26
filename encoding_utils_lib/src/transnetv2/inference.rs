@@ -501,11 +501,12 @@ impl SceneDetector {
             .enumerate()
             .map(|(idx, (start, end))| Scene {
                 index: idx as u32,
-                crf: 0, // or any default value
+                crf: 0.0, // or any default value
                 start_frame: start as u32,
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
+                ready: false,
             })
             .collect();
 
@@ -514,11 +515,12 @@ impl SceneDetector {
             .enumerate()
             .map(|(idx, (start, end))| Scene {
                 index: idx as u32,
-                crf: 0, // or any default value
+                crf: 0.0, // or any default value
                 start_frame: start as u32,
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
+                ready: false,
             })
             .collect();
 
@@ -539,11 +541,12 @@ impl SceneDetector {
             .enumerate()
             .map(|(idx, (start, end))| Scene {
                 index: idx as u32,
-                crf: 0, // or any default value
+                crf: 0.0, // or any default value
                 start_frame: start as u32,
                 end_frame: end as u32,
                 zone_overrides: None,
                 frame_scores: Vec::new(),
+                ready: false,
             })
             .collect();
 

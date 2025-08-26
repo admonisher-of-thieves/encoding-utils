@@ -98,13 +98,13 @@ impl Chunk {
     }
 
     /// Returns the CRF value from video_params if present, or None if not found
-    pub fn get_crf(&self) -> Option<u8> {
+    pub fn get_crf(&self) -> Option<f64> {
         // Find the position of "--crf" parameter
         if let Some(crf_pos) = self.video_params.iter().position(|p| p == "--crf") {
             // Check if there's a value after "--crf"
             if crf_pos + 1 < self.video_params.len() {
                 // Try to parse the value as i32
-                if let Ok(crf_value) = self.video_params[crf_pos + 1].parse::<u8>() {
+                if let Ok(crf_value) = self.video_params[crf_pos + 1].parse::<f64>() {
                     return Some(crf_value);
                 }
             }
