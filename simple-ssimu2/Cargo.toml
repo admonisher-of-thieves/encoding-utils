@@ -7,3 +7,4 @@ edition = "2024"
 encoding_utils_lib = { path = "../encoding_utils_lib" }
 eyre.workspace = true
 clap.workspace = true
+vapoursynth4-rs = { workspace = true }

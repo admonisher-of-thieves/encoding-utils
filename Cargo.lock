@@ -363,6 +363,7 @@ dependencies = [
  "itertools",
  "ndarray",
  "ort",
+ "quick-xml",
  "quill",
  "rayon",
  "serde",
@@ -853,6 +854,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.38.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42a232e7487fc2ef313d96dde7948e7a3c05101870d8985e4fd8d26aedd27b89"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "quill"
 version = "0.1.6"
 source = "git+https://github.com/admonisher-of-thieves/quill?rev=0b7d5d9c1731dcb6a96aeae53940f64a779a989b#0b7d5d9c1731dcb6a96aeae53940f64a779a989b"
@@ -1051,6 +1062,7 @@ dependencies = [
  "clap",
  "encoding_utils_lib",
  "eyre",
+ "vapoursynth4-rs",
 ]
 
 [[package]]
@@ -1295,7 +1307,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "vapoursynth4-rs"
 version = "0.4.0"
-source = "git+https://github.com/inflation/vapoursynth4-rs?rev=e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7#e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7"
+source = "git+https://github.com/inflation/vapoursynth4-rs#5685213b75cef2c8ae3e49ed60c71cb7258bc1a5"
 dependencies = [
  "bon",
  "thiserror",
@@ -1305,7 +1317,7 @@ dependencies = [
 [[package]]
 name = "vapoursynth4-sys"
 version = "0.3.1"
-source = "git+https://github.com/inflation/vapoursynth4-rs?rev=e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7#e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7"
+source = "git+https://github.com/inflation/vapoursynth4-rs#5685213b75cef2c8ae3e49ed60c71cb7258bc1a5"
 
 [[package]]
 name = "vcpkg"

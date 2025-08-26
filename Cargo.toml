@@ -16,7 +16,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.142"
 vapoursynth4-rs = { features = [
     "link-library",
-], git = "https://github.com/inflation/vapoursynth4-rs", rev = "e81e1ab17d8ad9625f4ee6cd309a658eeeb1b4c7" }
+], git = "https://github.com/inflation/vapoursynth4-rs" }
 clap = { version = "4.5.45", features = ["derive"] }
 indicatif = { version = "0.18.0" }
 quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "0b7d5d9c1731dcb6a96aeae53940f64a779a989b" }
@@ -26,3 +26,4 @@ itertools = "0.14.0"
 tempfile = "3.20.0"
 bytesize = "2.0.1"
 fs_extra = "1.3.0"
+quick-xml = { version = "0.38.3", features = ["serialize"] }
