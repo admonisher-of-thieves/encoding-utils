@@ -71,7 +71,7 @@ struct Args {
     chapters: Option<PathBuf>,
 
     /// Zoning by chapters. {Chapter}:{CRF} (e.g. Opening:21,Ending:35,Episode:24)
-    #[arg(short = 'z', long = "chapters_zoning", default_value = "")]
+    #[arg(short = 'z', long = "chapters-zoning", default_value = "")]
    chapters_zoning: String,
 
     /// Workers to use when encoding
