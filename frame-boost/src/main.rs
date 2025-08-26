@@ -233,11 +233,6 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    // let chapters = Chapters::parse(&args.chapters.unwrap())?;
-    // println!("{chapters}");
-    // println!("{}", args.chapter_crfs);
-    // panic!("YEAH");
-
     let crf_values = crf_parser(&args.crf)?;
     let input_path = absolute(&args.input)?;
     let scene_boosted = match args.output {
