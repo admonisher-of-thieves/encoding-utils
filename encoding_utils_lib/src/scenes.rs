@@ -869,10 +869,6 @@ impl SceneList {
     /// Applies CRF values from ZoneChapters to scenes that fall within chapter ranges
     pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters) {
         for scene in &mut self.split_scenes {
-            // Reset ready flag and CRF value initially
-            scene.zoned = false;
-            scene.crf = 0.0;
-
             // Find matching chapter for this scene
             for zone_chapter in &zone_chapters.chapters {
                 // Check if the scene falls within the chapter range
@@ -881,7 +877,6 @@ impl SceneList {
                     && !zone_chapter.crf.is_nan()
                 {
                     scene.update_crf(zone_chapter.crf);
-                    // Mark as ready if CRF is greater than 0.0
                     scene.zoned = true;
                     break; // Stop checking other chapters once we find a match
                 }

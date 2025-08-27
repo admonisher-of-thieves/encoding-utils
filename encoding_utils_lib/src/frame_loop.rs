@@ -162,17 +162,6 @@ pub fn run_frame_loop<'a>(
     let mut scene_list_frames = scene_list.clone();
     scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
 
-    let n_frames = match n_frames {
-        Some(n_frames) => n_frames,
-        None => seconds_to_frames(&core, s_frames, input, importer_scene, temp_folder)?,
-    };
-
-    scene_list_frames = match frames_distribution {
-        FramesDistribution::Center => scene_list_frames.with_center_expanding_frames(n_frames),
-        FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
-        FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
-    };
-
     // Zoning Chapters
     if !crf_chapters.is_empty()
         && let Some(chapters) = chapters
@@ -192,10 +181,23 @@ pub fn run_frame_loop<'a>(
         let chapters = Chapters::parse(chapters)?;
         let mut zone_chapters = ZoneChapters::from_chapters(&video, chapters);
         zone_chapters.with_crfs(crf_chapters);
+        println!("{}", zone_chapters);
         scene_list_frames.apply_zone_chapters(&zone_chapters);
         scene_list.sync_crf_by_index(&scene_list_frames);
-        scene_list_frames.filter_by_zoning();
     }
+
+    let n_frames = match n_frames {
+        Some(n_frames) => n_frames,
+        None => seconds_to_frames(&core, s_frames, input, importer_scene, temp_folder)?,
+    };
+
+    scene_list_frames = match frames_distribution {
+        FramesDistribution::Center => scene_list_frames.with_center_expanding_frames(n_frames),
+        FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
+        FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
+    };
+
+    scene_list_frames.filter_by_zoning();
 
     for (i, crf) in iter_crfs.iter().enumerate() {
         println!("\nCycle: {i}, CRF: {crf}\n");

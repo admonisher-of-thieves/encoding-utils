@@ -110,6 +110,55 @@ pub struct ZoneChapter {
     pub crf: f64,
 }
 
+impl fmt::Display for ZoneChapters {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "ZoneChapters ({} total):", self.chapters.len())?;
+
+        if self.chapters.is_empty() {
+            return Ok(());
+        }
+
+        // Find max widths for alignment
+        let max_name = self.chapters.iter().map(|c| c.name.len()).max().unwrap();
+        let max_start = self
+            .chapters
+            .iter()
+            .map(|c| c.start.to_string().len())
+            .max()
+            .unwrap();
+        let max_end = self
+            .chapters
+            .iter()
+            .map(|c| c.end.to_string().len())
+            .max()
+            .unwrap();
+
+        for (i, chapter) in self.chapters.iter().enumerate() {
+            // Format CRF: show "NaN" if it is NaN
+            let crf_str = if chapter.crf.is_nan() {
+                "NaN".to_string()
+            } else {
+                format!("{:.2}", chapter.crf)
+            };
+
+            writeln!(
+                f,
+                "  {:>2}. Chapter: {:<width_name$} | frames: {:>width_start$}–{:>width_end$} | CRF: {:>5}",
+                i + 1,
+                chapter.name,
+                chapter.start,
+                chapter.end,
+                crf_str,
+                width_name = max_name,
+                width_start = max_start,
+                width_end = max_end
+            )?;
+        }
+
+        Ok(())
+    }
+}
+
 impl ZoneChapters {
     /// Basic conversion from Chapters to ZoneChapters without CRF values
     pub fn from_chapters(video: &VideoNode, chapters: Chapters) -> Self {
