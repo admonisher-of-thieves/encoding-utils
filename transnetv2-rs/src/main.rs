@@ -80,7 +80,7 @@ struct Args {
     temp: Option<PathBuf>,
 
     /// Video Source Plugin for obtaining the scene file
-    #[arg(short, long = "source-plugin", default_value = "lsmash")]
+    #[arg(short, long = "source-plugin", default_value = "ffms2")]
     source_plugin: SourcePlugin,
 
     // Enable verbose output
