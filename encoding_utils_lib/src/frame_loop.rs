@@ -57,82 +57,87 @@ pub fn run_frame_loop<'a>(
     println!("\nRunning frame-boost\n");
     let core = Core::builder().build();
 
-    let mut scene_list = match scene_detection_method {
-        SceneDetectionMethod::Av1an => {
-            // Generating original scenes
-            let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
-            let scene_av1an_params = if let Some(extra_split_frames) = extra_split_frames {
-                update_extra_split(&scene_av1an_params, extra_split_frames)
-            } else {
-                update_extra_split_sec(&scene_av1an_params, extra_split_seconds)
-            };
-            let scene_av1an_params = if let Some(min_scene_len) = min_scene_len {
-                update_min_scene_len(&scene_av1an_params, min_scene_len)
-            } else {
-                scene_av1an_params
-            };
+    let scene_path = temp_folder.join("scenes.json");
+    let mut scene_list = if scene_path.exists() {
+        SceneList::parse_scene_file(&scene_path)?
+    } else {
+        match scene_detection_method {
+            SceneDetectionMethod::Av1an => {
+                // Generating original scenes
+                let scene_av1an_params = update_chunk_method(av1an_params, importer_scene);
+                let scene_av1an_params = if let Some(extra_split_frames) = extra_split_frames {
+                    update_extra_split(&scene_av1an_params, extra_split_frames)
+                } else {
+                    update_extra_split_sec(&scene_av1an_params, extra_split_seconds)
+                };
+                let scene_av1an_params = if let Some(min_scene_len) = min_scene_len {
+                    update_min_scene_len(&scene_av1an_params, min_scene_len)
+                } else {
+                    scene_av1an_params
+                };
 
-            let vpy_scene_path = temp_folder.join("scene.vpy");
+                let vpy_scene_path = temp_folder.join("scene.vpy");
 
-            let vpy_scene_file = create_vpy_file(
-                input,
-                &vpy_scene_path,
-                None,
-                importer_scene,
-                crop,
-                downscale,
-                detelecine,
-                encoder_params,
-                temp_folder,
-                clean,
-            )?;
-            let original_scenes_file =
-                get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
-            SceneList::parse_scene_file(&original_scenes_file)?
-        }
-
-        SceneDetectionMethod::TransnetV2 => {
-            println!("Obtaining scene using transnetv2-rs\n");
-            let (scene_list, hardcut_list) = run_transnetv2(
-                &core,
-                input,
-                None,
-                false,
-                *importer_scene,
-                temp_folder,
-                verbose,
-                encoder_params,
-                crop,
-                downscale,
-                detelecine,
-                extra_split_seconds,
-                extra_split_frames,
-                extra_split_seconds_fades,
-                extra_split_frames_fades,
-                min_scene_len_sec,
-                min_scene_len,
-                threshold,
-                fade_threshold_low,
-                min_fade_len,
-                merge_gap,
-                enable_fade_detection,
-                scene_predictions,
-            )?;
-            println!();
-            if hardcut_scenes {
-                let output_name = format!(
-                    "[HARDCUT-SCENES]_{}.json",
-                    input
-                        .file_stem()
-                        .ok_or_eyre("No file name")?
-                        .to_str()
-                        .ok_or_eyre("Invalid UTF-8 in input path")?
-                );
-                let hardcut_path = input.with_file_name(output_name);
-                hardcut_list.write_scene_list_to_file(&hardcut_path)?;
+                let vpy_scene_file = create_vpy_file(
+                    input,
+                    &vpy_scene_path,
+                    None,
+                    importer_scene,
+                    crop,
+                    downscale,
+                    detelecine,
+                    encoder_params,
+                    temp_folder,
+                    clean,
+                )?;
+                let original_scenes_file =
+                    get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
+                SceneList::parse_scene_file(&original_scenes_file)?
             }
-            scene_list.write_scene_list_to_file(&temp_folder.join("scenes.json"))?;
-            scene_list
+
+            SceneDetectionMethod::TransnetV2 => {
+                println!("Obtaining scene using transnetv2-rs\n");
+                let (scene_list, hardcut_list) = run_transnetv2(
+                    &core,
+                    input,
+                    None,
+                    false,
+                    *importer_scene,
+                    temp_folder,
+                    verbose,
+                    encoder_params,
+                    crop,
+                    downscale,
+                    detelecine,
+                    extra_split_seconds,
+                    extra_split_frames,
+                    extra_split_seconds_fades,
+                    extra_split_frames_fades,
+                    min_scene_len_sec,
+                    min_scene_len,
+                    threshold,
+                    fade_threshold_low,
+                    min_fade_len,
+                    merge_gap,
+                    enable_fade_detection,
+                    scene_predictions,
+                )?;
+                println!();
+                if hardcut_scenes {
+                    let output_name = format!(
+                        "[HARDCUT-SCENES]_{}.json",
+                        input
+                            .file_stem()
+                            .ok_or_eyre("No file name")?
+                            .to_str()
+                            .ok_or_eyre("Invalid UTF-8 in input path")?
+                    );
+                    let hardcut_path = input.with_file_name(output_name);
+                    hardcut_list.write_scene_list_to_file(&hardcut_path)?;
+                }
+                scene_list.write_scene_list_to_file(&temp_folder.join("scenes.json"))?;
+                scene_list
+            }
         }
     };
 
@@ -196,7 +201,7 @@ pub fn run_frame_loop<'a>(
         FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
         FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
     };
-
+    
     scene_list_frames.filter_by_zoning();
 
     for (i, crf) in iter_crfs.iter().enumerate() {
@@ -235,6 +240,7 @@ pub fn run_frame_loop<'a>(
         if verbose {
             println!("\nGet simulacra scores\n")
         }
+
         ssimu2_frames_selected(
             &core,
             input,

@@ -613,12 +613,6 @@ impl SceneList {
 
     pub fn filter_by_zoning(&mut self) {
         self.split_scenes.retain_mut(|scene| !scene.zoned);
-
-        self.frames = self
-            .split_scenes
-            .iter()
-            .map(|scene| scene.frame_scores.len() as u32)
-            .sum();
     }
 
     pub fn calculate_crf_percentages(&self) -> Vec<(f64, f64)> {
