@@ -1,8 +1,9 @@
 use std::{collections::HashMap, fs::File, io::Write, path::Path};
 
 use eyre::{Ok, OptionExt, Result};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct FrameScore {
     pub frame: u32,
     pub value: f64,

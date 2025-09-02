@@ -1,6 +1,7 @@
 use std::{
     fs,
-    path::{absolute, Path}, process::Stdio,
+    path::{Path, absolute},
+    process::Stdio,
 };
 
 use crate::vapoursynth::add_extension;

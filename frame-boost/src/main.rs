@@ -31,7 +31,7 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.5 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 10 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 3 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 2 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 8 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
@@ -113,7 +113,7 @@ struct Args {
     source_metric_plugin: SourcePlugin,
     
     /// Video Source Plugin for encoding
-    #[arg(short, long = "source-encoding-plugin", default_value = "bestsource")]
+    #[arg(short, long = "source-encoding-plugin", default_value = "ffms2")]
     source_encoding_plugin: SourcePlugin,
 
     /// Video Source Plugin for obtaining the scene file
@@ -147,8 +147,16 @@ struct Args {
     detelecine: bool,
 
     // Enable verbose output
-    #[arg(short, long, action = ArgAction::SetTrue, default_value_t = false)]
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
     verbose: bool,
+
+    // Enable verbose output
+    #[arg(long = "verbose-verbose", action = ArgAction::SetTrue, default_value_t = false)]
+    verbose_verbose: bool,
+
+    // Enable verbose output
+    #[arg(long = "verbose-verbose-verbose", action = ArgAction::SetTrue, default_value_t = false)]
+    verbose_verbose_verbose: bool,
 
     /// Avoid encoding frames that have already reached the quality score
     #[arg(
@@ -275,6 +283,7 @@ fn main() -> Result<()> {
             ))
         }
     };
+
     fs::create_dir_all(&temp_folder)?;
 
     run_frame_loop(
@@ -303,6 +312,8 @@ fn main() -> Result<()> {
         args.detelecine,
         !args.keep_files,
         args.verbose,
+        args.verbose_verbose,
+        args.verbose_verbose_verbose,
         &temp_folder,
         args.extra_split_sec.into(),
         args.extra_split.map(|x| x.into()),

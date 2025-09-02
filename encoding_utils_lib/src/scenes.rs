@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::ValueEnum;
-use eyre::{Ok, OptionExt, Result};
+use eyre::{Ok, OptionExt, Result, eyre};
 
 pub fn get_scene_file<'a>(
     scene_vpy_file: &'a Path,
@@ -645,7 +645,7 @@ impl SceneList {
     }
 
     pub fn print_crf_percentages(&self) {
-        println!("CRF Distribution:");
+        println!("\nCRF Distribution:");
         let percentages = self.calculate_crf_percentages();
 
         for (crf, pct) in percentages {
@@ -806,14 +806,33 @@ impl SceneList {
     }
 
     /// Prints a summary of all scenes including index, CRF, frame range, and mean score
-    pub fn print_updated_data(&self, percentile: u8) {
+    pub fn print_updated_data(&self, percentile: u8, crf: f64) {
         for (i, scene) in self.split_scenes.iter().enumerate() {
             let percentile_score = math::percentile(&scene.frame_scores, percentile);
             let min = math::min_score(&scene.frame_scores);
-            println!(
-                "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}",
-                i, scene.crf, scene.start_frame, scene.end_frame, percentile, percentile_score, min
-            );
+            if scene.crf < crf {
+                println!(
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2} ...updated crf",
+                    i,
+                    scene.crf,
+                    scene.start_frame,
+                    scene.end_frame,
+                    percentile,
+                    percentile_score,
+                    min
+                );
+            } else {
+                println!(
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}",
+                    i,
+                    scene.crf,
+                    scene.start_frame,
+                    scene.end_frame,
+                    percentile,
+                    percentile_score,
+                    min
+                );
+            }
         }
     }
 
@@ -878,6 +897,45 @@ impl SceneList {
         }
     }
 
+    pub fn to_metrics_cache(&self) -> MetricsCache {
+        MetricsCache {
+            frames: self.frames,
+            scene_metrics: self.split_scenes.iter().map(SceneMetrics::from).collect(),
+        }
+    }
+
+    pub fn apply_metrics_cache(&mut self, cache: &MetricsCache) -> Result<()> {
+        // Verify cache compatibility
+        if cache.frames != self.frames {
+            return Err(eyre!(
+                "Cache frame count mismatch: expected {}, got {}",
+                self.frames,
+                cache.frames
+            ));
+        }
+
+        for cached_scene in &cache.scene_metrics {
+            if let Some(scene) = self
+                .split_scenes
+                .iter_mut()
+                .find(|s| s.index == cached_scene.index)
+            {
+                // Verify scene boundaries match
+                if scene.start_frame != cached_scene.start_frame
+                    || scene.end_frame != cached_scene.end_frame
+                {
+                    return Err(eyre!(
+                        "Scene {} boundaries mismatch in cache",
+                        cached_scene.index
+                    ));
+                }
+                scene.frame_scores = cached_scene.frame_scores.clone();
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn parse_scene_file(json_path: &Path) -> Result<SceneList> {
         let json_data = fs::read_to_string(json_path)?;
         let scene_list: SceneList = serde_json::from_str(&json_data)?;
@@ -927,4 +985,43 @@ pub fn find_crf_value_in_params(params: &[String]) -> Option<&str> {
         }
     }
     None
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct MetricsCache {
+    pub frames: u32,
+    pub scene_metrics: Vec<SceneMetrics>,
+}
+
+impl MetricsCache {
+    pub fn parse_metrics_cache(json_path: &Path) -> Result<MetricsCache> {
+        let json_data = fs::read_to_string(json_path)?;
+        let metrics_cache: MetricsCache = serde_json::from_str(&json_data)?;
+        Ok(metrics_cache)
+    }
+
+    pub fn write_metrics_cache<'a>(&self, path: &'a Path) -> Result<&'a Path> {
+        let json = serde_json::to_string_pretty(&self)?;
+        fs::write(path, json)?;
+        Ok(path)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct SceneMetrics {
+    pub index: u32,
+    pub start_frame: u32,
+    pub end_frame: u32,
+    pub frame_scores: Vec<FrameScore>,
+}
+
+impl From<&Scene> for SceneMetrics {
+    fn from(scene: &Scene) -> Self {
+        Self {
+            index: scene.index,
+            start_frame: scene.start_frame,
+            end_frame: scene.end_frame,
+            frame_scores: scene.frame_scores.clone(),
+        }
+    }
 }

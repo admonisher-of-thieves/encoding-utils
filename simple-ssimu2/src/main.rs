@@ -109,7 +109,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let temp_dir = match args.temp {
+    let temp_folder = match args.temp {
         Some(temp) => temp, 
         None => { 
             let output_name = format!(
@@ -124,8 +124,10 @@ fn main() -> Result<()> {
         }
     };
 
+    let indexes_folder = temp_folder.join("indexes");
 
-    create_dir_all(&temp_dir)?;
+
+    create_dir_all(&indexes_folder)?;
 
     let core = Core::builder().build();
 
@@ -137,7 +139,7 @@ fn main() -> Result<()> {
             args.steps as usize,
             args.source_plugin,
             args.trim,
-            &temp_dir,
+            &indexes_folder,
             args.verbose,
             &args.color_metadata,
             args.crop.as_deref(),
@@ -174,8 +176,8 @@ fn main() -> Result<()> {
         create_plot(&plot_file, &score_list, &args.reference, &args.distorted, args.scenes.as_deref(), args.steps)?;
     }
 
-    if !args.keep_files && fs::exists(&temp_dir)? {
-        fs::remove_dir_all(&temp_dir)?;
+    if !args.keep_files && fs::exists(&temp_folder)? {
+        fs::remove_dir_all(&temp_folder)?;
     }
 
     Ok(())

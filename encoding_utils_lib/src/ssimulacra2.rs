@@ -2,7 +2,9 @@ use crate::{
     math::{self, FrameScore, ScoreList},
     scenes::SceneList,
     vapoursynth::{
-        bestsource_invoke, downscale_resolution, ffms2_invoke, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata, set_output, synchronize_clips, to_crop, vszip_metrics, SourcePlugin, ToCString, Trim
+        SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, ffms2_invoke,
+        inverse_telecine, lsmash_invoke, select_frames, set_color_metadata, set_output,
+        synchronize_clips, to_crop, vszip_metrics,
     },
 };
 
@@ -93,7 +95,7 @@ pub fn ssimu2_frames_selected(
     distorted: &Path,
     scene_list: &mut SceneList,
     importer_plugin: &SourcePlugin,
-    temp_dir: &Path,
+    temp_folder: &Path,
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
@@ -105,7 +107,7 @@ pub fn ssimu2_frames_selected(
         reference,
         distorted,
         importer_plugin,
-        temp_dir,
+        temp_folder,
         verbose,
         color_metadata,
         crop,

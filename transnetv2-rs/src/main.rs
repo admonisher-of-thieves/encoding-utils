@@ -166,7 +166,9 @@ fn main() -> eyre::Result<()> {
             args.input.with_file_name(temp_folder)
         }
     };
-    fs::create_dir_all(&temp_folder)?;
+
+    let indexes_folder = temp_folder.join("indexes");
+    fs::create_dir_all(&indexes_folder)?;
 
     let core = Core::builder().build();
 
@@ -176,7 +178,8 @@ fn main() -> eyre::Result<()> {
         args.model.as_deref(),
         args.cpu,
         args.source_plugin,
-        &temp_folder, args.verbose,
+        &indexes_folder,
+         args.verbose,
         &args.color_metadata,
         args.crop.as_deref(),
         args.detelecine,

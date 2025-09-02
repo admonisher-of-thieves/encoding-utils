@@ -3,7 +3,9 @@ use std::path::Path;
 
 use crate::chapters::{Chapters, ZoneChapters};
 use crate::encode::encode_frames;
-use crate::scenes::{FramesDistribution, SceneDetectionMethod, SceneList, get_scene_file};
+use crate::scenes::{
+    FramesDistribution, MetricsCache, SceneDetectionMethod, SceneList, get_scene_file,
+};
 use crate::ssimulacra2::ssimu2_frames_selected;
 use crate::transnetv2::transnet::run_transnetv2;
 use crate::vapoursynth::{SourcePlugin, prepare_clip, seconds_to_frames};
@@ -38,6 +40,8 @@ pub fn run_frame_loop<'a>(
     detelecine: bool,
     clean: bool,
     verbose: bool,
+    verbose_verbose: bool,
+    verbose_verbose_verbose: bool,
     temp_folder: &'a Path,
     extra_split_seconds: i64,
     extra_split_frames: Option<i64>,
@@ -54,10 +58,23 @@ pub fn run_frame_loop<'a>(
     percentile: u8,
     hardcut_scenes: bool,
 ) -> Result<&'a Path> {
-    println!("\nRunning frame-boost\n");
+    println!("\nRunning frame-boost");
     let core = Core::builder().build();
 
-    let scene_path = temp_folder.join("scenes.json");
+    let scenes_folder = temp_folder.join("scenes");
+    let encodes_folder = temp_folder.join("encodes");
+    let indexes_folder = temp_folder.join("indexes");
+    let vpys_folder = temp_folder.join("vpys");
+    let metrics_folder = temp_folder.join("metrics");
+
+    fs::create_dir_all(&scenes_folder)?;
+    fs::create_dir_all(&encodes_folder)?;
+    fs::create_dir_all(&indexes_folder)?;
+    fs::create_dir_all(&vpys_folder)?;
+    fs::create_dir_all(&metrics_folder)?;
+
+    let scene_path = scenes_folder.join("scenes.json");
+
     let mut scene_list = if scene_path.exists() {
         SceneList::parse_scene_file(&scene_path)?
     } else {
@@ -76,7 +93,7 @@ pub fn run_frame_loop<'a>(
                     scene_av1an_params
                 };
 
-                let vpy_scene_path = temp_folder.join("scene.vpy");
+                let vpy_scene_path = vpys_folder.join("scene.vpy");
 
                 let vpy_scene_file = create_vpy_file(
                     input,
@@ -91,7 +108,7 @@ pub fn run_frame_loop<'a>(
                     clean,
                 )?;
                 let original_scenes_file =
-                    get_scene_file(vpy_scene_file, temp_folder, &scene_av1an_params, clean)?;
+                    get_scene_file(vpy_scene_file, &scenes_folder, &scene_av1an_params, clean)?;
                 SceneList::parse_scene_file(&original_scenes_file)?
             }
 
@@ -103,8 +120,8 @@ pub fn run_frame_loop<'a>(
                     None,
                     false,
                     *importer_scene,
-                    temp_folder,
-                    verbose,
+                    &indexes_folder,
+                    verbose_verbose_verbose,
                     encoder_params,
                     crop,
                     detelecine,
@@ -134,7 +151,7 @@ pub fn run_frame_loop<'a>(
                     let hardcut_path = input.with_file_name(output_name);
                     hardcut_list.write_scene_list_to_file(&hardcut_path)?;
                 }
-                scene_list.write_scene_list_to_file(&temp_folder.join("scenes.json"))?;
+                scene_list.write_scene_list_to_file(&scenes_folder.join("scenes.json"))?;
                 scene_list
             }
         }
@@ -174,8 +191,8 @@ pub fn run_frame_loop<'a>(
             &core,
             input,
             importer_scene,
-            temp_folder,
-            verbose,
+            &indexes_folder,
+            verbose_verbose_verbose,
             encoder_params,
             crop,
             downscale,
@@ -192,7 +209,7 @@ pub fn run_frame_loop<'a>(
 
     let n_frames = match n_frames {
         Some(n_frames) => n_frames,
-        None => seconds_to_frames(&core, s_frames, input, importer_scene, temp_folder)?,
+        None => seconds_to_frames(&core, s_frames, input, importer_scene, &indexes_folder)?,
     };
 
     scene_list_frames = match frames_distribution {
@@ -200,14 +217,15 @@ pub fn run_frame_loop<'a>(
         FramesDistribution::Evenly => scene_list_frames.with_evenly_spaced_frames(n_frames),
         FramesDistribution::StartMiddleEnd => scene_list.with_start_middle_end_frames(n_frames),
     };
-    
+
     scene_list_frames.filter_by_zoning();
 
     for (i, crf) in iter_crfs.iter().enumerate() {
-        println!("\nCycle: {i}, CRF: {crf}\n");
-        let scenes_path = temp_folder.join(format!("scenes_{crf}.json"));
-        let vpy_path = temp_folder.join(format!("vpy_{crf}.vpy"));
-        let encode_path = temp_folder.join(format!("encode_{crf}.mkv"));
+        println!("\n\n✧ CYCLE: {i}, CRF: {crf}\n");
+        let scenes_path = scenes_folder.join(format!("scenes_{crf}.json"));
+        let vpy_path = vpys_folder.join(format!("encode_{crf}.vpy"));
+        let encode_path = encodes_folder.join(format!("encode_{crf}.mkv"));
+        let metrics_cache_path = metrics_folder.join(format!("metrics_{crf}.json"));
 
         scene_list_frames = scene_list_frames.with_contiguous_frames();
         let filter_scene_file = scene_list_frames.write_scene_list_to_file(&scenes_path)?;
@@ -222,39 +240,44 @@ pub fn run_frame_loop<'a>(
             downscale,
             detelecine,
             encoder_params,
-            temp_folder,
+            &indexes_folder,
             clean,
         )?;
-        let encode = encode_frames(
-            vpy_file,
-            filter_scene_file,
-            &encode_path,
-            &temp_av1an_params,
-            &temp_encoder_params,
-            clean,
-            temp_folder,
-        )?;
+        let encode = if !encode_path.exists() {
+            encode_frames(
+                vpy_file,
+                filter_scene_file,
+                &encode_path,
+                &temp_av1an_params,
+                &temp_encoder_params,
+                clean,
+                &encodes_folder,
+            )?
+        } else {
+            &encode_path
+        };
 
         // Scores
-        if verbose {
-            println!("\nGet simulacra scores\n")
+        if !metrics_cache_path.exists() {
+            ssimu2_frames_selected(
+                &core,
+                input,
+                encode,
+                &mut scene_list_frames,
+                importer_metrics,
+                &indexes_folder,
+                verbose_verbose_verbose,
+                encoder_params,
+                crop,
+                downscale,
+                detelecine,
+            )?;
+            let metrics_cache = scene_list_frames.to_metrics_cache();
+            metrics_cache.write_metrics_cache(&metrics_cache_path)?;
+        } else {
+            let metrics_cache = MetricsCache::parse_metrics_cache(&metrics_cache_path)?;
+            scene_list_frames.apply_metrics_cache(&metrics_cache)?;
         }
-
-        ssimu2_frames_selected(
-            &core,
-            input,
-            encode,
-            &mut scene_list_frames,
-            // n_frames,
-            // frames_distribution,
-            importer_metrics,
-            temp_folder,
-            verbose,
-            encoder_params,
-            crop,
-            downscale,
-            detelecine,
-        )?;
 
         scene_list.sync_scores_by_index(&scene_list_frames);
 
@@ -271,9 +294,13 @@ pub fn run_frame_loop<'a>(
 
         scene_list.sync_crf_by_index(&scene_list_frames);
 
-        println!("\nUpdated data:");
-        scene_list.print_updated_data(percentile);
-        scene_list.print_stats()?;
+        if verbose || verbose_verbose || verbose_verbose_verbose {
+            println!("\nUpdated data:");
+            scene_list.print_updated_data(percentile, *crf);
+        }
+        if verbose || verbose_verbose {
+            scene_list.print_stats()?;
+        }
 
         scene_list.print_crf_percentages();
 
