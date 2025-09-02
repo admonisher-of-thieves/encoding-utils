@@ -91,15 +91,6 @@ struct Args {
     #[arg(short, long)]
     crop: Option<String>,
 
-    /// Downscale, using Box Kernel 0.5
-    #[arg(
-        long, 
-        default_value_t = false,
-        action = ArgAction::Set,
-        value_parser = clap::value_parser!(bool)
-    )]
-    downscale: bool,
-
     /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
         long, 
@@ -188,7 +179,7 @@ fn main() -> eyre::Result<()> {
         &temp_folder, args.verbose,
         &args.color_metadata,
         args.crop.as_deref(),
-        args.downscale, args.detelecine,
+        args.detelecine,
         args.extra_split_sec.into(),
         args.extra_split.map(|x| x.into()),
         args.extra_split_sec_fades.into(),

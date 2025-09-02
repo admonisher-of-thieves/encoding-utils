@@ -107,7 +107,6 @@ pub fn run_frame_loop<'a>(
                     verbose,
                     encoder_params,
                     crop,
-                    downscale,
                     detelecine,
                     extra_split_seconds,
                     extra_split_frames,

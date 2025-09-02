@@ -19,7 +19,6 @@ pub fn run_transnetv2(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
-    downscale: bool,
     detelecine: bool,
     extra_split_seconds: i64,
     extra_split_frames: Option<i64>,
@@ -42,7 +41,7 @@ pub fn run_transnetv2(
         verbose,
         color_metadata,
         crop,
-        downscale,
+        false,
         detelecine,
     )?;
 
