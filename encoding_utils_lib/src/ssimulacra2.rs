@@ -3,7 +3,7 @@ use crate::{
     scenes::SceneList,
     vapoursynth::{
         SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, inverse_telecine,
-        lsmash_invoke, select_frames, set_color_metadata, synchronize_clips, to_crop,
+        lsmash_invoke, select_frames, set_color_metadata, set_output, synchronize_clips, to_crop,
         vszip_metrics,
     },
 };
@@ -60,12 +60,13 @@ pub fn prepare_clips(
         reference = inverse_telecine(core, &reference)?;
     }
 
-    if downscale {
-        reference = downscale_resolution(core, &reference)?;
-    }
-
     if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
         reference = to_crop(core, &reference, crop_str)?;
+    }
+
+    if downscale {
+        reference = downscale_resolution(core, &reference)?;
+        reference = set_output(core, &reference, color_metadata)?;
     }
 
     if let Some(trim) = trim {
@@ -113,6 +114,15 @@ pub fn ssimu2_frames_selected(
 
     let all_frames: Vec<u32> = scene_list.all_frames();
     let reference = select_frames(core, &reference, &all_frames)?;
+
+    if verbose {
+        println!(
+            "Select Frames\nReference: {:?}\nDistorted: {:?}\n",
+            reference.info(),
+            distorted.info()
+        );
+    }
+
     let ssimu2 = vszip_metrics(core, &reference, &distorted)?;
 
     // Calculate total frames to process for progress bar

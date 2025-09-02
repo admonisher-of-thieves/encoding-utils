@@ -24,7 +24,7 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
+        default_value = "--verbose --resume --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
     )]
     av1an_params: String,
 

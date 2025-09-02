@@ -257,6 +257,98 @@ pub fn set_color_metadata(core: &Core, clip: &VideoNode, color_params: &str) -> 
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
+pub fn set_output(core: &Core, clip: &VideoNode, color_params: &str) -> Result<VideoNode> {
+    let color_metadata = ColorMetadata::from_params(color_params);
+    let resize = resize(core)?;
+    let mut args = Map::default();
+
+    args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(clip.to_owned()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"format".to_cstring()),
+        Value::Int(805961985), // Added format
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"matrix".to_cstring()),
+        Value::Int(color_metadata.matrix.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"transfer".to_cstring()),
+        Value::Int(color_metadata.transfer.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"primaries".to_cstring()),
+        Value::Int(color_metadata.primaries.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"range".to_cstring()),
+        Value::Int(color_metadata.range.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"chromaloc".to_cstring()),
+        Value::Int(color_metadata.chromaloc.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"dither_type".to_cstring()),
+        Value::Utf8("error_diffusion"), // Added dither_type
+        Replace,
+    )?;
+
+    let func = resize.invoke(&"Bicubic".to_cstring(), args);
+
+    // Check for errors before getting the video node
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "Resize Bicubic failed: {}",
+            err.to_string_lossy()
+        ));
+    }
+
+    Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
+}
+
+pub fn set_linear_rgb(core: &Core, clip: &VideoNode) -> Result<VideoNode> {
+    let resize = resize(core)?;
+    let mut args = Map::default();
+
+    args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(clip.to_owned()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"format".to_cstring()),
+        Value::Int(555745280), // RGBS Format
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"transfer_s".to_cstring()),
+        Value::Utf8("linear"),
+        Replace,
+    )?;
+
+    let func = resize.invoke(&"Bicubic".to_cstring(), args);
+
+    // Check for errors before getting the video node
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "Resize Bicubic failed: {}",
+            err.to_string_lossy()
+        ));
+    }
+
+    Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
+}
+
 pub fn select_frames(core: &Core, clip: &VideoNode, frames: &[u32]) -> Result<VideoNode> {
     if frames.is_empty() {
         return Err(eyre::eyre!("No frames specified for selection"));
@@ -414,6 +506,8 @@ pub fn downscale_resolution(core: &Core, reference: &VideoNode) -> Result<VideoN
         }
         working_clip = cropped.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
     }
+
+    working_clip = set_linear_rgb(core, &working_clip)?;
 
     // Box downscale (scale = 0.5)
     let mut fmt_args = Map::default();
