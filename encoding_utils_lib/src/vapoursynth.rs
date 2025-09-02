@@ -825,6 +825,7 @@ pub fn prepare_clip(
 
     if downscale {
         input = downscale_resolution(core, &input)?;
+        input = set_output(core, &input, color_metadata)?;
     }
 
     if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
