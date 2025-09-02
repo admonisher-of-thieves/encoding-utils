@@ -64,13 +64,11 @@ pub fn run_frame_loop<'a>(
     let scenes_folder = temp_folder.join("scenes");
     let encodes_folder = temp_folder.join("encodes");
     let indexes_folder = temp_folder.join("indexes");
-    let vpys_folder = temp_folder.join("vpys");
     let metrics_folder = temp_folder.join("metrics");
 
     fs::create_dir_all(&scenes_folder)?;
     fs::create_dir_all(&encodes_folder)?;
     fs::create_dir_all(&indexes_folder)?;
-    fs::create_dir_all(&vpys_folder)?;
     fs::create_dir_all(&metrics_folder)?;
 
     let scene_path = scenes_folder.join("scenes.json");
@@ -93,7 +91,7 @@ pub fn run_frame_loop<'a>(
                     scene_av1an_params
                 };
 
-                let vpy_scene_path = vpys_folder.join("scene.vpy");
+                let vpy_scene_path = scenes_folder.join("scene.vpy");
 
                 let vpy_scene_file = create_vpy_file(
                     input,
@@ -223,7 +221,7 @@ pub fn run_frame_loop<'a>(
     for (i, crf) in iter_crfs.iter().enumerate() {
         println!("\n\n✧ CYCLE: {i}, CRF: {crf}\n");
         let scenes_path = scenes_folder.join(format!("scenes_{crf}.json"));
-        let vpy_path = vpys_folder.join(format!("encode_{crf}.vpy"));
+        let vpy_path = encodes_folder.join(format!("encode_{crf}.vpy"));
         let encode_path = encodes_folder.join(format!("encode_{crf}.mkv"));
         let metrics_cache_path = metrics_folder.join(format!("metrics_{crf}.json"));
 
