@@ -2,9 +2,7 @@ use crate::{
     math::{self, FrameScore, ScoreList},
     scenes::SceneList,
     vapoursynth::{
-        SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, inverse_telecine,
-        lsmash_invoke, select_frames, set_color_metadata, set_output, synchronize_clips, to_crop,
-        vszip_metrics,
+        bestsource_invoke, downscale_resolution, ffms2_invoke, inverse_telecine, lsmash_invoke, select_frames, set_color_metadata, set_output, synchronize_clips, to_crop, vszip_metrics, SourcePlugin, ToCString, Trim
     },
 };
 
@@ -42,6 +40,10 @@ pub fn prepare_clips(
         SourcePlugin::Bestsource => (
             bestsource_invoke(core, reference_path, temp_dir)?,
             bestsource_invoke(core, distorted_path, temp_dir)?,
+        ),
+        SourcePlugin::Ffms2 => (
+            ffms2_invoke(core, reference_path, temp_dir)?,
+            ffms2_invoke(core, distorted_path, temp_dir)?,
         ),
     };
 

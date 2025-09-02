@@ -109,11 +109,11 @@ struct Args {
     force: bool,
 
     /// Video Source Plugin for metrics
-    #[arg(short, long = "source-metric-plugin", default_value = "lsmash")]
+    #[arg(short, long = "source-metric-plugin", default_value = "ffms2")]
     source_metric_plugin: SourcePlugin,
     
     /// Video Source Plugin for encoding
-    #[arg(short, long = "source-encoding-plugin", default_value = "lsmash")]
+    #[arg(short, long = "source-encoding-plugin", default_value = "bestsource")]
     source_encoding_plugin: SourcePlugin,
 
     /// Video Source Plugin for obtaining the scene file

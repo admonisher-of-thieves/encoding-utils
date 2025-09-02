@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::{Path, absolute},
+    path::{absolute, Path}, process::Stdio,
 };
 
 use crate::vapoursynth::add_extension;
@@ -32,6 +32,7 @@ pub fn create_vpy_file<'a>(
 
     // Configure source and cache
     let (source, cache) = {
+        // Determine cache/index file path
         let cache_path = absolute(match source_plugin {
             SourcePlugin::Lsmash => add_extension(
                 "lwi",
@@ -40,10 +41,35 @@ pub fn create_vpy_file<'a>(
             SourcePlugin::Bestsource => {
                 temp_folder.join(input.file_name().ok_or_eyre("Input path has no filename")?)
             }
+            SourcePlugin::Ffms2 => add_extension(
+                "ffindex",
+                temp_folder.join(input.file_name().ok_or_eyre("Input path has no filename")?),
+            ),
         })?;
 
         let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
 
+        // Auto-generate FFMS2 index if needed
+        if let SourcePlugin::Ffms2 = source_plugin
+            && !cache_path.exists()
+        {
+            let status = std::process::Command::new("ffmsindex")
+                .arg("-f")
+                .arg("-p")
+                .arg(input)
+                .arg(&cache_path)
+                .stdout(Stdio::null())
+                .status()?;
+
+            if !status.success() {
+                return Err(eyre::eyre!(
+                    "ffmsindex failed to create index for {}",
+                    input.display()
+                ));
+            }
+        }
+
+        // Determine plugin and argument string
         match source_plugin {
             SourcePlugin::Lsmash => (
                 "core.lsmas.LWLibavSource",
@@ -53,6 +79,7 @@ pub fn create_vpy_file<'a>(
                 "core.bs.VideoSource",
                 format!("cachepath=\"{cache_str}\", cachemode=4"),
             ),
+            SourcePlugin::Ffms2 => ("core.ffms2.Source", format!("cachefile=\"{cache_str}\"")),
         }
     };
 

@@ -30,7 +30,7 @@ struct Args {
     verbose: bool,
 
     /// Video Source Plugin
-    #[arg(short, long = "source-plugin", default_value = "lsmash")]
+    #[arg(short, long = "source-plugin", default_value = "ffms2")]
     source_plugin: SourcePlugin,
 
     /// Path to stats file (if not provided, stats will only be printed)

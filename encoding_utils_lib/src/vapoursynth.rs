@@ -1,5 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf, absolute};
+use std::process::{Command, Stdio};
 use std::{ffi::CString, str::FromStr};
 
 use clap::ValueEnum;
@@ -38,6 +39,7 @@ pub fn print_vs_plugins() {
 pub enum SourcePlugin {
     Lsmash,
     Bestsource,
+    Ffms2,
 }
 
 impl SourcePlugin {
@@ -45,6 +47,7 @@ impl SourcePlugin {
         match self {
             SourcePlugin::Lsmash => "lsmash",
             SourcePlugin::Bestsource => "bestsource",
+            SourcePlugin::Ffms2 => "ffms2",
         }
     }
 }
@@ -54,9 +57,14 @@ pub fn lsmash(core: &Core) -> Result<Plugin> {
         .ok_or_eyre("Plugin [systems.innocent.lsmas] was not found")
 }
 
+pub fn ffms2(core: &Core) -> Result<Plugin> {
+    core.get_plugin_by_id(&"com.vapoursynth.ffms2".to_cstring())
+        .ok_or_eyre("Plugin [com.vapoursynth.ffms2] was not found")
+}
+
 pub fn bestsource(core: &Core) -> Result<Plugin> {
     core.get_plugin_by_id(&"com.vapoursynth.bestsource".to_cstring())
-        .ok_or_eyre("Plugin [systems.innocent.lsmas] was not found")
+        .ok_or_eyre("Plugin [com.vapoursynth.bestsource] was not found")
 }
 
 pub fn vszip(core: &Core) -> Result<Plugin> {
@@ -116,6 +124,65 @@ pub fn lsmash_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoN
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
             "lsmash LWLibavSource failed: {}",
+            err.to_string_lossy()
+        ));
+    }
+
+    Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
+}
+
+pub fn ffms2_invoke(core: &Core, path: &Path, temp_dir: &Path) -> Result<VideoNode> {
+    let ffms2 = ffms2(core)?;
+    let mut args = Map::default();
+
+    let path = absolute(path)?;
+    let temp_dir = absolute(temp_dir)?;
+
+    // Build index path: same filename but .ffindex
+    let cache_path = temp_dir.join(
+        path.file_name()
+            .ok_or_eyre("Input path has no filename")?
+            .to_str()
+            .ok_or_eyre("Filename not UTF-8")?,
+    );
+    let cache_path = add_extension("ffindex", cache_path);
+
+    // If index doesn’t exist, run ffmsindex
+    if !cache_path.exists() {
+        let status = Command::new("ffmsindex")
+            .arg("-f")
+            .arg("-p")
+            .arg(&path)
+            .arg(&cache_path)
+            .stdout(Stdio::null())
+            .status()?;
+
+        if !status.success() {
+            return Err(eyre::eyre!(
+                "ffmsindex failed to create index for {}",
+                path.display()
+            ));
+        }
+    }
+
+    // Set VapourSynth args
+    args.set(
+        KeyStr::from_cstr(&"source".to_cstring()),
+        Value::Utf8(path.to_str().unwrap()),
+        Replace,
+    )?;
+
+    args.set(
+        KeyStr::from_cstr(&"cachefile".to_cstring()),
+        Value::Utf8(cache_path.to_str().unwrap()),
+        Replace,
+    )?;
+
+    // Call plugin
+    let func = ffms2.invoke(&"Source".to_cstring(), args);
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "FFMS2 Source failed: {}",
             err.to_string_lossy()
         ));
     }
@@ -642,6 +709,7 @@ pub fn get_dimensions(
     let reference = match importer_plugin {
         SourcePlugin::Lsmash => lsmash_invoke(core, input, temp_dir)?,
         SourcePlugin::Bestsource => bestsource_invoke(core, input, temp_dir)?,
+        SourcePlugin::Ffms2 => ffms2_invoke(core, input, temp_dir)?,
     };
 
     let info = reference.info();
@@ -661,6 +729,7 @@ pub fn get_number_of_frames(
     let reference = match importer_plugin {
         SourcePlugin::Lsmash => lsmash_invoke(core, input, temp_dir)?,
         SourcePlugin::Bestsource => bestsource_invoke(core, input, temp_dir)?,
+        SourcePlugin::Ffms2 => ffms2_invoke(core, input, temp_dir)?,
     };
 
     let info = reference.info();
@@ -741,6 +810,7 @@ pub fn prepare_clip(
     let mut input = match importer_plugin {
         SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_folder)?,
         SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_folder)?,
+        SourcePlugin::Ffms2 => ffms2_invoke(core, input_path, temp_folder)?,
     };
 
     if verbose {
@@ -827,6 +897,7 @@ pub fn seconds_to_frames(
     let src = match importer_plugin {
         SourcePlugin::Lsmash => lsmash_invoke(core, input_path, temp_dir)?,
         SourcePlugin::Bestsource => bestsource_invoke(core, input_path, temp_dir)?,
+        SourcePlugin::Ffms2 => ffms2_invoke(core, input_path, temp_dir)?,
     };
     let video_info = src.info();
     Ok(((seconds * video_info.fps_num as f64) / video_info.fps_den as f64).ceil() as u32)

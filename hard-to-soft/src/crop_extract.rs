@@ -27,9 +27,10 @@ pub fn create_crops_vpy_file<'a>(
     let source = match source_plugin {
         SourcePlugin::Lsmash => "core.lsmas.LWLibavSource",
         SourcePlugin::Bestsource => "core.bs.VideoSource",
+        SourcePlugin::Ffms2 => "core.ffms2.Source",
     };
 
-    let cache_path = temp_folder.join(
+    let mut cache_path = temp_folder.join(
         input
             .file_name()
             .ok_or_eyre("Input path has no filename")?
@@ -37,17 +38,41 @@ pub fn create_crops_vpy_file<'a>(
             .ok_or_eyre("Filename not UTF-8")?,
     );
 
-    let cache_path = match source_plugin {
+    cache_path = match source_plugin {
         SourcePlugin::Lsmash => add_extension("lwi", cache_path),
+        SourcePlugin::Ffms2 => add_extension("ffindex", cache_path),
         SourcePlugin::Bestsource => cache_path,
     };
 
-    let cache_path = absolute(cache_path)?;
-
+    // Ensure the path is absolute
+    cache_path = absolute(cache_path)?;
     let cache_str = cache_path.to_str().ok_or_eyre("Filename not UTF-8")?;
+
+    // FFMS2: auto-generate index if it doesn’t exist
+    if let SourcePlugin::Ffms2 = source_plugin
+        && !cache_path.exists()
+    {
+        let status = std::process::Command::new("ffmsindex")
+            .arg("-f")
+            .arg("-p")
+            .arg(&input)
+            .arg(&cache_path)
+            .stdout(Stdio::null())
+            .status()?;
+
+        if !status.success() {
+            return Err(eyre::eyre!(
+                "ffmsindex failed to create index for {}",
+                input.display()
+            ));
+        }
+    }
+
+    // Build plugin arguments
     let cache = match source_plugin {
-        SourcePlugin::Lsmash => format!("cachefile=\"{cache_str}\"",),
+        SourcePlugin::Lsmash => format!("cachefile=\"{cache_str}\""),
         SourcePlugin::Bestsource => format!("cachepath=\"{cache_str}\", cachemode=4"),
+        SourcePlugin::Ffms2 => format!("cachefile=\"{cache_str}\""),
     };
 
     let crop_str = format!(
