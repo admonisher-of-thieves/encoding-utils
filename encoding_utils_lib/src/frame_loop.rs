@@ -296,7 +296,7 @@ pub fn run_frame_loop<'a>(
             println!("\nUpdated data:");
             scene_list.print_updated_data(percentile, *crf);
         }
-        if verbose || verbose_verbose {
+        if verbose_verbose || verbose_verbose_verbose {
             scene_list.print_stats()?;
         }
 
