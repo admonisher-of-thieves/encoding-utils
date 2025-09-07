@@ -807,19 +807,21 @@ impl SceneList {
 
     /// Prints a summary of all scenes including index, CRF, frame range, and mean score
     pub fn print_updated_data(&self, percentile: u8, crf: f64) {
+        println!();
         for (i, scene) in self.split_scenes.iter().enumerate() {
             let percentile_score = math::percentile(&scene.frame_scores, percentile);
             let min = math::min_score(&scene.frame_scores);
             if scene.crf < crf {
                 println!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2} ...updated crf",
+                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2} ...new crf: {}",
                     i,
-                    scene.crf,
+                    crf,
                     scene.start_frame,
                     scene.end_frame,
                     percentile,
                     percentile_score,
-                    min
+                    min,
+                    scene.crf
                 );
             } else {
                 println!(

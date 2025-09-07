@@ -293,7 +293,6 @@ pub fn run_frame_loop<'a>(
         scene_list.sync_crf_by_index(&scene_list_frames);
 
         if verbose || verbose_verbose || verbose_verbose_verbose {
-            println!("\nUpdated data:");
             scene_list.print_updated_data(percentile, *crf);
         }
         if verbose_verbose || verbose_verbose_verbose {
