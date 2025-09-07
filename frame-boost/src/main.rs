@@ -36,11 +36,11 @@ struct Args {
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 77.0)]
+    #[arg(short = 'q', long, default_value_t = 77.5)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
-    #[arg(long = "min-q", default_value_t = 74.0)]
+    #[arg(long = "min-q", default_value_t = 75.0)]
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
@@ -63,7 +63,7 @@ struct Args {
     n_frames: Option<u32>,
 
     /// Number of seconds to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 's', long = "s-frames", default_value_t = 0.5)]
+    #[arg(short = 's', long = "s-frames", default_value_t = 1.0)]
     s_frames: f64,
 
     /// XML Chapters file. Used for zoning.
@@ -75,7 +75,7 @@ struct Args {
    chapters_zoning: String,
 
     /// Workers to use when encoding
-    #[arg(short = 'w', long, default_value_t = 4, value_parser = clap::value_parser!(u32).range(1..))]
+    #[arg(short = 'w', long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..))]
     workers: u32,
 
     /// How the frames are distributed when encoding

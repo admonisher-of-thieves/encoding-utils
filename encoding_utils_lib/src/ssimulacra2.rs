@@ -145,7 +145,7 @@ pub fn ssimu2_frames_selected(
         .iter_mut()
         .enumerate()
         .try_for_each(|(scene_index, scene)| {
-            let updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
+            let mut updated_scores: Vec<FrameScore> = (scene.start_frame..scene.end_frame)
                 .par_bridge()
                 .map(|frame_index| {
                     // Get the FrameScore for this position
@@ -182,6 +182,8 @@ pub fn ssimu2_frames_selected(
                     })
                 })
                 .collect::<Result<_>>()?;
+
+            updated_scores.sort_by_key(|fs| fs.frame);
             scene.frame_scores = updated_scores;
             Ok(())
         })?;
