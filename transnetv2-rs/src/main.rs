@@ -72,7 +72,7 @@ struct Args {
     merge_gap_between_fades: u32,
 
     /// Skip GPU acceleration
-    #[arg(long, action = ArgAction::SetTrue, default_value_t = true)]
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
     cpu: bool,
 
     /// Temp folder (default: "[Temp]_<input>" if no temp folder given)

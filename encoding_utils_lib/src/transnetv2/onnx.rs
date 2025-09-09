@@ -78,10 +78,18 @@ impl TransNetSession {
 
     pub fn preferred_execution_providers() -> Vec<ExecutionProviderDispatch> {
         let mut providers = Vec::new();
+        // println!("USING PROVIDERS");
 
         #[cfg(target_os = "macos")]
         {
-            providers.push(CoreMLExecutionProvider::default().build());
+            // use ort::execution_providers::coreml::{CoreMLComputeUnits, CoreMLModelFormat};
+
+            providers.push(
+                CoreMLExecutionProvider::default()
+                    // .with_compute_units(CoreMLComputeUnits::CPUAndNeuralEngine)
+                    // .with_model_format(CoreMLModelFormat::MLProgram)
+                    .build(),
+            );
         }
 
         #[cfg(windows)]
