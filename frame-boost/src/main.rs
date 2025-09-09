@@ -234,6 +234,10 @@ struct Args {
         default_value_t = false,
     )]
     hardcut_scenes: bool,
+
+    /// Skip GPU acceleration
+    #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
+    cpu: bool,
 }
 
 fn main() -> Result<()> {
@@ -327,6 +331,7 @@ fn main() -> Result<()> {
         args.scene_predictions,
         args.target_percentile,
         args.hardcut_scenes,
+        args.cpu,
     )?;
 
     Ok(())

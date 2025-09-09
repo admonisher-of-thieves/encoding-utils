@@ -57,6 +57,7 @@ pub fn run_frame_loop<'a>(
     scene_predictions: bool,
     percentile: u8,
     hardcut_scenes: bool,
+    cpu: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning frame-boost");
     let core = Core::builder().build();
@@ -116,7 +117,7 @@ pub fn run_frame_loop<'a>(
                     &core,
                     input,
                     None,
-                    false,
+                    cpu,
                     *importer_scene,
                     &indexes_folder,
                     verbose_verbose_verbose,
