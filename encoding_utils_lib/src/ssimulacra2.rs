@@ -30,7 +30,7 @@ pub fn prepare_clips(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
     trim: Option<Trim>,
 ) -> Result<(VideoNode, VideoNode)> {
@@ -68,8 +68,8 @@ pub fn prepare_clips(
         reference = to_crop(core, &reference, crop_str)?;
     }
 
-    if downscale {
-        reference = downscale_resolution(core, &reference)?;
+    if downscale < 1.0 {
+        reference = downscale_resolution(core, &reference, downscale)?;
         reference = set_output(core, &reference, color_metadata)?;
     }
 
@@ -99,7 +99,7 @@ pub fn ssimu2_frames_selected(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
 ) -> Result<()> {
     let (reference, distorted) = prepare_clips(
@@ -205,7 +205,7 @@ pub fn ssimu2(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
 ) -> Result<ScoreList> {
     let (reference_node, distorted_node) = prepare_clips(

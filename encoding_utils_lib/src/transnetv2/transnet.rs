@@ -41,7 +41,7 @@ pub fn run_transnetv2(
         verbose,
         color_metadata,
         crop,
-        false,
+        1.0,
         detelecine,
     )?;
 

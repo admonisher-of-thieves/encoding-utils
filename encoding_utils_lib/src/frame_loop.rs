@@ -36,7 +36,7 @@ pub fn run_frame_loop<'a>(
     importer_scene: &SourcePlugin,
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
     clean: bool,
     verbose: bool,

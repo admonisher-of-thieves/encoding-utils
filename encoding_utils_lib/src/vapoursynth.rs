@@ -535,7 +535,11 @@ pub fn to_crop(core: &Core, reference: &VideoNode, crop: &str) -> Result<VideoNo
     Ok(func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?)
 }
 
-pub fn downscale_resolution(core: &Core, reference: &VideoNode) -> Result<VideoNode> {
+pub fn downscale_resolution(
+    core: &Core,
+    reference: &VideoNode,
+    downscale: f64,
+) -> Result<VideoNode> {
     use vapoursynth4_rs::{
         ffi::VSMapAppendMode::Replace,
         map::{KeyStr, Map, Value},
@@ -590,7 +594,7 @@ pub fn downscale_resolution(core: &Core, reference: &VideoNode) -> Result<VideoN
     )?;
     fmt_args.set(
         KeyStr::from_cstr(&"scale".to_cstring()),
-        Value::Float(0.5),
+        Value::Float(downscale),
         Replace,
     )?;
 
@@ -804,7 +808,7 @@ pub fn prepare_clip(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
 ) -> Result<VideoNode> {
     let mut input = match importer_plugin {
@@ -823,8 +827,8 @@ pub fn prepare_clip(
         input = inverse_telecine(core, &input)?;
     }
 
-    if downscale {
-        input = downscale_resolution(core, &input)?;
+    if downscale < 1.0 {
+        input = downscale_resolution(core, &input, downscale)?;
         input = set_output(core, &input, color_metadata)?;
     }
 

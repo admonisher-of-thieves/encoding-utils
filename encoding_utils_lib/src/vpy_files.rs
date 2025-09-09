@@ -16,7 +16,7 @@ pub fn create_vpy_file<'a>(
     scene_list: Option<&SceneList>,
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
-    downscale: bool,
+    downscale: f64,
     detelecine: bool,
     encoder_params: &str,
     temp_folder: &'a Path,
@@ -156,13 +156,13 @@ src = core.std.CropAbs(
         String::new()
     };
 
-    let downscale_section = if downscale {
+    let downscale_section = if downscale < 1.0 {
         format!(
             r#"
 rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
 if (rgb.height / 2) % 2 != 0:
     rgb = core.std.Crop(rgb, top=1, bottom=1)
-downscaled = core.fmtc.resample(rgb, kernel="box", scale=0.5)
+downscaled = core.fmtc.resample(rgb, kernel="box", scale={downscale})
 
 src = core.resize.Bicubic(
     downscaled,
@@ -179,7 +179,8 @@ src = core.resize.Bicubic(
             transfer = color_metadata.transfer,
             primaries = color_metadata.primaries,
             range = color_metadata.range,
-            chromaloc = color_metadata.chromaloc
+            chromaloc = color_metadata.chromaloc,
+            downscale = downscale,
         )
     } else {
         format!(

@@ -128,14 +128,12 @@ struct Args {
     #[arg(short, long)]
     crop: Option<String>,
 
-    /// Downscale, using Box Kernel 0.5
+    /// Downscale, using Box Kernel
     #[arg(
         long, 
-        default_value_t = false,
-        action = ArgAction::Set,
-        value_parser = clap::value_parser!(bool)
+        default_value_t = 1.0
     )]
-    downscale: bool,
+    downscale: f64,
 
     /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
