@@ -887,8 +887,8 @@ impl SceneList {
             // Find matching chapter for this scene
             for zone_chapter in &zone_chapters.chapters {
                 // Check if the scene falls within the chapter range
-                if scene.start_frame <= zone_chapter.end
-                    && scene.end_frame >= zone_chapter.start
+                if scene.start_frame >= zone_chapter.start
+                    && scene.end_frame <= zone_chapter.end
                     && !zone_chapter.crf.is_nan()
                 {
                     scene.update_crf(zone_chapter.crf);
