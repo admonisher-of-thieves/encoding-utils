@@ -31,16 +31,16 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 2 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 8 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 4 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 8 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 77.5)]
+    #[arg(short = 'q', long, default_value_t = 78.0)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
-    #[arg(long = "min-q", default_value_t = 75.0)]
+    #[arg(long = "min-q", default_value_t = 76.0)]
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
@@ -55,7 +55,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "35,30,27,24,21,18",
+        default_value = "30,27,24,21",
     )]
     crf: String,
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
@@ -63,7 +63,7 @@ struct Args {
     n_frames: Option<u32>,
 
     /// Number of seconds to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
-    #[arg(short = 's', long = "s-frames", default_value_t = 1.0)]
+    #[arg(short = 's', long = "s-frames", default_value_t = 0.5)]
     s_frames: f64,
 
     /// XML Chapters file. Used for zoning.
@@ -83,7 +83,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 7, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 8, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
