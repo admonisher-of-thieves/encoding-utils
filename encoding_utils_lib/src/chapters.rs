@@ -112,7 +112,7 @@ pub struct ZoneChapter {
 
 impl fmt::Display for ZoneChapters {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "ZoneChapters ({} total):", self.chapters.len())?;
+        writeln!(f, "\nZoneChapters ({} total):", self.chapters.len())?;
 
         if self.chapters.is_empty() {
             return Ok(());
