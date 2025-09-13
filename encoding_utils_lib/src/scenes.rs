@@ -905,8 +905,7 @@ impl SceneList {
                 let overlap_len = overlap_end - overlap_start;
 
                 // Check if overlap covers at least 80% of scene
-                if (overlap_len as f32) / (scene_len as f32) >= 0.8 && scene.crf > zone_chapter.crf
-                {
+                if (overlap_len as f32) / (scene_len as f32) >= 0.8 {
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;
                     break; // Stop checking once we find a matching chapter
