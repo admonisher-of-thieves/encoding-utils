@@ -36,11 +36,11 @@ struct Args {
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 78.0)]
+    #[arg(short = 'q', long, default_value_t = 77.0)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
-    #[arg(long = "min-q", default_value_t = 76.0)]
+    #[arg(long = "min-q", default_value_t = 75.0)]
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
