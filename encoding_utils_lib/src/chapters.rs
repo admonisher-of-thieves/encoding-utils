@@ -184,6 +184,13 @@ impl ZoneChapters {
                 info.num_frames.try_into().unwrap()
             };
 
+            if end_frame < start_frame {
+                panic!(
+                    "Invalid chapter '{}': end_frame ({}) is smaller than start_frame ({})",
+                    current_chapter.display.string, end_frame, start_frame
+                );
+            }
+
             zone_chapters.push(ZoneChapter {
                 name: current_chapter.display.string.clone(),
                 start: start_frame,
@@ -226,24 +233,34 @@ impl ZoneChapters {
     /// Converts a time string in format "HH:MM:SS.FFFFFFFFF" to frame number
     fn time_to_frame(time_str: &str, fps: f64) -> u32 {
         let parts: Vec<&str> = time_str.split(':').collect();
-        if parts.len() != 3 {
-            return 0;
-        }
+        assert!(
+            parts.len() == 3,
+            "Invalid timestamp '{}': must be in format HH:MM:SS.FFFFFFFFF",
+            time_str
+        );
 
-        let hours: f64 = parts[0].parse().unwrap_or(0.0);
-        let minutes: f64 = parts[1].parse().unwrap_or(0.0);
+        let hours: f64 = parts[0].parse().expect("Invalid hours field");
+        let minutes: f64 = parts[1].parse().expect("Invalid minutes field");
+
         let seconds_parts: Vec<&str> = parts[2].split('.').collect();
+        assert!(
+            !seconds_parts.is_empty(),
+            "Invalid seconds field in timestamp '{}'",
+            time_str
+        );
 
-        let seconds: f64 = seconds_parts[0].parse().unwrap_or(0.0);
+        let seconds: f64 = seconds_parts[0].parse().expect("Invalid seconds value");
         let nanoseconds: f64 = if seconds_parts.len() > 1 {
-            // Handle up to 9 decimal places (nanoseconds)
             let frac_str = seconds_parts[1];
             let padded_frac = if frac_str.len() > 9 {
                 &frac_str[..9]
             } else {
                 frac_str
             };
-            padded_frac.parse::<f64>().unwrap_or(0.0) / 1_000_000_000.0
+            padded_frac
+                .parse::<f64>()
+                .expect("Invalid fractional seconds")
+                / 1_000_000_000.0
         } else {
             0.0
         };
