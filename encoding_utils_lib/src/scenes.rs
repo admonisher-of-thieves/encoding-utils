@@ -586,6 +586,16 @@ impl SceneList {
             scene.update_crf(new_crf);
         }
     }
+
+    /// Update CRF only if scene is not already zoned
+    pub fn update_crf_if_unzoned(&mut self, new_crf: f64) {
+        for scene in &mut self.split_scenes {
+            if !scene.zoned {
+                scene.update_crf(new_crf);
+            }
+        }
+    }
+
     pub fn filter_by_frame_score(
         &mut self,
         target_quality: f64,
@@ -905,7 +915,8 @@ impl SceneList {
                 let overlap_len = overlap_end - overlap_start;
 
                 // Check if overlap covers at least 80% of scene
-                if (overlap_len as f32) / (scene_len as f32) >= 0.8 {
+                if (overlap_len as f32) / (scene_len as f32) >= 0.8 && scene.crf > zone_chapter.crf
+                {
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;
                     break; // Stop checking once we find a matching chapter

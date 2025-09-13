@@ -181,6 +181,7 @@ pub fn run_frame_loop<'a>(
 
     let mut scene_list_frames = scene_list.clone();
     scene_list_frames.with_zone_overrides(&temp_av1an_params, &temp_encoder_params);
+    scene_list_frames.update_crf(f64::MAX);
 
     // Zoning Chapters
     if !crf_chapters.is_empty()
@@ -205,6 +206,7 @@ pub fn run_frame_loop<'a>(
         scene_list_frames.apply_zone_chapters(&zone_chapters);
         scene_list.sync_crf_by_index(&scene_list_frames);
     }
+    scene_list_frames.update_crf_if_unzoned(*first_crf);
 
     let n_frames = match n_frames {
         Some(n_frames) => n_frames,
