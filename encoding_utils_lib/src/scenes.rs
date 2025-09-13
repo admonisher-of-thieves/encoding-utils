@@ -881,19 +881,35 @@ impl SceneList {
         Ok(())
     }
 
-    /// Applies CRF values from ZoneChapters to scenes that fall within chapter ranges
+    /// Applies CRF values from ZoneChapters to scenes that fall mostly (≥80%) within chapter ranges
     pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters) {
         for scene in &mut self.split_scenes {
-            // Find matching chapter for this scene
+            let scene_len = scene.end_frame - scene.start_frame;
+            if scene_len == 0 {
+                continue; // skip zero-length scenes
+            }
+
             for zone_chapter in &zone_chapters.chapters {
-                // Check if the scene falls within the chapter range
-                if scene.start_frame >= zone_chapter.start
-                    && scene.end_frame <= zone_chapter.end
-                    && !zone_chapter.crf.is_nan()
+                if zone_chapter.crf.is_nan() {
+                    continue;
+                }
+
+                // Calculate overlap between scene and chapter
+                let overlap_start = scene.start_frame.max(zone_chapter.start);
+                let overlap_end = scene.end_frame.min(zone_chapter.end);
+
+                if overlap_end <= overlap_start {
+                    continue; // no overlap
+                }
+
+                let overlap_len = overlap_end - overlap_start;
+
+                // Check if overlap covers at least 80% of scene
+                if (overlap_len as f32) / (scene_len as f32) >= 0.8 && scene.crf > zone_chapter.crf
                 {
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;
-                    break; // Stop checking other chapters once we find a match
+                    break; // Stop checking once we find a matching chapter
                 }
             }
         }
