@@ -892,7 +892,7 @@ impl SceneList {
     }
 
     /// Applies CRF values from ZoneChapters to scenes that fall mostly (≥80%) within chapter ranges
-    pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters) {
+    pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters, overlap_percentage: f64) {
         for scene in &mut self.split_scenes {
             let scene_len = scene.end_frame - scene.start_frame;
             if scene_len == 0 {
@@ -915,7 +915,8 @@ impl SceneList {
                 let overlap_len = overlap_end - overlap_start;
 
                 // Check if overlap covers at least 80% of scene
-                if (overlap_len as f32) / (scene_len as f32) >= 0.8 && scene.crf > zone_chapter.crf
+                if (overlap_len as f64) / (scene_len as f64) >= overlap_percentage
+                    && scene.crf > zone_chapter.crf
                 {
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;

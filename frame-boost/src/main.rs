@@ -74,6 +74,14 @@ struct Args {
     #[arg(short = 'z', long = "chapters-zoning", default_value = "")]
    chapters_zoning: String,
 
+    /// Percentage of overlap between the scene and chapter to be included for zoning.
+    /// 0.4 means that if 40% overlap is inside the scene, then the scene should be including for zoning.
+    #[arg(
+        long, 
+        default_value_t = 0.4,
+    )]
+    overlap_chapters: f64,
+
     /// Workers to use when encoding
     #[arg(short = 'w', long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..))]
     workers: u32,
@@ -304,6 +312,7 @@ fn main() -> Result<()> {
         args.filter_frames,
         args.chapters.as_deref(),
         args.chapters_zoning,
+        args.overlap_chapters,
         args.workers,
         &args.source_metric_plugin,
         &args.source_encoding_plugin,
