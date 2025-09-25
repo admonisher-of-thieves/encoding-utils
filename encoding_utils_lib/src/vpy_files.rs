@@ -4,7 +4,7 @@ use std::{
     process::Stdio,
 };
 
-use crate::vapoursynth::add_extension;
+use crate::vapoursynth::{add_extension, parse_resolution};
 use crate::{scenes::SceneList, vapoursynth::SourcePlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
@@ -17,6 +17,7 @@ pub fn create_vpy_file<'a>(
     source_plugin: &'a SourcePlugin,
     crop: Option<&str>,
     downscale: f64,
+    resize: Option<&str>,
     detelecine: bool,
     encoder_params: &str,
     temp_folder: &'a Path,
@@ -183,6 +184,41 @@ src = core.resize.Bicubic(
             downscale = downscale,
         )
     } else {
+        String::new()
+    };
+
+    let resize_section = if let Some(resize) = resize.filter(|s| !s.is_empty()) {
+        let (width, height) = parse_resolution(resize)?;
+        format!(
+            r#"
+rgb = core.resize.Bicubic(src, transfer_s="linear", format=vs.RGBS)
+downscaled = core.resize.Bicubic(clip=src, width={width}, height={height}, filter_param_a=0, filter_param_b=0)
+
+src = core.resize.Bicubic(
+    downscaled,
+    format=vs.YUV420P10,
+    matrix={matrix},
+    transfer={transfer},
+    primaries={primaries},
+    range={range},
+    chromaloc={chromaloc},
+    dither_type="error_diffusion"
+)
+"#,
+            matrix = color_metadata.matrix,
+            transfer = color_metadata.transfer,
+            primaries = color_metadata.primaries,
+            range = color_metadata.range,
+            chromaloc = color_metadata.chromaloc,
+            width = width,
+            height = height,
+        )
+    } else {
+        String::new()
+    };
+
+    let out_section = if downscale > 1.0 || resize.is_none() || resize.is_some_and(|s| s.is_empty())
+    {
         format!(
             r#"
 src = core.resize.Bicubic(
@@ -201,10 +237,12 @@ src = core.resize.Bicubic(
             range = color_metadata.range,
             chromaloc = color_metadata.chromaloc
         )
+    } else {
+        String::new()
     };
 
     let vpy_script = format!(
-        "{header}\n{color_metadata_section}\n{detelecine_section}\n{frame_selection_section}\n{crop}\n{downscale_section}\nsrc.set_output()\n",
+        "{header}\n{color_metadata_section}\n{detelecine_section}\n{frame_selection_section}\n{crop}\n{downscale_section}\n{resize_section}\n{out_section}\nsrc.set_output()\n",
     );
 
     fs::write(vpy_file, vpy_script)?;

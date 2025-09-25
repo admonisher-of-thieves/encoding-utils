@@ -3,8 +3,8 @@ use crate::{
     scenes::SceneList,
     vapoursynth::{
         SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, ffms2_invoke,
-        inverse_telecine, lsmash_invoke, select_frames, set_color_metadata, set_output,
-        synchronize_clips, to_crop, vszip_metrics,
+        inverse_telecine, lsmash_invoke, resize_resolution, select_frames, set_color_metadata,
+        set_output, synchronize_clips, to_crop, vszip_metrics,
     },
 };
 
@@ -31,6 +31,7 @@ pub fn prepare_clips(
     color_metadata: &str,
     crop: Option<&str>,
     downscale: f64,
+    resize: Option<&str>,
     detelecine: bool,
     trim: Option<Trim>,
 ) -> Result<(VideoNode, VideoNode)> {
@@ -73,6 +74,11 @@ pub fn prepare_clips(
         reference = set_output(core, &reference, color_metadata)?;
     }
 
+    if let Some(resize) = resize.filter(|s| !s.is_empty()) {
+        reference = resize_resolution(core, &reference, resize)?;
+        reference = set_output(core, &reference, color_metadata)?;
+    }
+
     if let Some(trim) = trim {
         (reference, distorted) = synchronize_clips(core, &reference, &distorted, &trim)?;
     }
@@ -100,6 +106,7 @@ pub fn ssimu2_frames_selected(
     color_metadata: &str,
     crop: Option<&str>,
     downscale: f64,
+    resize: Option<&str>,
     detelecine: bool,
 ) -> Result<()> {
     let (reference, distorted) = prepare_clips(
@@ -112,6 +119,7 @@ pub fn ssimu2_frames_selected(
         color_metadata,
         crop,
         downscale,
+        resize,
         detelecine,
         None,
     )?;
@@ -206,6 +214,7 @@ pub fn ssimu2(
     color_metadata: &str,
     crop: Option<&str>,
     downscale: f64,
+    resize: Option<&str>,
     detelecine: bool,
 ) -> Result<ScoreList> {
     let (reference_node, distorted_node) = prepare_clips(
@@ -218,6 +227,7 @@ pub fn ssimu2(
         color_metadata,
         crop,
         downscale,
+        resize,
         detelecine,
         trim,
     )?;

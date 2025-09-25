@@ -540,11 +540,6 @@ pub fn downscale_resolution(
     reference: &VideoNode,
     downscale: f64,
 ) -> Result<VideoNode> {
-    use vapoursynth4_rs::{
-        ffi::VSMapAppendMode::Replace,
-        map::{KeyStr, Map, Value},
-    };
-
     // Get plugin handles
     let fmtconv_plugin = fmtconv(core)?;
     let std_plugin = vs_std(core)?;
@@ -609,6 +604,78 @@ pub fn downscale_resolution(
     let box_clip = resampled.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
 
     Ok(box_clip)
+}
+
+pub fn resize_resolution(
+    core: &Core,
+    reference: &VideoNode,
+    resize_values: &str,
+) -> Result<VideoNode> {
+    // Get plugin handles
+    let resize = resize(core)?;
+
+    let working_clip = set_linear_rgb(core, reference)?;
+
+    let (width, height) = parse_resolution(resize_values)?;
+
+    // Box downscale (scale = 0.5)
+    let mut resize_args = Map::default();
+    resize_args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(working_clip.to_owned()),
+        Replace,
+    )?;
+    resize_args.set(
+        KeyStr::from_cstr(&"width".to_cstring()),
+        Value::Int(width.into()),
+        Replace,
+    )?;
+    resize_args.set(
+        KeyStr::from_cstr(&"height".to_cstring()),
+        Value::Int(height.into()),
+        Replace,
+    )?;
+    resize_args.set(
+        KeyStr::from_cstr(&"filter_param_a".to_cstring()),
+        Value::Float(0.0),
+        Replace,
+    )?;
+    resize_args.set(
+        KeyStr::from_cstr(&"filter_param_b".to_cstring()),
+        Value::Float(0.0),
+        Replace,
+    )?;
+
+    let resampled = resize.invoke(&"Bicubic".to_cstring(), resize_args);
+    if let Some(err) = resampled.get_error() {
+        return Err(eyre::eyre!(
+            "Resize Bicubic failed: {}",
+            err.to_string_lossy()
+        ));
+    }
+
+    let resize_clip = resampled.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+
+    Ok(resize_clip)
+}
+
+pub fn parse_resolution(res: &str) -> Result<(u32, u32)> {
+    let parts: Vec<&str> = res.split('x').collect();
+    if parts.len() != 2 {
+        return Err(eyre!(
+            "Invalid resolution format: expected 'WIDTHxHEIGHT', got '{}'",
+            res
+        ));
+    }
+
+    let width = parts[0]
+        .parse::<u32>()
+        .map_err(|e| eyre!("Invalid width '{}': {}", parts[0], e))?;
+    let height = parts[1]
+        .parse::<u32>()
+        .map_err(|e| eyre!("Invalid height '{}': {}", parts[1], e))?;
+
+    Ok((width, height))
 }
 
 #[derive(Debug, Clone)]

@@ -77,6 +77,10 @@ struct Args {
     )]
     downscale: f64,
 
+    /// Resize, using Hermite Kernel. Format WIDTHxHEIGHT. Example: 1920x1080. 
+    #[arg(long)]
+    resize: Option<String>,
+
     /// Removes telecine — A process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
         long, 
@@ -142,6 +146,7 @@ fn main() -> Result<()> {
             &args.color_metadata,
             args.crop.as_deref(),
             args.downscale,
+            args.resize.as_deref(),
             args.detelecine,
         )?;
 

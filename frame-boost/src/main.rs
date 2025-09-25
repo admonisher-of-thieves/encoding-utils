@@ -31,12 +31,12 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 4 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 8 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 6 --qp-scale-compress-strength 4.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 4 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 10 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 5 --qp-scale-compress-strength 1.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
     )]
     encoder_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 77.0)]
+    #[arg(short = 'q', long, default_value_t = 77.5)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
@@ -55,7 +55,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "30,27,24,21",
+        default_value = "30,27.5,25,22.5,20",
     )]
     crf: String,
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
@@ -75,7 +75,7 @@ struct Args {
    chapters_zoning: String,
 
     /// Percentage of overlap between the scene and chapter to be included for zoning.
-    /// 0.4 means that if 40% overlap is inside the scene, then the scene should be including for zoning.
+    /// 0.4 means that if 40% of the scene is overlapping the chapter, then the scene should be including for zoning.
     #[arg(
         long, 
         default_value_t = 0.4,
@@ -91,7 +91,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 8, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 6, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
@@ -142,6 +142,10 @@ struct Args {
         default_value_t = 1.0
     )]
     downscale: f64,
+
+    /// Resize, using Hermite Kernel. Format WIDTHxHEIGHT. Example: 1920x1080. 
+    #[arg(long)]
+    resize: Option<String>,
 
     /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
@@ -320,6 +324,7 @@ fn main() -> Result<()> {
         args.crf_data_file.as_deref(),
         args.crop.as_deref(),
         args.downscale,
+        args.resize.as_deref(),
         args.detelecine,
         !args.keep_files,
         args.verbose,

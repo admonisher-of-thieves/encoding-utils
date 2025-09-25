@@ -38,6 +38,7 @@ pub fn run_frame_loop<'a>(
     crf_data_file: Option<&'a Path>,
     crop: Option<&str>,
     downscale: f64,
+    resize: Option<&str>,
     detelecine: bool,
     clean: bool,
     verbose: bool,
@@ -102,6 +103,7 @@ pub fn run_frame_loop<'a>(
                     importer_scene,
                     crop,
                     downscale,
+                    resize,
                     detelecine,
                     encoder_params,
                     temp_folder,
@@ -240,6 +242,7 @@ pub fn run_frame_loop<'a>(
             importer_encoding,
             crop,
             downscale,
+            resize,
             detelecine,
             encoder_params,
             &indexes_folder,
@@ -272,6 +275,7 @@ pub fn run_frame_loop<'a>(
                 encoder_params,
                 crop,
                 downscale,
+                resize,
                 detelecine,
             )?;
             let metrics_cache = scene_list_frames.to_metrics_cache();
