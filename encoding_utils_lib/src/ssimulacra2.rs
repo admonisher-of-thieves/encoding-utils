@@ -2,9 +2,9 @@ use crate::{
     math::{self, FrameScore, ScoreList},
     scenes::SceneList,
     vapoursynth::{
-        SourcePlugin, ToCString, Trim, bestsource_invoke, downscale_resolution, ffms2_invoke,
-        inverse_telecine, lsmash_invoke, resize_resolution, select_frames, set_color_metadata,
-        set_output, synchronize_clips, to_crop, vszip_metrics,
+        SourcePlugin, ToCString, TrimComplex, bestsource_invoke, downscale_resolution,
+        ffms2_invoke, inverse_telecine, lsmash_invoke, resize_resolution, select_frames,
+        set_color_metadata, set_output, synchronize_clips, to_crop, trim_clip, vszip_metrics,
     },
 };
 
@@ -33,7 +33,8 @@ pub fn prepare_clips(
     downscale: f64,
     resize: Option<&str>,
     detelecine: bool,
-    trim: Option<Trim>,
+    trim: Option<&str>,
+    trim_complex: Option<TrimComplex>,
 ) -> Result<(VideoNode, VideoNode)> {
     let (mut reference, mut distorted) = match importer_plugin {
         SourcePlugin::Lsmash => (
@@ -65,6 +66,10 @@ pub fn prepare_clips(
         reference = inverse_telecine(core, &reference)?;
     }
 
+    if let Some(trim) = trim.filter(|s| !s.is_empty()) {
+        reference = trim_clip(core, &reference, trim)?;
+    }
+
     if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
         reference = to_crop(core, &reference, crop_str)?;
     }
@@ -79,7 +84,7 @@ pub fn prepare_clips(
         reference = set_output(core, &reference, color_metadata)?;
     }
 
-    if let Some(trim) = trim {
+    if let Some(trim) = trim_complex {
         (reference, distorted) = synchronize_clips(core, &reference, &distorted, &trim)?;
     }
 
@@ -108,6 +113,7 @@ pub fn ssimu2_frames_selected(
     downscale: f64,
     resize: Option<&str>,
     detelecine: bool,
+    trim: Option<&str>,
 ) -> Result<()> {
     let (reference, distorted) = prepare_clips(
         core,
@@ -121,6 +127,7 @@ pub fn ssimu2_frames_selected(
         downscale,
         resize,
         detelecine,
+        trim,
         None,
     )?;
 
@@ -208,7 +215,8 @@ pub fn ssimu2(
     distorted: &Path,
     step: usize,
     importer_plugin: SourcePlugin,
-    trim: Option<Trim>,
+    trim: Option<&str>,
+    trim_complex: Option<TrimComplex>,
     temp_dir: &Path,
     verbose: bool,
     color_metadata: &str,
@@ -230,6 +238,7 @@ pub fn ssimu2(
         resize,
         detelecine,
         trim,
+        trim_complex,
     )?;
 
     let ssimu2 = vszip_metrics(core, &reference_node, &distorted_node)?;

@@ -678,6 +678,25 @@ pub fn parse_resolution(res: &str) -> Result<(u32, u32)> {
     Ok((width, height))
 }
 
+pub fn parse_trim(res: &str) -> Result<(i32, i32)> {
+    let parts: Vec<&str> = res.split(':').collect();
+    if parts.len() != 2 {
+        return Err(eyre!(
+            "Invalid trim format: expected 'START:END', got '{}'",
+            res
+        ));
+    }
+
+    let start = parts[0]
+        .parse::<i32>()
+        .map_err(|e| eyre!("Invalid start '{}': {}", parts[0], e))?;
+    let end = parts[1]
+        .parse::<i32>()
+        .map_err(|e| eyre!("Invalid end '{}': {}", parts[1], e))?;
+
+    Ok((start, end))
+}
+
 #[derive(Debug, Clone)]
 pub enum ClipTarget {
     Reference,
@@ -685,13 +704,13 @@ pub enum ClipTarget {
 }
 
 #[derive(Debug, Clone)]
-pub struct Trim {
+pub struct TrimComplex {
     pub first: usize,
     pub last: usize,
     pub clip_target: ClipTarget,
 }
 
-impl FromStr for Trim {
+impl FromStr for TrimComplex {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -713,7 +732,7 @@ impl FromStr for Trim {
             other => return Err(format!("Invalid clip target: '{other}'")),
         };
 
-        Ok(Trim {
+        Ok(TrimComplex {
             first,
             last,
             clip_target,
@@ -725,12 +744,12 @@ pub fn synchronize_clips(
     core: &Core,
     reference: &VideoNode,
     distorted: &VideoNode,
-    clip: &Trim,
+    trim: &TrimComplex,
 ) -> Result<(VideoNode, VideoNode)> {
     let std = vs_std(core)?;
 
     let mut args = Map::default();
-    let (target_clip, _, is_reference) = match clip.clip_target {
+    let (target_clip, _, is_reference) = match trim.clip_target {
         ClipTarget::Reference => (reference, distorted, true),
         ClipTarget::Distorted => (distorted, reference, false),
     };
@@ -742,12 +761,12 @@ pub fn synchronize_clips(
     )?;
     args.set(
         KeyStr::from_cstr(&"first".to_cstring()),
-        Value::Int(clip.first as i64),
+        Value::Int(trim.first as i64),
         Replace,
     )?;
     args.set(
         KeyStr::from_cstr(&"last".to_cstring()),
-        Value::Int(clip.last as i64),
+        Value::Int(trim.last as i64),
         Replace,
     )?;
 
@@ -755,8 +774,8 @@ pub fn synchronize_clips(
     if let Some(err) = func.get_error() {
         return Err(eyre::eyre!(
             "Failed to trim selected clip ({}–{}): {}",
-            clip.first,
-            clip.last,
+            trim.first,
+            trim.last,
             err.to_string_lossy()
         ));
     }
@@ -768,6 +787,47 @@ pub fn synchronize_clips(
     } else {
         Ok((reference.clone(), trimmed))
     }
+}
+
+pub fn trim_clip(core: &Core, input: &VideoNode, trim: &str) -> Result<VideoNode> {
+    let std = vs_std(core)?;
+
+    let mut args = Map::default();
+
+    let (start, mut end) = parse_trim(trim)?;
+    let info = input.info();
+    if end == -1 {
+        end = info.num_frames - 1;
+    }
+
+    args.set(
+        KeyStr::from_cstr(&"clip".to_cstring()),
+        Value::VideoNode(input.to_owned()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"first".to_cstring()),
+        Value::Int(start.into()),
+        Replace,
+    )?;
+    args.set(
+        KeyStr::from_cstr(&"last".to_cstring()),
+        Value::Int(end.into()),
+        Replace,
+    )?;
+
+    let func = std.invoke(&"Trim".to_cstring(), args);
+    if let Some(err) = func.get_error() {
+        return Err(eyre::eyre!(
+            "Failed to trim clip ({}~{}): {}",
+            start,
+            end,
+            err.to_string_lossy()
+        ));
+    }
+
+    let trimmed = func.get_video_node(KeyStr::from_cstr(&"clip".to_cstring()), 0)?;
+    Ok(trimmed)
 }
 
 pub fn get_dimensions(
@@ -875,6 +935,7 @@ pub fn prepare_clip(
     verbose: bool,
     color_metadata: &str,
     crop: Option<&str>,
+    trim: Option<&str>,
     downscale: f64,
     detelecine: bool,
 ) -> Result<VideoNode> {
@@ -892,6 +953,10 @@ pub fn prepare_clip(
 
     if detelecine {
         input = inverse_telecine(core, &input)?;
+    }
+
+    if let Some(trim) = trim.filter(|s| !s.is_empty()) {
+        input = trim_clip(core, &input, trim)?;
     }
 
     if downscale < 1.0 {

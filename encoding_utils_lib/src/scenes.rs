@@ -823,7 +823,7 @@ impl SceneList {
             let min = math::min_score(&scene.frame_scores);
             if scene.crf < crf {
                 println!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2} ...new crf: {}",
+                    "scene: {:4}, crf: {:3.2}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2} ...new crf: {}",
                     i,
                     crf,
                     scene.start_frame,
@@ -835,7 +835,7 @@ impl SceneList {
                 );
             } else {
                 println!(
-                    "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}",
+                    "scene: {:4}, crf: {:3.2}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}",
                     i,
                     scene.crf,
                     scene.start_frame,

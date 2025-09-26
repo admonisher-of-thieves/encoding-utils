@@ -147,6 +147,10 @@ struct Args {
     #[arg(long)]
     resize: Option<String>,
 
+    /// Trim source file. Format Start:End. Examples: 1261:5623, 0:2432, 2352:-1. 
+    #[arg(short, long)]
+    trim: Option<String>,
+
     /// Removes telecine — a process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
         long, 
@@ -325,6 +329,7 @@ fn main() -> Result<()> {
         args.crop.as_deref(),
         args.downscale,
         args.resize.as_deref(),
+        args.trim.as_deref(),
         args.detelecine,
         !args.keep_files,
         args.verbose,

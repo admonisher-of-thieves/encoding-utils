@@ -4,7 +4,7 @@ use std::{
     process::Stdio,
 };
 
-use crate::vapoursynth::{add_extension, parse_resolution};
+use crate::vapoursynth::{add_extension, parse_resolution, parse_trim};
 use crate::{scenes::SceneList, vapoursynth::SourcePlugin};
 use eyre::{OptionExt, Result, eyre};
 use std::str::FromStr;
@@ -18,6 +18,7 @@ pub fn create_vpy_file<'a>(
     crop: Option<&str>,
     downscale: f64,
     resize: Option<&str>,
+    trim: Option<&str>,
     detelecine: bool,
     encoder_params: &str,
     temp_folder: &'a Path,
@@ -137,6 +138,7 @@ src = core.vivtc.VDecimate(src)
 
     let crop = if let Some(crop_str) = crop.filter(|s| !s.is_empty()) {
         let params = CropParams::from_str(crop_str)?;
+
         format!(
             r#"
 # Apply cropping
@@ -153,6 +155,19 @@ src = core.std.CropAbs(
             left = params.left,
             top = params.top
         )
+    } else {
+        String::new()
+    };
+
+    let trim_section = if let Some(trim_str) = trim.filter(|s| !s.is_empty()) {
+        let (start, end) = parse_trim(trim_str)?;
+
+        match (start, end) {
+            (0, -1) => String::new(),
+            (start, -1) => format!("src = src[{start}:]", start = start),
+            (0, end) => format!("src = src[:{end}]", end = end),
+            (start, end) => format!("src = src[{start}:{end}]", start = start, end = end),
+        }
     } else {
         String::new()
     };
@@ -242,7 +257,7 @@ src = core.resize.Bicubic(
     };
 
     let vpy_script = format!(
-        "{header}\n{color_metadata_section}\n{detelecine_section}\n{frame_selection_section}\n{crop}\n{downscale_section}\n{resize_section}\n{out_section}\nsrc.set_output()\n",
+        "{header}\n{color_metadata_section}\n{detelecine_section}\n{trim_section}\n{frame_selection_section}\n{crop}\n{downscale_section}\n{resize_section}\n{out_section}\nsrc.set_output()\n",
     );
 
     fs::write(vpy_file, vpy_script)?;

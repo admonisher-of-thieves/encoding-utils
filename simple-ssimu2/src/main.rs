@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, Trim}
+use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, TrimComplex}
 };
 use eyre::{OptionExt, Result};
 use vapoursynth4_rs::core::Core;
@@ -39,8 +39,8 @@ struct Args {
 
     /// Trim to sync video: format is "first,last,clip"
     /// Example: "6,18,distorted" or "6,18,d"
-    #[arg(short, long)]
-    trim: Option<Trim>,
+    #[arg(long)]
+    trim_complex: Option<TrimComplex>,
 
     /// Allows you to use a distorted video composed of n frames. Needs scenes file
     #[arg(short = 'n', long = "middle-frames", default_value_t = 0)]
@@ -80,6 +80,10 @@ struct Args {
     /// Resize, using Hermite Kernel. Format WIDTHxHEIGHT. Example: 1920x1080. 
     #[arg(long)]
     resize: Option<String>,
+
+    /// Trim source file. Format Start:End. Examples: 1261:5623, 0:2432, 2352:-1. 
+    #[arg(short, long)]
+    trim: Option<String>,
 
     /// Removes telecine — A process used to convert 24fps film to 29.97fps video using a 3:2 pulldown pattern.
     #[arg(
@@ -140,7 +144,8 @@ fn main() -> Result<()> {
             &args.distorted,
             args.steps as usize,
             args.source_plugin,
-            args.trim,
+            args.trim.as_deref(),
+            args.trim_complex,
             &indexes_folder,
             args.verbose,
             &args.color_metadata,

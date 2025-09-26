@@ -39,6 +39,7 @@ pub fn run_frame_loop<'a>(
     crop: Option<&str>,
     downscale: f64,
     resize: Option<&str>,
+    trim: Option<&str>,
     detelecine: bool,
     clean: bool,
     verbose: bool,
@@ -104,6 +105,7 @@ pub fn run_frame_loop<'a>(
                     crop,
                     downscale,
                     resize,
+                    trim,
                     detelecine,
                     encoder_params,
                     temp_folder,
@@ -126,6 +128,7 @@ pub fn run_frame_loop<'a>(
                     verbose_verbose_verbose,
                     encoder_params,
                     crop,
+                    trim,
                     detelecine,
                     extra_split_seconds,
                     extra_split_frames,
@@ -197,6 +200,7 @@ pub fn run_frame_loop<'a>(
             verbose_verbose_verbose,
             encoder_params,
             crop,
+            trim,
             downscale,
             detelecine,
         )?;
@@ -243,6 +247,7 @@ pub fn run_frame_loop<'a>(
             crop,
             downscale,
             resize,
+            trim,
             detelecine,
             encoder_params,
             &indexes_folder,
@@ -277,6 +282,7 @@ pub fn run_frame_loop<'a>(
                 downscale,
                 resize,
                 detelecine,
+                trim,
             )?;
             let metrics_cache = scene_list_frames.to_metrics_cache();
             metrics_cache.write_metrics_cache(&metrics_cache_path)?;
