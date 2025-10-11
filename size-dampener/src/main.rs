@@ -68,6 +68,15 @@ struct Args {
     // Save a copy of the original data. "encode_backup" folder, "chunk_backup.json" and "done_backup.json"
     #[arg(short, long, action = ArgAction::SetTrue, default_value_t = true)]
     backup: bool,
+
+    /// Keep temporary files (disables automatic cleanup)
+    #[arg(
+        short = 'k', 
+        long = "keep-files",
+        action = ArgAction::SetTrue,
+        default_value_t = false,
+    )]
+    keep_files: bool,
 }
 
 fn main() -> Result<()> {
@@ -132,6 +141,7 @@ fn main() -> Result<()> {
         args.crf_data_file.as_deref(),
         &temp_folder,
         args.backup,
+        args.keep_files
     )?;
 
     Ok(())

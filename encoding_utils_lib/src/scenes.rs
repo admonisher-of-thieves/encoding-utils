@@ -659,7 +659,7 @@ impl SceneList {
         let percentages = self.calculate_crf_percentages();
 
         for (crf, pct) in percentages {
-            println!("CRF {crf}: {pct:.2}%");
+            println!("CRF {crf:.2}: {pct:.2}%");
         }
     }
 

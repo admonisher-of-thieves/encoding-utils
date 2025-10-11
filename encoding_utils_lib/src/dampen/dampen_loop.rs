@@ -25,9 +25,13 @@ pub fn dampen_loop<'a>(
     crf_data_file: Option<&'a Path>,
     temp_folder: &'a Path,
     backup: bool,
+    keep_files: bool,
 ) -> Result<&'a Path> {
     println!("\nRunning size-dampener\n");
     println!("Size Threshold: {:3.2}", size_threshold.display());
+
+    let size_folder = temp_folder.join("size_dampener");
+    fs::create_dir_all(&size_folder)?;
 
     // Initialize scene data
     let mut scene_list = SceneList::parse_scene_file(scene_boosted)?;
@@ -41,9 +45,9 @@ pub fn dampen_loop<'a>(
 
     if backup {
         // BackUp paths
-        let done_backup = temp_folder.join("done_backup.json");
-        let chunks_backup = temp_folder.join("chunks_backup.json");
-        let encode_backup = temp_folder.join("encode_backup");
+        let done_backup = size_folder.join("done_backup.json");
+        let chunks_backup = size_folder.join("chunks_backup.json");
+        let encode_backup = size_folder.join("encode_backup");
 
         // 1. Backup JSON files
         if done_path.exists() {
@@ -128,7 +132,7 @@ pub fn dampen_loop<'a>(
         chunk_list.write_chunks_to_file(&chunks_path)?;
 
         // Run encode
-        let encode_path = temp_folder.join(format!("encode_size_dampener_{}.mkv", iteration));
+        let encode_path = size_folder.join(format!("encode_size_dampener_{}.mkv", iteration));
         let input = if let Some(vel_input) = velocity_input {
             vel_input
         } else {
@@ -149,7 +153,9 @@ pub fn dampen_loop<'a>(
         chunk_list = ChunkList::parse_chunks_file(&chunks_path)?;
 
         // Cleanup and update for next iteration
-        fs::remove_file(&encode_path)?;
+        if !keep_files {
+            fs::remove_file(&encode_path)?;
+        }
         scene_sizes.update_sizes()?;
 
         scene_sizes.print_not_ready();
@@ -168,6 +174,7 @@ pub fn dampen_loop<'a>(
     done.write_done_to_file(&done_path)?;
     chunk_list.write_chunks_to_file(&chunks_path)?;
 
+    println!("\n\n=== FINAL ENCODE ===");
     // Final encode
     resume_encode(
         input,
@@ -405,7 +412,7 @@ impl SceneSizeList {
             if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
                 if !scene.ready {
                     println!(
-                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2} ...updated",
+                        "scene: {:4}, original_crf: {:.2} → new_crf: {:.2}, original_size: {:3.2} → new_size: {:3.2} ...updated",
                         scene.index,
                         scene.original_crf,
                         scene.new_crf,
@@ -414,7 +421,7 @@ impl SceneSizeList {
                     );
                 } else {
                     println!(
-                        "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
+                        "scene: {:4}, original_crf: {:.2} → new_crf: {:.2}, original_size: {:3.2} → new_size: {:3.2}",
                         scene.index,
                         scene.original_crf,
                         scene.new_crf,
@@ -443,7 +450,7 @@ impl SceneSizeList {
             // 2. The CRF changed (new_crf != original_crf)
             if scene.new_size != scene.original_size || scene.new_crf != scene.original_crf {
                 println!(
-                    "scene: {:4}, original_crf: {:2} → new_crf: {:2}, original_size: {:3.2} → new_size: {:3.2}",
+                    "scene: {:4}, original_crf: {:.2} → new_crf: {:.2}, original_size: {:3.2} → new_size: {:3.2}",
                     scene.index,
                     scene.original_crf,
                     scene.new_crf,
