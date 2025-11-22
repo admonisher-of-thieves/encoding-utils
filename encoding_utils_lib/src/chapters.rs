@@ -32,9 +32,9 @@ pub struct ChapterAtom {
     #[serde(rename = "ChapterTimeStart")]
     pub time_start: String,
     #[serde(rename = "ChapterFlagHidden")]
-    pub flag_hidden: u8,
+    pub flag_hidden: Option<u8>,
     #[serde(rename = "ChapterFlagEnabled")]
-    pub flag_enabled: u8,
+    pub flag_enabled: Option<u8>,
     #[serde(rename = "ChapterDisplay")]
     pub display: ChapterDisplay,
 }
@@ -69,7 +69,7 @@ impl fmt::Display for Chapters {
             writeln!(f, "      Start Time: {}", chapter.time_start)?;
             writeln!(
                 f,
-                "      Hidden: {}, Enabled: {}",
+                "      Hidden: {:?}, Enabled: {:?}",
                 chapter.flag_hidden, chapter.flag_enabled
             )?;
             writeln!(f, "      Title: {}", chapter.display.string)?;

@@ -711,7 +711,7 @@ impl SceneList {
                         math::percentile(&scene.frame_scores, percentile.unwrap());
                     let min = math::min_score(&scene.frame_scores);
                     output.push_str(&format!(
-                        "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}\n",
+                        "scene: {:4}, crf: {:3.2}, frame-range: {:6} {:6}, {} percentile: {:6.2}, min: {:6.2}\n",
                         i,
                         scene.crf,
                         scene.start_frame,
@@ -722,7 +722,7 @@ impl SceneList {
                     ));
                 } else {
                     output.push_str(&format!(
-                        "scene: {:4}, crf: {:3}, frame-range: {:6} {:6}\n",
+                        "scene: {:4}, crf: {:3.2}, frame-range: {:6} {:6}\n",
                         i, scene.crf, scene.start_frame, scene.end_frame,
                     ));
                 }
