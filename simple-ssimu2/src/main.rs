@@ -17,9 +17,9 @@ struct Args {
     #[arg(short, long)]
     distorted: PathBuf,
 
-    // /// JSON file containing scene information
-    // #[arg(short = 'S', long)]
-    // scenes: Option<PathBuf>,
+    /// JSON file containing scene information. Use for plot file.
+    #[arg(short = 'S', long)]
+    scenes: Option<PathBuf>,
 
     /// Frame step value (process every N-th frame)
     #[arg(short = 's', long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
