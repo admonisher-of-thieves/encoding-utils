@@ -17,9 +17,9 @@ struct Args {
     #[arg(short, long)]
     distorted: PathBuf,
 
-    /// JSON file containing scene information
-    #[arg(short = 'S', long)]
-    scenes: Option<PathBuf>,
+    // /// JSON file containing scene information
+    // #[arg(short = 'S', long)]
+    // scenes: Option<PathBuf>,
 
     /// Frame step value (process every N-th frame)
     #[arg(short = 's', long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
@@ -42,13 +42,13 @@ struct Args {
     #[arg(long)]
     trim_complex: Option<TrimComplex>,
 
-    /// Allows you to use a distorted video composed of n frames. Needs scenes file
-    #[arg(short = 'n', long = "middle-frames", default_value_t = 0)]
-    n_frames: u32,
+    // /// Allows you to use a distorted video composed of n frames. Needs scenes file
+    // #[arg(short = 'n', long = "middle-frames", default_value_t = 0)]
+    // n_frames: u32,
 
-    /// How the frames are distributed when encoding
-    #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
-    frames_distribution: FramesDistribution,
+    // /// How the frames are distributed when encoding
+    // #[arg(value_enum, short = 'd', long = "frames-distribution", default_value_t = FramesDistribution::Center)]
+    // frames_distribution: FramesDistribution,
 
     /// Keep temporary files (disables automatic cleanup)
     #[arg(
