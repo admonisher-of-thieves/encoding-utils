@@ -150,6 +150,11 @@ impl Scene {
             overrides.update_crf(new_crf);
         }
     }
+    pub fn update_encoder_params(&mut self, encoder_params: &str) {
+        if let Some(ref mut overrides) = self.zone_overrides {
+            overrides.update_encoder_params(encoder_params);
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -336,6 +341,14 @@ impl ZoneOverrides {
         } else {
             self.video_params = Some(vec!["--crf".to_string(), crf.to_string()]);
         }
+    }
+
+    pub fn update_encoder_params(&mut self, encoder_params: &str) {
+        let video_params_vec = encoder_params
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        self.video_params = Some(video_params_vec)
     }
 }
 
@@ -581,6 +594,15 @@ impl SceneList {
         }
     }
 
+    pub fn update_encoder_params(&mut self, encoder_params: &str) {
+        // Process each split scene
+        for scene in &mut self.split_scenes {
+            if let Some(ref mut overrides) = scene.zone_overrides {
+                overrides.update_encoder_params(encoder_params);
+            }
+        }
+    }
+
     pub fn update_crf(&mut self, new_crf: f64) {
         for scene in &mut self.split_scenes {
             scene.update_crf(new_crf);
@@ -592,6 +614,14 @@ impl SceneList {
         for scene in &mut self.split_scenes {
             if !scene.zoned {
                 scene.update_crf(new_crf);
+            }
+        }
+    }
+
+    pub fn update_encoder_params_if_zoned(&mut self, encoder_params: &str) {
+        for scene in &mut self.split_scenes {
+            if scene.zoned {
+                scene.update_encoder_params(encoder_params);
             }
         }
     }
@@ -798,6 +828,29 @@ impl SceneList {
         }
     }
 
+    pub fn sync_encoder_params_by_index(&mut self, reference: &SceneList) {
+        // Create a map of scene index to video_params from reference
+        let mut params_map = std::collections::HashMap::new();
+
+        for scene in &reference.split_scenes {
+            if scene.zoned
+                && let Some(overrides) = &scene.zone_overrides
+                && let Some(params) = &overrides.video_params
+            {
+                params_map.insert(scene.index, params.clone());
+            }
+        }
+
+        // Update current scenes
+        for scene in &mut self.split_scenes {
+            if let Some(new_params) = params_map.get(&scene.index)
+                && let Some(overrides) = &mut scene.zone_overrides
+            {
+                overrides.video_params = Some(new_params.clone());
+            }
+        }
+    }
+
     /// Updates frame scores based on reference scene list (by index)
     pub fn sync_scores_by_index(&mut self, reference: &SceneList) {
         use std::collections::HashMap;
@@ -892,7 +945,12 @@ impl SceneList {
     }
 
     /// Applies CRF values from ZoneChapters to scenes that fall mostly (≥80%) within chapter ranges
-    pub fn apply_zone_chapters(&mut self, zone_chapters: &ZoneChapters, overlap_percentage: f64) {
+    pub fn apply_zone_chapters(
+        &mut self,
+        zone_chapters: &ZoneChapters,
+        overlap_percentage: f64,
+        zoning_params: &str,
+    ) {
         for scene in &mut self.split_scenes {
             let scene_len = scene.end_frame - scene.start_frame;
             if scene_len == 0 {
@@ -918,6 +976,7 @@ impl SceneList {
                 if (overlap_len as f64) / (scene_len as f64) >= overlap_percentage
                     && scene.crf > zone_chapter.crf
                 {
+                    scene.update_encoder_params(zoning_params);
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;
                     break; // Stop checking once we find a matching chapter

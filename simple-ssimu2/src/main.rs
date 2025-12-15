@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use encoding_utils_lib::{ scenes::FramesDistribution, ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, TrimComplex}
+use encoding_utils_lib::{ ssimulacra2::{create_plot, ssimu2}, vapoursynth::{add_extension, SourcePlugin, TrimComplex}
 };
 use eyre::{OptionExt, Result};
 use vapoursynth4_rs::core::Core;

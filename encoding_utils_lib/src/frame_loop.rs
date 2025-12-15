@@ -30,6 +30,7 @@ pub fn run_frame_loop<'a>(
     filter_frames: bool,
     chapters: Option<&'a Path>,
     crf_chapters: String,
+    zoning_params: &'a str,
     overlap_chapters: f64,
     workers: u32,
     importer_metrics: &SourcePlugin,
@@ -198,7 +199,7 @@ pub fn run_frame_loop<'a>(
             importer_scene,
             &indexes_folder,
             verbose_verbose_verbose,
-            encoder_params,
+            zoning_params,
             crop,
             trim,
             downscale,
@@ -210,7 +211,8 @@ pub fn run_frame_loop<'a>(
         zone_chapters.with_crfs(crf_chapters);
         println!("{}", zone_chapters);
         scene_list_frames.update_crf(f64::MAX);
-        scene_list_frames.apply_zone_chapters(&zone_chapters, overlap_chapters);
+        scene_list_frames.apply_zone_chapters(&zone_chapters, overlap_chapters, zoning_params);
+        scene_list.sync_encoder_params_by_index(&scene_list_frames);
         scene_list_frames.update_crf_if_unzoned(*first_crf);
         scene_list.sync_crf_by_index(&scene_list_frames);
     }

@@ -31,9 +31,16 @@ struct Args {
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 4 --tune 1 --keyint 0 --film-grain 0 --scm 0 --scd 0 --hbd-mds 1 --psy-rd 1.0 --complex-hvs 1 --spy-rd 2 --enable-qm 1 --qm-min 8 --qm-max 15 --chroma-qm-min 10 --chroma-qm-max 15 --luminance-qp-bias 20 --enable-tf 1 --tf-strength 2 --alt-tf-decay 1 --kf-tf-strength 0 --filtering-noise-detection 2 --enable-cdef 1 --enable-restoration 1 --enable-dlf 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 5 --qp-scale-compress-strength 1.0 --low-q-taper 1 --noise-norm-strength 1 --adaptive-film-grain 0 --film-grain-denoise 0 --rc 0 --aq-mode 2 --sharpness 1 --sharp-tx 1 --tile-columns 1 --input-depth 10 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left"
+        default_value = "--preset 4 --tune 1 --keyint 0 --hbd-mds 1 --scm 0 --enable-dlf 2 --enable-qm 1 --qm-min 8 --chroma-qm-min 10 --luminance-qp-bias 20 --enable-tf 1 --kf-tf-strength 0 --alt-tf-decay 1 --tf-strength 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 5 --enable-cdef 1 --enable-restoration 1 --filtering-noise-detection 2 --complex-hvs 1 --ac-bias 2.0 --noise-norm-strength 1 --qp-scale-compress-strength 3.0 --cdef-bias 1 --chroma-qmc-bias 2 --variance-md-bias 1 --tile-columns 1 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
     )]
     encoder_params: String,
+
+    /// SVT-AV1 encoder parameters for zoning
+    #[arg(
+    long,
+        default_value = "--preset 4 --tune 1 --keyint 0 --hbd-mds 1 --enable-dlf 2 --enable-qm 1 --qm-min 0 --chroma-qm-min 0 --enable-tf 1 --kf-tf-strength 0 --alt-tf-decay 1 --tf-strength 2 --enable-variance-boost 1 --variance-boost-strength 1 --variance-octile 4 --enable-cdef 1 --enable-restoration 1 --filtering-noise-detection 2 --qp-scale-compress-strength 1 --tile-columns 1 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
+    )]
+    zoning_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
     #[arg(short = 'q', long, default_value_t = 77.5)]
@@ -320,6 +327,7 @@ fn main() -> Result<()> {
         args.filter_frames,
         args.chapters.as_deref(),
         args.chapters_zoning,
+        &args.zoning_params,
         args.overlap_chapters,
         args.workers,
         &args.source_metric_plugin,
