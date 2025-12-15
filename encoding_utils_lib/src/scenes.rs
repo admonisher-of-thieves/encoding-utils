@@ -976,7 +976,9 @@ impl SceneList {
                 if (overlap_len as f64) / (scene_len as f64) >= overlap_percentage
                     && scene.crf > zone_chapter.crf
                 {
-                    scene.update_encoder_params(zoning_params);
+                    if !zoning_params.is_empty() {
+                        scene.update_encoder_params(zoning_params);
+                    }
                     scene.update_crf(zone_chapter.crf);
                     scene.zoned = true;
                     break; // Stop checking once we find a matching chapter

@@ -212,7 +212,9 @@ pub fn run_frame_loop<'a>(
         println!("{}", zone_chapters);
         scene_list_frames.update_crf(f64::MAX);
         scene_list_frames.apply_zone_chapters(&zone_chapters, overlap_chapters, zoning_params);
-        scene_list.sync_encoder_params_by_index(&scene_list_frames);
+        if !zoning_params.is_empty() {
+            scene_list.sync_encoder_params_by_index(&scene_list_frames);
+        }
         scene_list_frames.update_crf_if_unzoned(*first_crf);
         scene_list.sync_crf_by_index(&scene_list_frames);
     }
