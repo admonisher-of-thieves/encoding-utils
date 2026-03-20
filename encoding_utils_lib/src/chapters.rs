@@ -46,7 +46,7 @@ pub struct ChapterDisplay {
     #[serde(rename = "ChapterLanguage")]
     pub language: String,
     #[serde(rename = "ChapLanguageIETF")]
-    pub language_ietf: String,
+    pub language_ietf: Option<String>,
 }
 
 // Custom display implementation for better formatting
@@ -76,7 +76,12 @@ impl fmt::Display for Chapters {
             writeln!(
                 f,
                 "      Language: {} ({})",
-                chapter.display.language, chapter.display.language_ietf
+                chapter.display.language,
+                chapter
+                    .display
+                    .language_ietf
+                    .clone()
+                    .unwrap_or("".to_string())
             )?;
         }
         Ok(())
