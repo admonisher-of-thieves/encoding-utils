@@ -47,7 +47,7 @@ impl TransNetSession {
             .map_err(|e| eyre!("{}", e))?
             .with_optimization_level(GraphOptimizationLevel::Level3)
             .map_err(|e| eyre!("{}", e))?
-            .with_intra_threads(rayon::max_num_threads())
+            .with_intra_threads(rayon::current_num_threads())
             .map_err(|e| eyre!("{}", e))?
             .with_execution_providers(execution_providers)
             .map_err(|e| eyre!("{}", e))?;
@@ -73,7 +73,7 @@ impl TransNetSession {
             .map_err(|e| eyre!("{}", e))?
             .with_optimization_level(GraphOptimizationLevel::Level3)
             .map_err(|e| eyre!("{}", e))?
-            .with_intra_threads(rayon::max_num_threads())
+            .with_intra_threads(rayon::current_num_threads())
             .map_err(|e| eyre!("{}", e))?
             .with_execution_providers(execution_providers)
             .map_err(|e| eyre!("{}", e))?
