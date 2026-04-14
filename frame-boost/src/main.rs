@@ -10,7 +10,7 @@ use std::{fs, path::{absolute, PathBuf}};
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Input video file, you can also pass a .vpy script
-    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    // #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
     /// Output scene file (default: "[BOOST]_<input>.json" if no output given)

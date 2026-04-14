@@ -24,7 +24,7 @@ vapoursynth4-rs = { features = [
 clap = { version = "4.6.0", features = ["derive"] }
 indicatif = { version = "0.18.4" }
 quill = { git = "https://github.com/admonisher-of-thieves/quill", rev = "0b7d5d9c1731dcb6a96aeae53940f64a779a989b" }
-ndarray = "0.16.1"
+ndarray = "0.17.2"
 iter-chunks = "0.3.0"
 itertools = "0.14.0"
 tempfile = "3.27.0"

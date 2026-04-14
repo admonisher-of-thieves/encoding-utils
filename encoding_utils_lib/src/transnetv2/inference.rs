@@ -96,13 +96,15 @@ impl SceneDetector {
         video_config: &VideoConfig,
         path_predictions: Option<&Path>,
     ) -> Result<()> {
-        let input_name = session.inputs[0].name.clone();
-        // Get both output names - assuming index 0 is single_frame_pred and 1 is all_frames_pred
-        let output_names = (
-            session.outputs[0].name.clone(), // single_frame_pred
-            session.outputs[1].name.clone(), // all_frames_pred
-        );
+        let inputs = session.inputs();
+        let input_name = inputs[0].name().to_owned();
 
+        let output_names = {
+            let outputs = session.outputs(); // This borrows session temporarily
+            (outputs[0].name().to_string(), outputs[1].name().to_string())
+        };
+
+        // Now session is no longer borrowed immutably
         let padded_frames = video_config.process_frames()?;
         let total_frames = video_config.total_frames;
 

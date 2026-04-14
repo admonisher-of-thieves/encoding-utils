@@ -43,12 +43,18 @@ impl TransNetSession {
         model_path: &Path,
         execution_providers: &[ExecutionProviderDispatch],
     ) -> Result<Session> {
-        Session::builder()?
-            .with_optimization_level(GraphOptimizationLevel::Level3)?
-            .with_intra_threads(4)?
-            .with_execution_providers(execution_providers)?
+        let mut builder = Session::builder()
+            .map_err(|e| eyre!("{}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Level3)
+            .map_err(|e| eyre!("{}", e))?
+            .with_intra_threads(rayon::max_num_threads())
+            .map_err(|e| eyre!("{}", e))?
+            .with_execution_providers(execution_providers)
+            .map_err(|e| eyre!("{}", e))?;
+
+        builder
             .commit_from_file(model_path)
-            .map_err(|e| eyre!("Failed to load model from file: {}", e))
+            .map_err(|e| eyre!("{}", e))
     }
 
     pub fn init_session_from_embedded(
@@ -63,10 +69,14 @@ impl TransNetSession {
         std::fs::write(&model_path, MODEL_BYTES)?;
 
         // Create the session from the temp file
-        let session = Session::builder()?
-            .with_optimization_level(GraphOptimizationLevel::Level3)?
-            .with_intra_threads(4)?
-            .with_execution_providers(execution_providers)?
+        let session = Session::builder()
+            .map_err(|e| eyre!("{}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Level3)
+            .map_err(|e| eyre!("{}", e))?
+            .with_intra_threads(rayon::max_num_threads())
+            .map_err(|e| eyre!("{}", e))?
+            .with_execution_providers(execution_providers)
+            .map_err(|e| eyre!("{}", e))?
             .commit_from_file(&model_path)
             .map_err(|e| eyre!("Failed to load embedded model: {}", e))?;
 
