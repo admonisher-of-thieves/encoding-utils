@@ -24,30 +24,30 @@ struct Args {
     /// AV1an encoding parameters
     #[arg(
         long,
-        default_value = "--verbose --resume --workers 1 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
+        default_value = "--verbose --resume --workers 2 --concat mkvmerge --chunk-method bestsource --chunk-order sequential --encoder svt-av1 --no-defaults --split-method none --extra-split-sec 0 --min-scene-len 0"
     )]
     av1an_params: String,
 
     /// SVT-AV1 encoder parameters
     #[arg(
     long,
-        default_value = "--preset 4 --tune 1 --keyint 0 --hbd-mds 1 --scm 0 --enable-dlf 2 --enable-qm 1 --qm-min 8 --chroma-qm-min 10 --luminance-qp-bias 20 --enable-tf 1 --kf-tf-strength 0 --alt-tf-decay 1 --tf-strength 2 --enable-variance-boost 1 --variance-boost-strength 2 --variance-octile 5 --enable-cdef 1 --enable-restoration 1 --filtering-noise-detection 2 --complex-hvs 1 --ac-bias 2.0 --noise-norm-strength 1 --qp-scale-compress-strength 3.0 --cdef-bias 1 --chroma-qmc-bias 2 --variance-md-bias 1 --tile-columns 1 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
+        default_value = "--preset 4 --tune 0 --scd 0 --keyint 0 --hbd-mds 1 --lineart-psy-bias 4 --texture-psy-bias 2 --filtering-noise-detection 2 --alt-tf-decay 1 --kf-tf-strength 0 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
     )]
     encoder_params: String,
 
     /// SVT-AV1 encoder parameters for zoning
     #[arg(
     long,
-        default_value = "--preset 4 --tune 1 --keyint 0 --hbd-mds 1 --enable-dlf 2 --enable-qm 1 --qm-min 0 --chroma-qm-min 0 --enable-tf 1 --kf-tf-strength 0 --alt-tf-decay 1 --tf-strength 2 --enable-variance-boost 1 --variance-boost-strength 1 --variance-octile 4 --enable-cdef 1 --enable-restoration 1 --filtering-noise-detection 2 --qp-scale-compress-strength 1 --tile-columns 1 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
+        default_value = "--preset 4 --tune 0 --scd 0 --keyint 0 --hbd-mds 1 --lineart-psy-bias 4 --texture-psy-bias 2 --filtering-noise-detection 2 --alt-tf-decay 1 --kf-tf-strength 0 --color-primaries bt709 --transfer-characteristics bt709 --matrix-coefficients bt709 --color-range studio --chroma-sample-position left --lp 3"
     )]
     zoning_params: String,
 
     /// Target SSIMULACRA2 score (0-100)
-    #[arg(short = 'q', long, default_value_t = 77.5)]
+    #[arg(short = 'q', long, default_value_t = 70.0)]
     target_quality: f64,
 
     /// Min SSIMULACRA2 score (0-100). All scores are going to be above the min-q when selecting a crf value.
-    #[arg(long = "min-q", default_value_t = 75.0)]
+    #[arg(long = "min-q", default_value_t = 70.0)]
     min_target_quality: f64,
 
     /// Percentile (0-100). 20 means that 80 percent of all values in a scene will be above target-quality when selecting a crf value.
@@ -62,7 +62,7 @@ struct Args {
     #[arg(
         short = 'c',
         long,
-        default_value = "30,27.5,25,22.5,20",
+        default_value = "32,28,24",
     )]
     crf: String,
     /// Number of frames to encode for scene. Higher value increase the confidence than all the frames in the scene will be above your quality target at cost of encoding time
@@ -98,7 +98,7 @@ struct Args {
     frames_distribution: FramesDistribution,
 
     /// Velocity tuning preset (-1~13)
-    #[arg(short = 'v', long, default_value_t = 6, value_parser = clap::value_parser!(i32).range(-1..=13))]
+    #[arg(short = 'v', long, default_value_t = 8, value_parser = clap::value_parser!(i32).range(-1..=13))]
     velocity_preset: i32,
 
     /// Which method to use to calculate scenes
