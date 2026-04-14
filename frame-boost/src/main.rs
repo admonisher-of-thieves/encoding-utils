@@ -262,7 +262,7 @@ struct Args {
     #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
     cpu: bool,
     
-    /// Threads to use
+    /// Num of threads Rayon uses. Matters when calculating metrics
     #[arg(long, default_value_t = 0)]
     threads: u32,
 }
