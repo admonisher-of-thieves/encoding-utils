@@ -10,11 +10,11 @@ use std::{fs::{self, create_dir_all}, path::PathBuf};
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Reference video file
-    #[arg(short, long)]
+    // #[arg(short, long)]
     reference: PathBuf,
 
     /// Distorted video file (encoded version)
-    #[arg(short, long)]
+    // #[arg(short, long)]
     distorted: PathBuf,
 
     /// JSON file containing scene information. Use for plot file.
@@ -110,10 +110,20 @@ struct Args {
         value_parser = clap::value_parser!(bool)
     )]
     save_csv: bool,
+
+    /// Threads to use
+    #[arg(long, default_value_t = 0)]
+    threads: u32,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+
+    // Configure global pool at startup
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads.try_into().unwrap())
+        .build_global()
+        .expect("Failed to initialize global thread pool");
 
     let temp_folder = match args.temp {
         Some(temp) => temp, 

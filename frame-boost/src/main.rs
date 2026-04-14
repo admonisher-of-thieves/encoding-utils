@@ -261,10 +261,20 @@ struct Args {
     /// Skip GPU acceleration
     #[arg(long, action = ArgAction::SetTrue, default_value_t = false)]
     cpu: bool,
+    
+    /// Threads to use
+    #[arg(long, default_value_t = 0)]
+    threads: u32,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+
+    // Configure global pool at startup
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads.try_into().unwrap())
+        .build_global()
+        .expect("Failed to initialize global thread pool");
 
     let crf_values = crf_parser(&args.crf)?;
     let input_path = absolute(&args.input)?;

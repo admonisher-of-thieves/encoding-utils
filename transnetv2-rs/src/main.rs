@@ -9,7 +9,7 @@ use std::{fs, path::{absolute, PathBuf}};
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Path to the video file
-    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    // #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     input: PathBuf,
 
     /// Path to the scenes JSON output file (default: "[SCENES]_<input>.json" if no path given)
@@ -135,11 +135,21 @@ struct Args {
         default_value_t = false,
     )]
     hardcut_scenes: bool,
+
+    /// Threads to use
+    #[arg(long, default_value_t = 0)]
+    threads: u32,
 }
 
 fn main() -> eyre::Result<()> {
     let args = Args::parse();
     let input_path = absolute(&args.input)?;
+
+    // Configure global pool at startup
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads.try_into().unwrap())
+        .build_global()
+        .expect("Failed to initialize global thread pool");
 
     let scenes = match args.output {
         Some(path) => path,
