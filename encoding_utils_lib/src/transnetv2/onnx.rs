@@ -7,7 +7,7 @@ use ort::{
 };
 
 #[cfg(target_os = "macos")]
-use ort::execution_providers::CoreMLExecutionProvider;
+use ort::ep::CoreML;
 
 #[cfg(windows)]
 use ort::execution_providers::{
@@ -95,7 +95,7 @@ impl TransNetSession {
             // use ort::execution_providers::coreml::{CoreMLComputeUnits, CoreMLModelFormat};
 
             providers.push(
-                CoreMLExecutionProvider::default()
+                CoreML::default()
                     // .with_compute_units(CoreMLComputeUnits::CPUAndNeuralEngine)
                     // .with_model_format(CoreMLModelFormat::MLProgram)
                     .build(),
