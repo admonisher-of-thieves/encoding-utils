@@ -1,2 +1,7 @@
 [target.aarch64-apple-darwin]
-rustflags = ["-C", "link-arg=-Wl,-rpath,/opt/homebrew/lib/python3.14/site-packages/vapoursynth"]
+rustflags = [
+  "-C",
+  "link-arg=-L/opt/homebrew/Cellar/vapoursynth/80/libexec/lib/python3.14/site-packages/vapoursynth",
+  "-C",
+  "link-arg=-Wl,-rpath,/opt/homebrew/Cellar/vapoursynth/80/libexec/lib/python3.14/site-packages/vapoursynth",
+]
